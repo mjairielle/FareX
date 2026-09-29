@@ -1,0 +1,35 @@
+package FareX;
+public class TapDevice {
+    public TapSession tapIn(String cardUIDOrAppUserID) {}
+    public Transaction tapOut(TapSession s) {}
+    public Transaction chargeMaxFare(TapSession s) {}
+}
+
+public class TapSession { private String passengerRef; private Stop tapInStop, tapOutStop; private double gpsLat, gpsLng; private LocalDateTime inTime, outTime; }
+
+public class GpsTracker {
+    public void track() {}
+    public void logStopArrival() {}
+}
+
+public class EarningsAccount {                       // derived from ledger rows, never edited
+    private String operatorID;
+    private double totalCollected, totalTransferred;
+
+    public double getAvailable() {}
+}
+
+public class EarningsTransfer {
+    private String uuid, operatorID, payoutCardUID;
+    private double amount;
+    private String status;                           // pending / signed / written / failed
+    private LocalDateTime requestedAt;
+
+    public boolean isWithinAvailable(EarningsAccount acct) {}
+}
+
+public class TransferService {                       // on the operator phone
+    public EarningsTransfer submit(EarningsTransfer t) {}
+    public void writeToCard(XPressCard c, String signedBalance) {}
+    public void queueIfOffline(EarningsTransfer t) {}
+}
