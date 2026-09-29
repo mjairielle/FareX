@@ -1,3 +1,5 @@
+generate project folder:mvn archetype:generate "-DarchetypeGroupId=com.gluonhq" "-DarchetypeArtifactId=gluonfx-archetype-mobile"
+
 JDK:21.0.12
 Maven:3.9.16.
 GraalVM:25.0.4
