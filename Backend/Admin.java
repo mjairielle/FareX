@@ -1,4 +1,4 @@
-package FareX;
+package Backend;
 
 public class Admin extends User {
     public void suspendAccount(String accountID) { }

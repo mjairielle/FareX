@@ -1,4 +1,4 @@
-package FareX;
+package Backend;
 
 public class TransferHandler {
     public void receiveTransferRequest() { }

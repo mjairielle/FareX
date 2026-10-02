@@ -1,4 +1,4 @@
-package FareX;
+package Backend;
 
 public class AuthHandler {
     public void register() { }

@@ -1,4 +1,4 @@
-package FareX;
+package Backend;
 
 public abstract class User {
     protected String accountID, name, password, phoneNumber, email;

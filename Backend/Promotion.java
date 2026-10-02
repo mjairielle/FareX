@@ -1,4 +1,4 @@
-package FareX;
+package Backend;
 
 import java.time.LocalDate;
 

@@ -1,4 +1,4 @@
-package FareX;
+package Backend;
 
 public class TapDevice {
     public TapSession tapIn(String cardUIDOrAppUserID) { return null; }

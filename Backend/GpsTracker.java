@@ -1,4 +1,4 @@
-package FareX;
+package Backend;
 
 public class GpsTracker {
     public void track() { }

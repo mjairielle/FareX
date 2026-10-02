@@ -1,4 +1,4 @@
-package FareX;
+package Backend;
 
 public class Operator extends User {
     private Vehicle assignedVehicle;

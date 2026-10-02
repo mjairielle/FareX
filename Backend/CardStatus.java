@@ -1,3 +1,3 @@
-package FareX;
+package Backend;
 
 public enum CardStatus { ACTIVE, FROZEN }
