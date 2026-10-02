@@ -9,9 +9,9 @@ public class PayMongoGateway {
     private HttpClient httpClient;
 
 
-    public PaymentIntent createPaymentIntent(double amount, String description) throws GatewayException { return null; }
-    public PaymentIntent attachQrPh(PaymentIntent intent) throws GatewayException { return null; }
-    public IntentStatus getIntentStatus(String paymentIntentID) throws GatewayException { return null; }
+    public PaymentIntent createPaymentIntent(double amount, String description) throws GateWayException { return null; }
+    public PaymentIntent attachQrPh(PaymentIntent intent) throws GateWayException { return null; }
+    public IntentStatus getIntentStatus(String paymentIntentID) throws GateWayException { return null; }
     public boolean verifyWebhookSignature(String payload, String signatureHeader) { return false; }
-    public WebhookEvent parseWebhook(String payload) { return null; }
+    public WebHookEvent parseWebhook(String payload) { return null; }
 }
