@@ -22,7 +22,9 @@ public class FarexApp extends Application {
         Navigator.register("welcome", WelcomeView::new);
         Navigator.register("login", LoginView::new);
         Navigator.register("register", RegisterView::new);
-        // Part 3 will add: "otp", "accountType", "congrats"
+        Navigator.register("otp", OtpView::new);
+        Navigator.register("accountType", AccountTypeView::new);
+        Navigator.register("congrats", CongratsView::new);
 
         Scene scene = new Scene(root, 360, 720);
 
