@@ -20,7 +20,9 @@ public class FarexApp extends Application {
         // Each screen is registered by name. Later parts add more lines here.
         Navigator.register("splash", SplashView::new);
         Navigator.register("welcome", WelcomeView::new);
-        // Part 2 will add: "login", "register"
+        Navigator.register("login", LoginView::new);
+        Navigator.register("register", RegisterView::new);
+        // Part 3 will add: "otp", "accountType", "congrats"
 
         Scene scene = new Scene(root, 360, 720);
 

@@ -4,9 +4,14 @@ import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -24,6 +29,9 @@ public final class Theme {
     public static final Color DARK = Color.web("#141414");
     public static final Color BLACK = Color.BLACK;
     public static final Color WHITE = Color.WHITE;
+    public static final Color GRAY = Color.web("#9A9A9A");
+    public static final Color ERROR = Color.web("#FF5C5C");
+    public static final Color FIELD = Color.web("#1F1F1F");         // input box background
 
     private Theme() {
     }
@@ -34,6 +42,12 @@ public final class Theme {
 
     public static Background rounded(Color color, double radius) {
         return new Background(new BackgroundFill(color, new CornerRadii(radius), Insets.EMPTY));
+    }
+
+    /** Only the top two corners rounded (used for the dark card on login/register). */
+    public static Background roundedTop(Color color, double radius) {
+        CornerRadii radii = new CornerRadii(radius, radius, 0, 0, false);
+        return new Background(new BackgroundFill(color, radii, Insets.EMPTY));
     }
 
     public static Font bold(double size) {
@@ -56,6 +70,15 @@ public final class Theme {
         return label;
     }
 
+    /** Bold white text you can click, like "Sign up" or "Log in". */
+    public static Label linkLabel(String text) {
+        Label label = new Label(text);
+        label.setTextFill(WHITE);
+        label.setFont(bold(14));
+        label.setCursor(Cursor.HAND);
+        return label;
+    }
+
     /** Lime rounded button with a glow (Get Started, Login, Sign up, ...). */
     public static void limeButton(Button button) {
         button.setBackground(rounded(LIME, 12));
@@ -72,5 +95,28 @@ public final class Theme {
         button.setOnMouseExited(e -> button.setBackground(rounded(LIME, 12)));
         button.setOnMousePressed(e -> button.setBackground(rounded(LIME_PRESSED, 12)));
         button.setOnMouseReleased(e -> button.setBackground(rounded(LIME_HOVER, 12)));
+    }
+
+    /**
+     * Dark rounded input box with white text. Gets a lime outline while you type in it.
+     * Works for TextField and PasswordField (PasswordField is a TextField).
+     */
+    public static void inputField(TextField field, String prompt) {
+        field.setPromptText(prompt);
+        field.setBackground(rounded(FIELD, 10));
+        field.setPadding(new Insets(14));
+        field.setFont(Font.font("System", 14));
+        field.setMaxWidth(Double.MAX_VALUE);
+
+        // The only inline style line: JavaFX has no Java method for text color in a TextField
+        field.setStyle("-fx-text-fill: white; -fx-prompt-text-fill: #9A9A9A;");
+
+        Border idleBorder = new Border(new BorderStroke(
+                Color.web("#333333"), BorderStrokeStyle.SOLID, new CornerRadii(10), new BorderWidths(1)));
+        Border focusBorder = new Border(new BorderStroke(
+                LIME, BorderStrokeStyle.SOLID, new CornerRadii(10), new BorderWidths(2)));
+
+        field.setBorder(idleBorder);
+        field.focusedProperty().addListener((obs, wasFocused, isFocused) -> field.setBorder(isFocused ? focusBorder : idleBorder));
     }
 }
