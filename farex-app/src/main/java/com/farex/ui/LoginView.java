@@ -3,7 +3,6 @@ package com.farex.ui;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 
@@ -11,11 +10,10 @@ import javafx.scene.layout.HBox;
 public class LoginView extends AuthenticationScreen {
 
     public LoginView() {
-        TextField contactField = new TextField();
-        Theme.inputField(contactField, "Email/Contact Number");
-
-        PasswordField passwordField = new PasswordField();
-        Theme.inputField(passwordField, "Password");
+        IconField contactBox = IconField.text("Email/Contact Number");
+        IconField passwordBox = IconField.password("Password");
+        TextField contactField = contactBox.getField();
+        TextField passwordField = passwordBox.getField();
 
         Button loginButton = new Button("Login");
         Theme.limeButton(loginButton);
@@ -35,7 +33,7 @@ public class LoginView extends AuthenticationScreen {
         });
 
         // Enter key: contact field -> password field -> login
-        contactField.setOnAction(e -> passwordField.requestFocus());
+        contactField.setOnAction(e -> passwordBox.focusField());
         passwordField.setOnAction(e -> loginButton.fire());
 
         Label question = Theme.bodyText("Didn't have an account yet?", Theme.GRAY);
@@ -44,6 +42,6 @@ public class LoginView extends AuthenticationScreen {
         HBox bottom = new HBox(6, question, signUp);
         bottom.setAlignment(Pos.CENTER);
 
-        addToCard(contactField, passwordField, errorLabel, loginButton, bottom);
+        addToCard(contactBox, passwordBox, errorLabel, loginButton, bottom);
     }
 }

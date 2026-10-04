@@ -5,10 +5,6 @@ import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
-/**
- * Entry point of the FareX app. Builds the window (phone-sized),
- * registers every screen with the Navigator, then shows the splash.
- */
 public class FarexApp extends Application {
 
     @Override
@@ -17,7 +13,6 @@ public class FarexApp extends Application {
         root.setBackground(Theme.solid(Theme.DARK));
         Navigator.init(root);
 
-        // Each screen is registered by name. Later parts add more lines here.
         Navigator.register("splash", SplashView::new);
         Navigator.register("welcome", WelcomeView::new);
         Navigator.register("login", LoginView::new);

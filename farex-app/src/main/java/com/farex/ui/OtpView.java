@@ -27,7 +27,7 @@ import javafx.util.Duration;
 public class OtpView extends VBox {
 
     private static final String DEMO_CODE = "123456";
-    private static final int START_SECONDS = 5;
+    private static final int START_SECONDS = 300;
 
     private static final Border IDLE_BORDER = new Border(new BorderStroke(
             Color.web("#333333"), BorderStrokeStyle.SOLID, new CornerRadii(8), new BorderWidths(1)));

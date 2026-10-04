@@ -1,76 +1,183 @@
 package com.farex.ui;
 
-import javafx.collections.FXCollections;
-import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.ComboBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
+import java.util.ArrayList;
+import java.util.List;
 
-/** Account Type screen: dropdown with Passenger / Operator / Both, then Create Account. */
-public class AccountTypeView extends AuthenticationScreen {
+import javafx.animation.FadeTransition;
+import javafx.animation.Interpolator;
+import javafx.animation.ParallelTransition;
+import javafx.animation.TranslateTransition;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Cursor;
+import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.effect.DropShadow;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.text.Text;
+import javafx.util.Duration;
+
+/**
+ * Figma "Account Type" screen: outlined FareX on lime, and a dark panel that slides
+ * up from the bottom holding the role cards (Passenger / Operator).
+ */
+public class AccountTypeView extends StackPane {
+
+    private static final double SHEET_HEIGHT = 540;
+    private static final String[] ROLES = {"Passenger", "Operator"};
+
+    private static final Border SELECTED_BORDER = new Border(new BorderStroke(
+            Theme.LIME, BorderStrokeStyle.SOLID, new CornerRadii(12), new BorderWidths(2)));
+    // Same width as the selected border (but invisible) so cards don't shift when selected
+    private static final Border IDLE_BORDER = new Border(new BorderStroke(
+            Color.TRANSPARENT, BorderStrokeStyle.SOLID, new CornerRadii(12), new BorderWidths(2)));
+
+    private final List<RoleCard> cards = new ArrayList<>();
+    private String selectedRole = "Passenger";
 
     public AccountTypeView() {
+        setBackground(Theme.solid(Theme.LIME));
+
+        // --- Lime area: outlined "FareX" (partly hidden by the panel) and back arrow ---
+        Text outlinedName = new Text("FareX");
+        outlinedName.setFont(Theme.bold(112));
+        outlinedName.setFill(Color.TRANSPARENT);
+        outlinedName.setStroke(Theme.BLACK);
+        outlinedName.setStrokeWidth(2);
+        StackPane.setAlignment(outlinedName, Pos.TOP_CENTER);
+        StackPane.setMargin(outlinedName, new Insets(90, 0, 0, 0));
+
+        Label back = new Label("\u2039");
+        back.setTextFill(Theme.BLACK);
+        back.setFont(Theme.bold(40));
+        back.setCursor(Cursor.HAND);
+        back.setOnMouseClicked(e -> Navigator.go("register"));
+        StackPane.setAlignment(back, Pos.TOP_LEFT);
+        StackPane.setMargin(back, new Insets(14, 0, 0, 22));
+
+        // --- Dark panel ---
         Label title = new Label("Account Type");
         title.setTextFill(Theme.WHITE);
         title.setFont(Theme.bold(26));
         title.setMaxWidth(Double.MAX_VALUE);
         title.setAlignment(Pos.CENTER);
+        VBox.setMargin(title, new Insets(0, 0, 14, 0));
 
-        ComboBox<String> roleBox = new ComboBox<>(
-                FXCollections.observableArrayList("Passenger", "Operator", "Both"));
-        roleBox.setValue("Passenger");
-        styleRoleBox(roleBox);
+        VBox sheet = new VBox(14);
+        sheet.setPadding(new Insets(36, 24, 36, 24));
+        sheet.setBackground(Theme.roundedTop(Theme.DARK, 28));
+        sheet.setPrefHeight(SHEET_HEIGHT);
+        sheet.setMinHeight(SHEET_HEIGHT);
+        sheet.setMaxHeight(SHEET_HEIGHT);
+        DropShadow shadow = new DropShadow(30, Color.rgb(0, 0, 0, 0.6));
+        shadow.setOffsetY(-8);
+        sheet.setEffect(shadow);
+        StackPane.setAlignment(sheet, Pos.BOTTOM_CENTER);
+
+        sheet.getChildren().add(title);
+        for (String role : ROLES) {
+            // "Passenger" -> icon_passenger, "Operator" -> icon_operator
+            RoleCard card = new RoleCard(role, Icons.view("icon_" + role.toLowerCase(), 40));
+            cards.add(card);
+            sheet.getChildren().add(card);
+        }
+        select(selectedRole);
+
+        Region spacer = new Region();
+        VBox.setVgrow(spacer, Priority.ALWAYS);
 
         Button createButton = new Button("Create Account");
         Theme.limeButton(createButton);
         createButton.setMaxWidth(Double.MAX_VALUE);
         createButton.setOnAction(e -> {
-            SignUpState.setRole(roleBox.getValue());   // "Passenger", "Operator" or "Both"
+            SignUpState.setRole(selectedRole);   // "Passenger" or "Operator"
             Navigator.go("congrats");
         });
 
-        addToCard(title, roleBox, createButton);
+        sheet.getChildren().addAll(spacer, createButton);
+        getChildren().addAll(outlinedName, back, sheet);
+
+        playEntrance(sheet);
     }
 
-    // Dark box with white text; the list that opens is dark too, lime when hovered
-    private void styleRoleBox(ComboBox<String> box) {
-        box.setMaxWidth(Double.MAX_VALUE);
-        // Box look and white arrow (same inline-style reason as Theme.inputField)
-        box.setStyle("-fx-background-color: #1F1F1F; -fx-background-radius: 10; "
-                + "-fx-border-color: #333333; -fx-border-radius: 10; "
-                + "-fx-mark-color: white; -fx-padding: 6 4 6 4;");
+    // Panel rises from below the screen, then each card fades in and slides up in turn
+    private void playEntrance(VBox sheet) {
+        sheet.setTranslateY(SHEET_HEIGHT);
+        TranslateTransition rise = new TranslateTransition(Duration.millis(450), sheet);
+        rise.setToY(0);
+        rise.setInterpolator(Interpolator.EASE_OUT);
+        rise.play();
 
-        // The text shown inside the closed box
-        box.setButtonCell(new ListCell<String>() {
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty ? null : item);
-                setTextFill(Theme.WHITE);
-                setFont(Theme.bold(15));
-            }
-        });
+        for (int i = 0; i < cards.size(); i++) {
+            RoleCard card = cards.get(i);
+            card.setOpacity(0);
+            card.setTranslateY(30);
 
-        // The rows in the opened list
-        box.setCellFactory(list -> new ListCell<String>() {
-            {
-                hoverProperty().addListener((obs, wasHover, isHover) -> paint());
-            }
+            FadeTransition fade = new FadeTransition(Duration.millis(300), card);
+            fade.setToValue(1);
+            TranslateTransition slide = new TranslateTransition(Duration.millis(300), card);
+            slide.setToY(0);
+            slide.setInterpolator(Interpolator.EASE_OUT);
 
-            @Override
-            protected void updateItem(String item, boolean empty) {
-                super.updateItem(item, empty);
-                setText(empty ? null : item);
-                setFont(Theme.bold(14));
-                paint();
-            }
+            ParallelTransition show = new ParallelTransition(fade, slide);
+            show.setDelay(Duration.millis(300 + i * 100));   // 300, 400 ms
+            show.play();
+        }
+    }
 
-            private void paint() {
-                boolean hot = isHover() && !isEmpty();
-                setBackground(Theme.solid(hot ? Theme.LIME : Theme.FIELD));
-                setTextFill(hot ? Theme.BLACK : Theme.WHITE);
+    private void select(String role) {
+        selectedRole = role;
+        for (RoleCard card : cards) {
+            card.setSelected(card.role.equals(role));
+        }
+    }
+
+    // ---------- One role card ----------
+
+    private class RoleCard extends HBox {
+        private final String role;
+        private final Circle dot = new Circle(6);
+
+        RoleCard(String role, Node icon) {
+            this.role = role;
+            setAlignment(Pos.CENTER_LEFT);
+            setSpacing(18);
+            setPadding(new Insets(14, 20, 14, 20));
+            setCursor(Cursor.HAND);
+
+            Label name = new Label(role);
+            name.setTextFill(Theme.WHITE);
+            name.setFont(Theme.bold(17));
+
+            Region gap = new Region();
+            HBox.setHgrow(gap, Priority.ALWAYS);
+
+            getChildren().addAll(icon, name, gap, dot);
+            setOnMouseClicked(e -> select(role));
+            setSelected(false);
+        }
+
+        void setSelected(boolean selected) {
+            setBackground(Theme.rounded(Theme.FIELD, 12));
+            setBorder(selected ? SELECTED_BORDER : IDLE_BORDER);
+            dot.setFill(selected ? Theme.LIME : Color.web("#888888"));
+            if (selected) {
+                dot.setEffect(new DropShadow(10, Theme.LIME));
+            } else {
+                dot.setEffect(null);
             }
-        });
+        }
     }
 }

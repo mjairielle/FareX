@@ -3,7 +3,6 @@ package com.farex.ui;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.control.PasswordField;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 
@@ -11,14 +10,12 @@ import javafx.scene.layout.HBox;
 public class RegisterView extends AuthenticationScreen {
 
     public RegisterView() {
-        TextField contactField = new TextField();
-        Theme.inputField(contactField, "Email/Contact Number");
-
-        PasswordField passwordField = new PasswordField();
-        Theme.inputField(passwordField, "Password");
-
-        PasswordField confirmField = new PasswordField();
-        Theme.inputField(confirmField, "Confirm Password");
+        IconField contactBox = IconField.text("Email/Contact Number");
+        IconField passwordBox = IconField.password("Password");
+        IconField confirmBox = IconField.password("Confirm Password");
+        TextField contactField = contactBox.getField();
+        TextField passwordField = passwordBox.getField();
+        TextField confirmField = confirmBox.getField();
 
         Button signUpButton = new Button("Sign up");
         Theme.limeButton(signUpButton);
@@ -35,13 +32,13 @@ public class RegisterView extends AuthenticationScreen {
                 showError("Passwords do not match.");   // e.g. farex123 vs farex12
             } else {
                 MockData.setPendingContact(contact);     // the OTP screen shows this
-                Navigator.go("otp");                     // built in Part 3
+                Navigator.go("otp");
             }
         });
 
         // Enter key moves down the form, then submits
-        contactField.setOnAction(e -> passwordField.requestFocus());
-        passwordField.setOnAction(e -> confirmField.requestFocus());
+        contactField.setOnAction(e -> passwordBox.focusField());
+        passwordField.setOnAction(e -> confirmBox.focusField());
         confirmField.setOnAction(e -> signUpButton.fire());
 
         Label question = Theme.bodyText("Already have an account?", Theme.GRAY);
@@ -50,6 +47,6 @@ public class RegisterView extends AuthenticationScreen {
         HBox bottom = new HBox(6, question, logIn);
         bottom.setAlignment(Pos.CENTER);
 
-        addToCard(contactField, passwordField, confirmField, errorLabel, signUpButton, bottom);
+        addToCard(contactBox, passwordBox, confirmBox, errorLabel, signUpButton, bottom);
     }
 }
