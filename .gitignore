@@ -2,3 +2,5 @@
 .idea/
 .vscode/
 .gluonfx/
+.server/data/
+.server/keys/

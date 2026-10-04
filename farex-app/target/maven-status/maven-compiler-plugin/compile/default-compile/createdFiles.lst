@@ -1,2 +1,7 @@
+farex\app\operator\SyncClient.class
+farex\app\operator\OperatorSession.class
+farex\app\ApiClient.class
+farex\app\operator\TapService$Session.class
+farex\app\operator\GpsTracker.class
+farex\app\operator\TapService.class
 com\farex\HelloGluon.class
-com\farex\HelloGluon$1.class

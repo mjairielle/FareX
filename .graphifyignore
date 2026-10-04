@@ -1,0 +1,8 @@
+# Ignore all image files so text-only DeepSeek won't throw 500 errors
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.svg
+*.ico

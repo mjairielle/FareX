@@ -1,0 +1,17 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>farex</groupId>
+  <artifactId>farex-backend</artifactId>
+  <version>1.0</version>
+  <packaging>pom</packaging>
+  <properties>
+    <maven.compiler.release>21</maven.compiler.release>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  <modules>
+    <module>farex-app</module>
+    <module>farex-shared</module>
+    <module>farex-server</module>
+    <!-- app: copy app/src into your farex-app project, add farex-shared dependency there -->
+  </modules>
+</project>
