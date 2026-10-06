@@ -23,7 +23,8 @@ import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
 /**
- * The xPress card from the Figma: dark gradient, lime and teal glows, faint dashed lines,
+ * The xPress card from the Figma: dark base, olive glow top-right, teal glow bottom-left,
+ * a dashed circuit line and a solid one (positions measured from the Figma card background),
  * balance in the middle, cardholder + number bottom-left, expiry bottom-right.
  * Fixed size 320 x 190 so it lines up with the 20px screen margins.
  */
@@ -47,40 +48,50 @@ public class CardTile extends StackPane {
         getChildren().addAll(backgroundLayer(), textLayer(card));
     }
 
-    // ---------- Background: base color + two glows + dashed circuit lines ----------
+    // ---------- Background ----------
 
     private Pane backgroundLayer() {
         Rectangle base = new Rectangle(W, H);
         base.setFill(new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#1C2020")), new Stop(1, Color.web("#101313"))));
+                new Stop(0, Color.web("#1F1F1F")), new Stop(1, Color.web("#161616"))));
 
-        Rectangle limeGlow = new Rectangle(W, H);       // top-right
-        limeGlow.setFill(new RadialGradient(0, 0, 0.95, 0.05, 0.75, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.rgb(202, 254, 6, 0.32)), new Stop(1, Color.rgb(202, 254, 6, 0))));
+        Rectangle oliveGlow = new Rectangle(W, H);       // top-right
+        oliveGlow.setFill(new RadialGradient(0, 0, 0.84, 0.12, 0.42, true, CycleMethod.NO_CYCLE,
+                new Stop(0, Color.rgb(202, 254, 6, 0.24)), new Stop(1, Color.rgb(202, 254, 6, 0))));
 
-        Rectangle tealGlow = new Rectangle(W, H);       // bottom-left
-        tealGlow.setFill(new RadialGradient(0, 0, 0.02, 0.98, 0.75, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.rgb(0, 190, 210, 0.30)), new Stop(1, Color.rgb(0, 190, 210, 0))));
+        Rectangle tealGlow = new Rectangle(W, H);        // bottom-left
+        tealGlow.setFill(new RadialGradient(0, 0, 0.09, 0.88, 0.34, true, CycleMethod.NO_CYCLE,
+                new Stop(0, Color.rgb(0, 200, 220, 0.22)), new Stop(1, Color.rgb(0, 200, 220, 0))));
 
-        Polyline lineTop = dashedLine(0, 78, 70, 78, 96, 100, 225, 100, 250, 124, W, 124);
-        Polyline lineBottom = dashedLine(0, 150, 90, 150, 112, 128, 190, 128);
-        Circle dot1 = lineDot(250, 124);
-        Circle dot2 = lineDot(96, 100);
+        // Points are fractions of the card (x across, y down), measured from the Figma
+        Polyline dashed = line(true, 0.34, 0.0, 0.158, 0.304, 0.158, 0.397, 0.316,
+                0.743, 0.316, 0.845, 0.471, 1.0, 0.471);
+        Polyline solid = line(false, 0.22, 0.0, 0.747, 0.224, 0.747, 0.326, 0.592,
+                0.673, 0.592, 0.774, 0.747, 1.0, 0.747);
 
-        return new Pane(base, limeGlow, tealGlow, lineTop, lineBottom, dot1, dot2);
+        Pane layer = new Pane(base, oliveGlow, tealGlow, dashed, solid);
+        layer.getChildren().addAll(dot(0.397, 0.316), dot(0.845, 0.471), dot(0.326, 0.592));
+        return layer;
     }
 
-    private Polyline dashedLine(double... points) {
+    // fractions = x1, y1, x2, y2, ... (each between 0 and 1); opacity = how visible the line is
+    private Polyline line(boolean dashed, double opacity, double... fractions) {
+        double[] points = new double[fractions.length];
+        for (int i = 0; i < fractions.length; i++) {
+            points[i] = fractions[i] * ((i % 2 == 0) ? W : H);   // even index = x, odd index = y
+        }
         Polyline line = new Polyline(points);
-        line.setStroke(Color.rgb(202, 254, 6, 0.28));
-        line.setStrokeWidth(1);
-        line.getStrokeDashArray().addAll(3.0, 3.0);
+        line.setStroke(Color.rgb(202, 254, 6, opacity));
+        line.setStrokeWidth(1.2);
         line.setFill(null);
+        if (dashed) {
+            line.getStrokeDashArray().addAll(5.0, 4.0);
+        }
         return line;
     }
 
-    private Circle lineDot(double x, double y) {
-        Circle dot = new Circle(x, y, 2.5);
+    private Circle dot(double fx, double fy) {
+        Circle dot = new Circle(fx * W, fy * H, 3);
         dot.setFill(Color.rgb(202, 254, 6, 0.45));
         return dot;
     }

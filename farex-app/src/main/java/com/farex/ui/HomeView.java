@@ -6,12 +6,15 @@ import java.util.function.IntConsumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.effect.DropShadow;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
@@ -23,7 +26,12 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 
@@ -34,6 +42,8 @@ import javafx.scene.text.TextAlignment;
 public class HomeView extends ScrollPane {
 
     private static final Color TILE = Color.web("#1C1C1C");       // tiles and rows
+    private static final Color PANEL = Color.web("#222222");      // empty-card panel (sampled from Figma)
+    private static final Color BANNER = Color.web("#212121");     // points banner (sampled from Figma)
     private static final Color ICON_TILE = Color.web("#2A2A2A");  // small square behind row icons
     private static final Color LINE = Color.web("#2A2A2A");
 
@@ -96,8 +106,8 @@ public class HomeView extends ScrollPane {
 
         HBox chip = new HBox(6, dot, label);
         chip.setAlignment(Pos.CENTER);
-        chip.setPadding(new Insets(5, 10, 5, 10));
-        chip.setBackground(Theme.rounded(Color.web("#262626"), 14));
+        chip.setPadding(new Insets(6, 12, 6, 12));
+        chip.setBackground(Theme.rounded(Color.web("#262626"), 50));   // 50 = always a full pill
         return chip;
     }
 
@@ -108,16 +118,21 @@ public class HomeView extends ScrollPane {
         brand.setTextFill(Theme.WHITE);
         brand.setFont(Theme.bold(20));
 
-        Label plus = new Label("+");
-        plus.setTextFill(Theme.LIME);
-        plus.setFont(Theme.bold(16));
-        Button addCard = new Button("Add Card", plus);
+        // Plus sign drawn with two thick rounded lines
+        Line horizontal = new Line(0, 5.5, 11, 5.5);
+        Line vertical = new Line(5.5, 0, 5.5, 11);
+        for (Line stroke : new Line[] {horizontal, vertical}) {
+            stroke.setStroke(Theme.LIME);
+            stroke.setStrokeWidth(2.5);
+            stroke.setStrokeLineCap(StrokeLineCap.ROUND);
+        }
+        Button addCard = new Button("Add Card", new Group(horizontal, vertical));
         addCard.setContentDisplay(ContentDisplay.LEFT);
-        addCard.setGraphicTextGap(6);
-        addCard.setBackground(Theme.rounded(Color.web("#0F0F0F"), 18));
-        addCard.setTextFill(Theme.WHITE);
-        addCard.setFont(Theme.bold(12));
-        addCard.setPadding(new Insets(7, 14, 7, 14));
+        addCard.setGraphicTextGap(8);
+        addCard.setBackground(Theme.rounded(Color.web("#151515"), 50));
+        addCard.setTextFill(Theme.LIME);
+        addCard.setFont(Theme.bold(13));
+        addCard.setPadding(new Insets(8, 16, 8, 16));
         addCard.setCursor(Cursor.HAND);
         addCard.setOnAction(e -> Navigator.go("addCard"));
 
@@ -142,7 +157,7 @@ public class HomeView extends ScrollPane {
         VBox panel = new VBox(14, top, logo, message);
         panel.setAlignment(Pos.TOP_CENTER);
         panel.setPadding(new Insets(16, 16, 20, 16));
-        panel.setBackground(Theme.rounded(TILE, 18));
+        panel.setBackground(Theme.rounded(PANEL, 18));
         return panel;
     }
 
@@ -150,18 +165,36 @@ public class HomeView extends ScrollPane {
 
     private Node buyLoadButton() {
         Button buy = new Button("BUY LOAD");
-        Theme.limeButton(buy);
+        Theme.limeButton(buy);                       // glow, hand cursor, text color
+        buy.setFont(Theme.bold(17));
         buy.setPadding(new Insets(18, 20, 18, 20));
         buy.setMaxWidth(Double.MAX_VALUE);
+
+        // Figma: lime with a slightly darker top edge. Replaces the flat color from limeButton.
+        Background normal = lime("#BFF000", "#CAFF06");
+        Background hover = lime("#CBFF30", "#D6FF55");
+        Background pressed = lime("#A5CE00", "#AFD800");
+        buy.setBackground(normal);
+        buy.setOnMouseEntered(e -> buy.setBackground(hover));
+        buy.setOnMouseExited(e -> buy.setBackground(normal));
+        buy.setOnMousePressed(e -> buy.setBackground(pressed));
+        buy.setOnMouseReleased(e -> buy.setBackground(hover));
+
         buy.setOnAction(e -> Navigator.go("buyLoad"));
         return buy;
     }
 
+    // Rounded lime background fading from `top` color to `bottom` color
+    private Background lime(String top, String bottom) {
+        LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
+                new Stop(0, Color.web(top)), new Stop(1, Color.web(bottom)));
+        return new Background(new BackgroundFill(gradient, new CornerRadii(16), Insets.EMPTY));
+    }
+
     private Node actionTiles() {
-        HBox row = new HBox(12,
+        return new HBox(12,
                 actionTile("icon_view_cards", "View All Cards", "allCards"),
                 actionTile("icon_fetch_load", "Fetch Load", "fetchLoad"));
-        return row;
     }
 
     private Node actionTile(String iconName, String text, String target) {
@@ -218,18 +251,19 @@ public class HomeView extends ScrollPane {
         VBox text = new VBox(2, topLine, sub);
         HBox.setHgrow(text, Priority.ALWAYS);
 
+        // Figma: gray pill, light-weight lime text
         Button redeem = new Button("Redeem");
-        redeem.setBackground(Theme.rounded(Color.rgb(202, 254, 6, 0.18), 10));
+        redeem.setBackground(Theme.rounded(Color.web("#363636"), 50));
         redeem.setTextFill(Theme.LIME);
-        redeem.setFont(Theme.bold(10));
-        redeem.setPadding(new Insets(4, 10, 4, 10));
+        redeem.setFont(Font.font("System", 11));
+        redeem.setPadding(new Insets(5, 14, 5, 14));
         redeem.setCursor(Cursor.HAND);
         redeem.setOnAction(e -> Navigator.go("redeem"));
 
         HBox banner = new HBox(12, trophyTile, text, redeem);
         banner.setAlignment(Pos.CENTER_LEFT);
         banner.setPadding(new Insets(12));
-        banner.setBackground(Theme.rounded(Color.web("#171717"), 14));
+        banner.setBackground(Theme.rounded(BANNER, 14));
         banner.setBorder(new Border(new BorderStroke(Color.web("#3A3A3A"),
                 BorderStrokeStyle.SOLID, new CornerRadii(14), new BorderWidths(1))));
         return banner;
