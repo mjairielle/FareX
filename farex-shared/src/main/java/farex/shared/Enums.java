@@ -10,5 +10,5 @@ public final class Enums {
     public enum CardStatus { ACTIVE, FROZEN }
     public enum PaymentMethod { GCASH, MAYA, BANK, OTHERS }
     public enum TxnType { CARD_LOAD, FARE_PAYMENT, POINTS_REDEEMED, OPERATOR_TRANSFER }
-    public enum LoadStatus { AWAITING_PAYMENT, PAID, EXPIRED, FAILED }
+    public enum LoadStatus { AWAITING_PAYMENT, PAID, EXPIRED, CANCELLED, FAILED }
 }

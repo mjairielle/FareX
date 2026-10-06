@@ -1,0 +1,1 @@
+{"nodes": [{"id": "pkg_farex_farex_shared", "label": "farex:farex-shared", "file_type": "code", "type": "package", "ecosystem": "maven", "source_file": "farex-shared/pom.xml", "source_location": "L1", "version": "1.0"}], "edges": []}

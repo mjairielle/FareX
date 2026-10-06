@@ -1,7 +1,10 @@
 package farex.server;
 
-import farex.shared.Model.*;
 import java.util.List;
+
+import farex.shared.Model.Credit;
+import farex.shared.Model.Load;
+import farex.shared.Model.SignedBalance;
 
 /**
  * cards.csv, loads.csv, credits.csv.
@@ -14,6 +17,11 @@ public class CardService {
         //       PayMongo.createQrPh, append loads.csv with AWAITING_PAYMENT
         throw new UnsupportedOperationException("TODO");
     }
+
+    // Allowed moves, from the old LoadRequest:
+    // AWAITING_PAYMENT -> PAID, FAILED, CANCELLED, EXPIRED
+    // EXPIRED, CANCELLED -> PAID  (paid late, money is real, still credit)
+    // PAID, FAILED -> nothing     (repeated webhook is ignored)
 
     public void onWebhook(String payload, String signatureHeader) {
         // TODO: verifyWebhook, find Load by intentId, ignore if already PAID (webhooks repeat),

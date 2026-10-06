@@ -1,0 +1,19 @@
+package farex.shared.user;
+
+public abstract class User {
+    protected final String id;
+    protected final String name;
+    protected final String email;
+
+    protected User(String id, String name, String email) {
+        this.id = id;
+        this.name = name;
+        this.email = email;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public abstract String homeScreen();
+}

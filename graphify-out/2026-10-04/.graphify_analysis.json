@@ -1,0 +1,440 @@
+{
+  "communities": {
+    "0": [
+      "farex_app_src_main_java_farex_app_apiclient",
+      "farex_app_src_main_java_farex_app_apiclient_apiclient",
+      "farex_app_src_main_java_farex_app_apiclient_apiclient_apiclient",
+      "farex_app_src_main_java_farex_app_apiclient_apiclient_get",
+      "farex_app_src_main_java_farex_app_apiclient_apiclient_post",
+      "farex_app_src_main_java_farex_app_apiclient_apiclient_settoken",
+      "farex_app_src_main_java_farex_app_operator_syncclient",
+      "farex_app_src_main_java_farex_app_operator_syncclient_syncclient",
+      "farex_app_src_main_java_farex_app_operator_syncclient_syncclient_syncclient",
+      "farex_app_src_main_java_farex_app_operator_syncclient_syncclient_uploadbatch",
+      "farex_server_src_main_java_farex_server_paymongo",
+      "farex_server_src_main_java_farex_server_paymongo_event",
+      "farex_server_src_main_java_farex_server_paymongo_paymongo",
+      "farex_server_src_main_java_farex_server_paymongo_paymongo_createqrph",
+      "farex_server_src_main_java_farex_server_paymongo_paymongo_parsewebhook",
+      "farex_server_src_main_java_farex_server_paymongo_paymongo_verifywebhook",
+      "farex_server_src_main_java_farex_server_paymongo_qr",
+      "java_net_http_httpclient"
+    ],
+    "1": [
+      "button",
+      "faretable",
+      "farex_app_src_main_java_com_farex_hellogluon",
+      "farex_app_src_main_java_com_farex_hellogluon_hellogluon",
+      "farex_app_src_main_java_com_farex_hellogluon_hellogluon_main",
+      "farex_app_src_main_java_com_farex_hellogluon_hellogluon_start",
+      "farex_server_src_main_java_farex_server_adminservice_adminservice_publishfares",
+      "farex_shared_src_main_java_farex_shared_farecalculator_farecalculator_fare",
+      "farex_shared_src_main_java_farex_shared_model_faretable",
+      "javafx_application_application",
+      "javafx_stage_stage",
+      "label",
+      "override",
+      "passengertype",
+      "pos",
+      "scene",
+      "vbox"
+    ],
+    "2": [
+      "farex_app_src_main_java_farex_app_operator_tapservice_session",
+      "farex_app_src_main_java_farex_app_operator_tapservice_tapservice",
+      "farex_app_src_main_java_farex_app_operator_tapservice_tapservice_chargemaxfare",
+      "farex_app_src_main_java_farex_app_operator_tapservice_tapservice_tapin",
+      "farex_app_src_main_java_farex_app_operator_tapservice_tapservice_tapout",
+      "farex_server_src_main_java_farex_server_adminservice_adminservice_saveroute",
+      "farex_shared_src_main_java_farex_shared_farecalculator_farecalculator",
+      "farex_shared_src_main_java_farex_shared_farecalculator_farecalculator_distancekm",
+      "farex_shared_src_main_java_farex_shared_farecalculator_farecalculator_farecalculator",
+      "farex_shared_src_main_java_farex_shared_farecalculator_farecalculator_maxfare",
+      "farex_shared_src_main_java_farex_shared_model_model",
+      "farex_shared_src_main_java_farex_shared_model_model_model",
+      "farex_shared_src_main_java_farex_shared_model_pointsrow",
+      "farex_shared_src_main_java_farex_shared_model_route",
+      "farex_shared_src_main_java_farex_shared_model_stop",
+      "farex_shared_src_main_java_farex_shared_model_txn",
+      "farex_shared_src_main_java_farex_shared_model_vehicle"
+    ],
+    "3": [
+      "farex_server_src_main_java_farex_server_adminservice",
+      "farex_server_src_main_java_farex_server_adminservice_adminservice",
+      "farex_server_src_main_java_farex_server_adminservice_adminservice_assignvehicle",
+      "farex_server_src_main_java_farex_server_adminservice_adminservice_retirevehicle",
+      "farex_server_src_main_java_farex_server_adminservice_adminservice_reviewstop",
+      "farex_server_src_main_java_farex_server_adminservice_adminservice_setsuspended",
+      "farex_server_src_main_java_farex_server_adminservice_adminservice_verifydiscount",
+      "farex_server_src_main_java_farex_server_tripservice",
+      "farex_server_src_main_java_farex_server_tripservice_tripservice",
+      "farex_server_src_main_java_farex_server_tripservice_tripservice_candidates",
+      "farex_server_src_main_java_farex_server_tripservice_tripservice_plan",
+      "farex_shared_src_main_java_farex_shared_enums_passengertype",
+      "farex_shared_src_main_java_farex_shared_enums_passengertype_pwd",
+      "farex_shared_src_main_java_farex_shared_enums_passengertype_regular",
+      "farex_shared_src_main_java_farex_shared_enums_passengertype_senior",
+      "farex_shared_src_main_java_farex_shared_enums_passengertype_student",
+      "farex_shared_src_main_java_farex_shared_model_tripoption"
+    ],
+    "4": [
+      "farex_server_src_main_java_farex_server_adminservice_adminservice_createpromotion",
+      "farex_server_src_main_java_farex_server_rewardsservice",
+      "farex_server_src_main_java_farex_server_rewardsservice_rewardsservice",
+      "farex_server_src_main_java_farex_server_rewardsservice_rewardsservice_activepromo",
+      "farex_server_src_main_java_farex_server_rewardsservice_rewardsservice_earn",
+      "farex_server_src_main_java_farex_server_rewardsservice_rewardsservice_redeem",
+      "farex_server_src_main_java_farex_server_rewardsservice_rewardsservice_total",
+      "farex_server_src_main_java_farex_server_serverapp",
+      "farex_server_src_main_java_farex_server_serverapp_serverapp",
+      "farex_server_src_main_java_farex_server_serverapp_serverapp_main",
+      "farex_server_src_main_java_farex_server_syncservice_syncservice",
+      "farex_server_src_main_java_farex_server_syncservice_syncservice_history",
+      "farex_server_src_main_java_farex_server_syncservice_syncservice_receivestopcandidates",
+      "farex_server_src_main_java_farex_server_syncservice_syncservice_receivetxns",
+      "farex_shared_src_main_java_farex_shared_model_promotion",
+      "javalin"
+    ],
+    "5": [
+      "farex_server_src_main_java_farex_server_cardservice_cardservice",
+      "farex_server_src_main_java_farex_server_cardservice_cardservice_claim",
+      "farex_server_src_main_java_farex_server_cardservice_cardservice_link",
+      "farex_server_src_main_java_farex_server_cardservice_cardservice_loadstatus",
+      "farex_server_src_main_java_farex_server_cardservice_cardservice_onwebhook",
+      "farex_server_src_main_java_farex_server_cardservice_cardservice_reportlost",
+      "farex_server_src_main_java_farex_server_cardservice_cardservice_startload",
+      "farex_server_src_main_java_farex_server_cardservice_cardservice_syncedbalance",
+      "farex_shared_src_main_java_farex_shared_enums_loadstatus",
+      "farex_shared_src_main_java_farex_shared_enums_loadstatus_awaiting_payment",
+      "farex_shared_src_main_java_farex_shared_enums_loadstatus_expired",
+      "farex_shared_src_main_java_farex_shared_enums_loadstatus_failed",
+      "farex_shared_src_main_java_farex_shared_enums_loadstatus_paid",
+      "farex_shared_src_main_java_farex_shared_model_load",
+      "farex_shared_src_main_java_farex_shared_model_signedbalance"
+    ],
+    "6": [
+      "farex_shared_src_main_java_farex_shared_enums",
+      "farex_shared_src_main_java_farex_shared_enums_accountstatus",
+      "farex_shared_src_main_java_farex_shared_enums_accountstatus_active",
+      "farex_shared_src_main_java_farex_shared_enums_accountstatus_suspended",
+      "farex_shared_src_main_java_farex_shared_enums_cardstatus",
+      "farex_shared_src_main_java_farex_shared_enums_cardstatus_active",
+      "farex_shared_src_main_java_farex_shared_enums_cardstatus_frozen",
+      "farex_shared_src_main_java_farex_shared_enums_enums",
+      "farex_shared_src_main_java_farex_shared_enums_enums_enums",
+      "farex_shared_src_main_java_farex_shared_enums_paymentmethod",
+      "farex_shared_src_main_java_farex_shared_enums_paymentmethod_bank",
+      "farex_shared_src_main_java_farex_shared_enums_paymentmethod_gcash",
+      "farex_shared_src_main_java_farex_shared_enums_paymentmethod_maya",
+      "farex_shared_src_main_java_farex_shared_enums_paymentmethod_others",
+      "farex_shared_src_main_java_farex_shared_model_card"
+    ],
+    "7": [
+      "farex_server_src_main_java_farex_server_authservice",
+      "farex_server_src_main_java_farex_server_authservice_authservice",
+      "farex_server_src_main_java_farex_server_authservice_authservice_changepin",
+      "farex_server_src_main_java_farex_server_authservice_authservice_login",
+      "farex_server_src_main_java_farex_server_authservice_authservice_register",
+      "farex_server_src_main_java_farex_server_authservice_authservice_updateprofile",
+      "farex_server_src_main_java_farex_server_authservice_authservice_userfor",
+      "farex_shared_src_main_java_farex_shared_enums_role",
+      "farex_shared_src_main_java_farex_shared_enums_role_admin",
+      "farex_shared_src_main_java_farex_shared_enums_role_operator",
+      "farex_shared_src_main_java_farex_shared_enums_role_passenger",
+      "farex_shared_src_main_java_farex_shared_model_user"
+    ],
+    "8": [
+      "farex_server_src_main_java_farex_server_cardservice_cardservice_createcredit",
+      "farex_server_src_main_java_farex_server_cardservice_cardservice_pendingcredits",
+      "farex_server_src_main_java_farex_server_earningsservice",
+      "farex_server_src_main_java_farex_server_earningsservice_earningsservice",
+      "farex_server_src_main_java_farex_server_earningsservice_earningsservice_available",
+      "farex_server_src_main_java_farex_server_earningsservice_earningsservice_requesttransfer",
+      "farex_shared_src_main_java_farex_shared_enums_txntype",
+      "farex_shared_src_main_java_farex_shared_enums_txntype_card_load",
+      "farex_shared_src_main_java_farex_shared_enums_txntype_fare_payment",
+      "farex_shared_src_main_java_farex_shared_enums_txntype_operator_transfer",
+      "farex_shared_src_main_java_farex_shared_enums_txntype_points_redeemed",
+      "farex_shared_src_main_java_farex_shared_model_credit"
+    ],
+    "9": [
+      "farex_app_src_main_java_farex_app_operator_tapservice",
+      "farex_server_src_main_java_farex_server_cardservice",
+      "farex_server_src_main_java_farex_server_syncservice",
+      "farex_shared_src_main_java_farex_shared_farecalculator",
+      "farex_shared_src_main_java_farex_shared_model",
+      "instant",
+      "list",
+      "localdate",
+      "map",
+      "set"
+    ],
+    "10": [
+      "farex_app_src_main_java_farex_app_operator_operatorsession",
+      "farex_app_src_main_java_farex_app_operator_operatorsession_operatorsession",
+      "farex_app_src_main_java_farex_app_operator_operatorsession_operatorsession_endshift",
+      "farex_app_src_main_java_farex_app_operator_operatorsession_operatorsession_isonshift",
+      "farex_app_src_main_java_farex_app_operator_operatorsession_operatorsession_lock",
+      "farex_app_src_main_java_farex_app_operator_operatorsession_operatorsession_startshift",
+      "farex_app_src_main_java_farex_app_operator_operatorsession_operatorsession_unlock"
+    ],
+    "11": [
+      "farex_shared_src_main_java_farex_shared_csv",
+      "farex_shared_src_main_java_farex_shared_csv_csv",
+      "farex_shared_src_main_java_farex_shared_csv_csv_append",
+      "farex_shared_src_main_java_farex_shared_csv_csv_csv",
+      "farex_shared_src_main_java_farex_shared_csv_csv_readall",
+      "farex_shared_src_main_java_farex_shared_csv_csv_rewrite",
+      "path"
+    ],
+    "12": [
+      "farex_shared_src_main_java_farex_shared_signer",
+      "farex_shared_src_main_java_farex_shared_signer_signer",
+      "farex_shared_src_main_java_farex_shared_signer_signer_sign",
+      "farex_shared_src_main_java_farex_shared_signer_signer_signer",
+      "farex_shared_src_main_java_farex_shared_signer_signer_verify",
+      "java_security_privatekey",
+      "java_security_publickey"
+    ],
+    "13": [
+      "farex_app_src_main_java_farex_app_operator_gpstracker",
+      "farex_app_src_main_java_farex_app_operator_gpstracker_gpstracker",
+      "farex_app_src_main_java_farex_app_operator_gpstracker_gpstracker_onposition"
+    ],
+    "14": [
+      "pkg_com_farex_farex_app",
+      "pkg_farex_farex_server",
+      "pkg_farex_farex_shared"
+    ],
+    "15": [
+      "00000000"
+    ],
+    "16": [
+      "00000001"
+    ],
+    "17": [
+      "00000002"
+    ],
+    "18": [
+      "00000003"
+    ],
+    "19": [
+      "00000004"
+    ],
+    "20": [
+      "00000005"
+    ],
+    "21": [
+      "00000006"
+    ],
+    "22": [
+      "00000007"
+    ],
+    "23": [
+      "00000008"
+    ],
+    "24": [
+      "00000009"
+    ],
+    "25": [
+      "00000010"
+    ],
+    "26": [
+      "00000011"
+    ],
+    "27": [
+      "00000012"
+    ],
+    "28": [
+      "00000013"
+    ],
+    "29": [
+      "00000014"
+    ],
+    "30": [
+      "00000015"
+    ],
+    "31": [
+      "00000016"
+    ],
+    "32": [
+      "00000017"
+    ],
+    "33": [
+      "00000018"
+    ],
+    "34": [
+      "00000019"
+    ],
+    "35": [
+      "00000020"
+    ],
+    "36": [
+      "00000021"
+    ],
+    "37": [
+      "00000022"
+    ],
+    "38": [
+      "00000023"
+    ],
+    "39": [
+      "pkg_farex_farex_backend"
+    ]
+  },
+  "cohesion": {
+    "0": 0.1503267973856209,
+    "1": 0.14705882352941177,
+    "2": 0.19852941176470587,
+    "3": 0.15441176470588236,
+    "4": 0.125,
+    "5": 0.14285714285714285,
+    "6": 0.13333333333333333,
+    "7": 0.19696969696969696,
+    "8": 0.19696969696969696,
+    "9": 0.28888888888888886,
+    "10": 0.2857142857142857,
+    "11": 0.2857142857142857,
+    "12": 0.38095238095238093,
+    "13": 0.6666666666666666,
+    "14": 0.6666666666666666,
+    "15": 1.0,
+    "16": 1.0,
+    "17": 1.0,
+    "18": 1.0,
+    "19": 1.0,
+    "20": 1.0,
+    "21": 1.0,
+    "22": 1.0,
+    "23": 1.0,
+    "24": 1.0,
+    "25": 1.0,
+    "26": 1.0,
+    "27": 1.0,
+    "28": 1.0,
+    "29": 1.0,
+    "30": 1.0,
+    "31": 1.0,
+    "32": 1.0,
+    "33": 1.0,
+    "34": 1.0,
+    "35": 1.0,
+    "36": 1.0,
+    "37": 1.0,
+    "38": 1.0,
+    "39": 1.0
+  },
+  "gods": [
+    {
+      "id": "farex_shared_src_main_java_farex_shared_model_model",
+      "label": "Model",
+      "degree": 15
+    },
+    {
+      "id": "farex_shared_src_main_java_farex_shared_enums_passengertype",
+      "label": "PassengerType",
+      "degree": 14
+    },
+    {
+      "id": "farex_server_src_main_java_farex_server_cardservice_cardservice",
+      "label": "CardService",
+      "degree": 11
+    },
+    {
+      "id": "farex_server_src_main_java_farex_server_adminservice_adminservice",
+      "label": "AdminService",
+      "degree": 10
+    },
+    {
+      "id": "farex_app_src_main_java_farex_app_apiclient_apiclient",
+      "label": "ApiClient",
+      "degree": 9
+    },
+    {
+      "id": "farex_shared_src_main_java_farex_shared_enums_enums",
+      "label": "Enums",
+      "degree": 9
+    },
+    {
+      "id": "farex_shared_src_main_java_farex_shared_enums_txntype",
+      "label": "TxnType",
+      "degree": 8
+    },
+    {
+      "id": "farex_server_src_main_java_farex_server_authservice_authservice",
+      "label": "AuthService",
+      "degree": 7
+    },
+    {
+      "id": "farex_server_src_main_java_farex_server_paymongo_paymongo",
+      "label": "PayMongo",
+      "degree": 7
+    },
+    {
+      "id": "farex_shared_src_main_java_farex_shared_model_user",
+      "label": "User",
+      "degree": 7
+    }
+  ],
+  "surprises": [
+    {
+      "source": "com.farex:farex-app",
+      "target": "farex:farex-shared",
+      "source_files": [
+        "farex-app/pom.xml",
+        "farex-shared/pom.xml"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "depends_on",
+      "why": "connects across different repos/directories"
+    },
+    {
+      "source": "Session",
+      "target": "Stop",
+      "source_files": [
+        "farex-app/src/main/java/farex/app/operator/TapService.java",
+        "farex-shared/src/main/java/farex/shared/Model.java"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "connects across different repos/directories"
+    },
+    {
+      "source": "farex:farex-server",
+      "target": "farex:farex-shared",
+      "source_files": [
+        "farex-server/pom.xml",
+        "farex-shared/pom.xml"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "depends_on",
+      "why": "connects across different repos/directories"
+    },
+    {
+      "source": "User",
+      "target": "AccountStatus",
+      "source_files": [
+        "farex-shared/src/main/java/farex/shared/Model.java",
+        "farex-shared/src/main/java/farex/shared/Enums.java"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "bridges separate communities"
+    },
+    {
+      "source": "User",
+      "target": "PassengerType",
+      "source_files": [
+        "farex-shared/src/main/java/farex/shared/Model.java",
+        "farex-shared/src/main/java/farex/shared/Enums.java"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "references",
+      "why": "bridges separate communities"
+    }
+  ],
+  "tokens": {
+    "input": 7121,
+    "output": 3119
+  }
+}
