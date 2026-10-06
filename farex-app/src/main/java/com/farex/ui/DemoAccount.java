@@ -1,0 +1,47 @@
+package com.farex.ui;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/** Stand-in for a passenger account: login details plus any number of cards. */
+public class DemoAccount {
+
+    private final String contact;
+    private final String password;
+    private final List<DemoCard> cards = new ArrayList<>();
+    private final double points = 0;
+
+    public DemoAccount(String contact, String password) {
+        this.contact = contact;
+        this.password = password;
+    }
+
+    public String getContact() {
+        return contact;
+    }
+
+    public boolean passwordMatches(String attempt) {
+        return password.equals(attempt);
+    }
+
+    public List<DemoCard> getCards() {
+        return cards;
+    }
+
+    public void addCard(DemoCard card) {
+        cards.add(card);
+    }
+
+    public boolean hasCard() {
+        return !cards.isEmpty();
+    }
+
+    /** The card shown on Home: the first one added. */
+    public DemoCard getPrimaryCard() {
+        return cards.isEmpty() ? null : cards.get(0);
+    }
+
+    public double getPoints() {
+        return points;
+    }
+}

@@ -20,6 +20,14 @@ public class FarexApp extends Application {
         Navigator.register("otp", OtpView::new);
         Navigator.register("accountType", AccountTypeView::new);
         Navigator.register("congrats", CongratsView::new);
+        Navigator.register("dashboard", MainShell::new);
+        Navigator.register("addCard", () -> new PlaceholderView("Add a xPress Card", "dashboard"));
+        Navigator.register("buyLoad", () -> new PlaceholderView("Buy Load", "dashboard"));
+        Navigator.register("allCards", () -> new PlaceholderView("View All Cards", "dashboard"));
+        Navigator.register("fetchLoad", () -> new PlaceholderView("Fetch Load", "dashboard"));
+        Navigator.register("redeem", () -> new PlaceholderView("Redeem Points", "dashboard"));
+        Navigator.register("lostCard", () -> new PlaceholderView("Replace or Report Lost Card", "dashboard"));
+        Navigator.register("notifications", () -> new PlaceholderView("Notifications", "dashboard"));
 
         Scene scene = new Scene(root, 360, 720);
 

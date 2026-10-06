@@ -31,6 +31,7 @@ public class RegisterView extends AuthenticationScreen {
             } else if (!password.equals(confirm)) {
                 showError("Passwords do not match.");   // e.g. farex123 vs farex12
             } else {
+                MockData.registerAccount(contact, password);
                 MockData.setPendingContact(contact);     // the OTP screen shows this
                 Navigator.go("otp");
             }
