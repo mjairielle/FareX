@@ -71,6 +71,8 @@ public class MainShell extends BorderPane {
         name.setFont(Theme.bold(16));
         HBox brand = new HBox(8, Assets.logo(26, 7), name);
         brand.setAlignment(Pos.CENTER_LEFT);
+        // Prevent the brand from expanding across the entire header width
+        brand.setMaxWidth(Double.NEGATIVE_INFINITY); 
 
         titleLabel.setTextFill(Theme.LIME);
         titleLabel.setFont(Theme.bold(14));
@@ -78,10 +80,18 @@ public class MainShell extends BorderPane {
         StackPane bell = new StackPane(Icons.view("icon_bell", 20));
         bell.setCursor(Cursor.HAND);
         bell.setOnMouseClicked(e -> Navigator.go("notifications"));
+        // Prevent the bell container from expanding and forcing itself into the center
+        bell.setMaxWidth(Double.NEGATIVE_INFINITY); 
 
-        StackPane header = new StackPane(brand, titleLabel, bell);
+        // Use a StackPane to handle perfect absolute centering layers
+        StackPane header = new StackPane();
+        header.getChildren().addAll(brand, titleLabel, bell);
+        
+        // Lock their individual alignments securely
         StackPane.setAlignment(brand, Pos.CENTER_LEFT);
+        StackPane.setAlignment(titleLabel, Pos.CENTER);
         StackPane.setAlignment(bell, Pos.CENTER_RIGHT);
+        
         header.setPadding(new Insets(14, 20, 10, 20));
         return header;
     }
