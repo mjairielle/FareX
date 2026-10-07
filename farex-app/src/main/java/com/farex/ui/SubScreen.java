@@ -2,17 +2,12 @@ package com.farex.ui;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Cursor;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
-import javafx.scene.Cursor;
 
-/**
- * Layout for screens opened from Home (Add Card, Buy Load, ...):
- * lime header with a back arrow and a centered title, dark body below.
- * Subclasses put their content in `body`.
- */
 public abstract class SubScreen extends VBox {
 
     protected final VBox body = new VBox(16);

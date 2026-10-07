@@ -29,16 +29,9 @@ import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 
-/**
- * The passenger app frame: fixed header (logo, title, bell) on top, fixed bottom tabs,
- * and the tab's content in between. Registered as "dashboard".
- * Tab 0 = Home, 1 = Routes, 2 = Transactions, 3 = Profile.
- */
 public class MainShell extends BorderPane {
 
     private static final String[] TITLES = {"HOME", "ROUTES", "TRANSACTIONS", "PROFILE"};
-    // When you export these as PNGs, the tabs switch to them automatically:
-    // icon_tab_home.png (+ icon_tab_home_active.png), icon_tab_routes.png, icon_tab_transactions.png, icon_tab_profile.png
     private static final String[] ICON_NAMES = {
         "icon_tab_home", "icon_tab_routes", "icon_tab_transactions", "icon_tab_profile"};
 
@@ -63,7 +56,7 @@ public class MainShell extends BorderPane {
         contentArea.getChildren().setAll(content);
     }
 
-    // ---------- Header ----------
+    // Header 
 
     private Node buildHeader() {
         Label name = new Label("FareX");
@@ -71,7 +64,6 @@ public class MainShell extends BorderPane {
         name.setFont(Theme.bold(16));
         HBox brand = new HBox(8, Assets.logo(26, 7), name);
         brand.setAlignment(Pos.CENTER_LEFT);
-        // Prevent the brand from expanding across the entire header width
         brand.setMaxWidth(Double.NEGATIVE_INFINITY); 
 
         titleLabel.setTextFill(Theme.LIME);
@@ -80,14 +72,11 @@ public class MainShell extends BorderPane {
         StackPane bell = new StackPane(Icons.view("icon_bell", 20));
         bell.setCursor(Cursor.HAND);
         bell.setOnMouseClicked(e -> Navigator.go("notifications"));
-        // Prevent the bell container from expanding and forcing itself into the center
         bell.setMaxWidth(Double.NEGATIVE_INFINITY); 
 
-        // Use a StackPane to handle perfect absolute centering layers
         StackPane header = new StackPane();
         header.getChildren().addAll(brand, titleLabel, bell);
-        
-        // Lock their individual alignments securely
+
         StackPane.setAlignment(brand, Pos.CENTER_LEFT);
         StackPane.setAlignment(titleLabel, Pos.CENTER);
         StackPane.setAlignment(bell, Pos.CENTER_RIGHT);
@@ -96,7 +85,7 @@ public class MainShell extends BorderPane {
         return header;
     }
 
-    // ---------- Bottom tabs ----------
+    // Bottom tabs
 
     private Node buildNav() {
         HBox nav = new HBox();
@@ -151,28 +140,28 @@ public class MainShell extends BorderPane {
         }
     }
 
-    // ---------- Placeholder tab icons (simple drawn shapes until the real icons arrive) ----------
+    // Placeholder tab icons
 
     private static Node placeholderIcon(int index, Color color) {
         Group icon = new Group();
         switch (index) {
-            case 0:   // home: roof + walls
+            case 0:   // home
                 icon.getChildren().addAll(
                         line(color, 3, 12, 12, 3, 21, 12),
                         line(color, 6, 10, 6, 21, 18, 21, 18, 10));
                 break;
-            case 1:   // routes: zigzag with a dot at each end
+            case 1:   // routes
                 icon.getChildren().addAll(
                         line(color, 7, 17, 10, 8, 14, 16, 17, 7),
                         dot(color, 7, 17), dot(color, 17, 7));
                 break;
-            case 2:   // transactions: receipt
+            case 2:   // transactions
                 icon.getChildren().addAll(
                         line(color, 6, 3, 18, 3, 18, 21, 15, 19, 12, 21, 9, 19, 6, 21, 6, 3),
                         line(color, 9, 9, 15, 9),
                         line(color, 9, 13, 15, 13));
                 break;
-            default:  // profile: head + shoulders
+            default:  // profile
                 Circle head = new Circle(12, 8, 4);
                 style(head, color);
                 Arc shoulders = new Arc(12, 21, 8, 7, 0, 180);
@@ -181,7 +170,6 @@ public class MainShell extends BorderPane {
                 icon.getChildren().addAll(head, shoulders);
                 break;
         }
-        // Fixed 24 x 24 area so every tab icon sits at the same place
         Line pad = new Line(0, 0, 24, 24);
         pad.setStroke(Color.TRANSPARENT);
         icon.getChildren().add(0, pad);
@@ -209,7 +197,7 @@ public class MainShell extends BorderPane {
         shape.setStrokeLineJoin(StrokeLineJoin.ROUND);
     }
 
-    // ---------- Tabs without a design yet ----------
+    // Tabs with no design
 
     private Node placeholderContent(String title) {
         Label message = Theme.bodyText(title + " isn't designed yet.", Theme.GRAY);

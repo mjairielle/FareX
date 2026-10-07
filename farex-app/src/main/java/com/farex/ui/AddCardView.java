@@ -8,13 +8,9 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 
-/**
- * Figma "Add a xPress Card": type the last 8 digits, press Save Card.
- * The card is added to the logged-in demo account and Home switches to the "with card" state.
- */
 public class AddCardView extends SubScreen {
 
-    // Until the backend supplies the real cardholder name
+    // Test account
     private static final String DEMO_HOLDER = "Aron Ferrancullo";
 
     private final Label errorLabel = new Label();

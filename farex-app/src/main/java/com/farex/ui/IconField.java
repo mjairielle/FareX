@@ -18,11 +18,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
-/**
- * Dark input box with an icon on the left (Figma Login / Register fields).
- * IconField.text(...)     -> user icon
- * IconField.password(...) -> lock icon, plus an eye icon that shows/hides the password
- */
 public class IconField extends HBox {
 
     private static final Border IDLE_BORDER = new Border(new BorderStroke(
@@ -30,8 +25,8 @@ public class IconField extends HBox {
     private static final Border FOCUS_BORDER = new Border(new BorderStroke(
             Theme.LIME, BorderStrokeStyle.SOLID, new CornerRadii(10), new BorderWidths(1.5)));
 
-    private final TextField field;      // the real field: getText() always works on this one
-    private TextField shownField;       // password only: plain-text twin shown when the eye is on
+    private final TextField field;
+    private TextField shownField;
     private StackPane eyeHolder;
     private boolean showing = false;
 
@@ -65,12 +60,10 @@ public class IconField extends HBox {
         }
     }
 
-    /** The field to read with getText() and to attach setOnAction(...) to. */
     public TextField getField() {
         return field;
     }
 
-    /** Puts the cursor in this box (works whether the password is shown or hidden). */
     public void focusField() {
         if (showing) {
             shownField.requestFocus();
@@ -79,7 +72,7 @@ public class IconField extends HBox {
         }
     }
 
-    // Transparent text field inside the dark box, white text (same inline-style reason as Theme.inputField)
+    // Transparent text field inside the dark box, white text
     private void styleInner(TextField inner, String prompt) {
         inner.setPromptText(prompt);
         inner.setBackground(Background.EMPTY);
@@ -93,12 +86,11 @@ public class IconField extends HBox {
     private void addEyeToggle(String prompt) {
         shownField = new TextField();
         styleInner(shownField, prompt);
-        shownField.textProperty().bindBidirectional(field.textProperty());   // same text in both
+        shownField.textProperty().bindBidirectional(field.textProperty());
         shownField.setVisible(false);
         shownField.managedProperty().bind(shownField.visibleProperty());
         field.managedProperty().bind(field.visibleProperty());
 
-        // Pressing Enter in the plain-text twin does the same as Enter in the password field
         shownField.setOnAction(e -> {
             if (field.getOnAction() != null) {
                 field.getOnAction().handle(e);
@@ -117,7 +109,6 @@ public class IconField extends HBox {
         shownField.setVisible(showing);
         field.setVisible(!showing);
 
-        // Crossed-out eye = hidden. When shown, use icon_eye if you have it, else a dimmed crossed-out eye.
         Node eye;
         if (!showing) {
             eye = Icons.view("icon_eye_off", 20);

@@ -21,7 +21,6 @@ import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 /**
- * Figma "Verification" screen: 6 digit boxes, 5:00 countdown, Resend code.
  * Demo code is 123456 (no real email is sent yet).
  */
 public class OtpView extends VBox {
@@ -98,7 +97,7 @@ public class OtpView extends VBox {
         box.setAlignment(Pos.CENTER);
         box.setBackground(Theme.rounded(Theme.FIELD, 8));
         box.setFont(Theme.bold(20));
-        box.setStyle("-fx-text-fill: white;");   // same reason as in Theme.inputField
+        box.setStyle("-fx-text-fill: white;"); 
         box.setBorder(IDLE_BORDER);
 
         box.textProperty().addListener((obs, oldText, newText) -> {
@@ -106,13 +105,13 @@ public class OtpView extends VBox {
                 box.setText(oldText);
                 return;
             }
-            if (newText.length() > 1) {              // typed over a filled box: keep the new digit
+            if (newText.length() > 1) { 
                 box.setText(newText.substring(newText.length() - 1));
                 return;
             }
             box.setBorder(newText.isEmpty() ? IDLE_BORDER : FILLED_BORDER);
             if (newText.length() == 1 && index < boxes.length - 1) {
-                boxes[index + 1].requestFocus();     // jump to the next box
+                boxes[index + 1].requestFocus(); 
             }
             checkCode();
         });
@@ -134,7 +133,6 @@ public class OtpView extends VBox {
         return code.toString();
     }
 
-    // Runs after every change; only acts once all 6 digits are in
     private void checkCode() {
         String code = enteredCode();
         if (code.length() < boxes.length) {
@@ -180,7 +178,6 @@ public class OtpView extends VBox {
         errorLabel.setVisible(true);
     }
 
-    // 300 -> "05:00", 65 -> "01:05"
     private String formatTime(int seconds) {
         return String.format("%02d:%02d", seconds / 60, seconds % 60);
     }

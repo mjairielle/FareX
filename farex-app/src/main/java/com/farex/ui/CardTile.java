@@ -22,17 +22,11 @@ import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-/**
- * The xPress card from the Figma: dark base, olive glow top-right, teal glow bottom-left,
- * a dashed circuit line and a solid one (positions measured from the Figma card background),
- * balance in the middle, cardholder + number bottom-left, expiry bottom-right.
- * Fixed size 320 x 190 so it lines up with the 20px screen margins.
- */
 public class CardTile extends StackPane {
 
     private static final double W = 320;
     private static final double H = 190;
-    private static final double ARC = 36;      // corner rounding (arc width = 2 x radius 18)
+    private static final double ARC = 36;
 
     public CardTile(DemoCard card) {
         setMinSize(W, H);
@@ -48,7 +42,7 @@ public class CardTile extends StackPane {
         getChildren().addAll(backgroundLayer(), textLayer(card));
     }
 
-    // ---------- Background ----------
+    // Background
 
     private Pane backgroundLayer() {
         Rectangle base = new Rectangle(W, H);
@@ -96,7 +90,7 @@ public class CardTile extends StackPane {
         return dot;
     }
 
-    // ---------- Text ----------
+    // Text
 
     private BorderPane textLayer(DemoCard card) {
         Label brand = new Label("xPress");

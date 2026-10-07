@@ -11,11 +11,6 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
-/**
- * Switches between screens by name, e.g. Navigator.go("login").
- * Each name maps to a factory, so a screen is created fresh every time
- * (typing in the login fields is cleared when you come back to it).
- */
 public final class Navigator {
 
     private static StackPane container;
@@ -38,8 +33,6 @@ public final class Navigator {
         container.getChildren().setAll(screen);
     }
 
-    // Shown when a screen name has not been registered yet,
-    // so tapping a button never crashes the app.
     private static Parent comingSoon(String name) {
         Label message = Theme.bodyText("The \"" + name + "\" screen isn't built yet.", Theme.WHITE);
 

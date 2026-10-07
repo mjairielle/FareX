@@ -7,10 +7,6 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Region;
 
-/**
- * Loads icon images from the images folder.
- * Icons.view("icon_user", 20) shows images/icon_user.png at 20 x 20 pixels.
- */
 public final class Icons {
 
     private Icons() {

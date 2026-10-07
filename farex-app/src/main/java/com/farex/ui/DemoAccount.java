@@ -3,7 +3,6 @@ package com.farex.ui;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Stand-in for a passenger account: login details plus any number of cards. */
 public class DemoAccount {
 
     private final String contact;
@@ -36,7 +35,6 @@ public class DemoAccount {
         return !cards.isEmpty();
     }
 
-    /** The card shown on Home: the first one added. */
     public DemoCard getPrimaryCard() {
         return cards.isEmpty() ? null : cards.get(0);
     }

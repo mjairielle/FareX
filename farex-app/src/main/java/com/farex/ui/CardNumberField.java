@@ -15,11 +15,6 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
-/**
- * The "00 | 6767 6767" box from the Figma. "00" is fixed, you type the last 8 digits.
- * Typing "67676767" shows "6767 6767"; letters are ignored; more than 8 digits are cut off.
- * Used by Add Card now and Buy Load later.
- */
 public class CardNumberField extends HBox {
 
     private static final String PREFIX = "00";
@@ -77,12 +72,10 @@ public class CardNumberField extends HBox {
                 setBorder(now ? FOCUS_BORDER : IDLE_BORDER));
     }
 
-    /** Just the typed digits, e.g. "67676767" (0 to 8 characters). */
     public String getDigits() {
         return field.getText().replaceAll("\\D", "");
     }
 
-    /** The full 10-digit card number, e.g. "0067676767". Only call when isComplete() is true. */
     public String getFullNumber() {
         return PREFIX + getDigits();
     }
@@ -91,7 +84,6 @@ public class CardNumberField extends HBox {
         return getDigits().length() == 8;
     }
 
-    /** Fills the box, e.g. setDigits("67676767"). */
     public void setDigits(String digits) {
         field.setText(digits);
     }

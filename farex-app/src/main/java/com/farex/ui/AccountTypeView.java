@@ -29,10 +29,6 @@ import javafx.scene.shape.Circle;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
 
-/**
- * Figma "Account Type" screen: outlined FareX on lime, and a dark panel that slides
- * up from the bottom holding the role cards (Passenger / Operator).
- */
 public class AccountTypeView extends StackPane {
 
     private static final double SHEET_HEIGHT = 540;
@@ -50,7 +46,7 @@ public class AccountTypeView extends StackPane {
     public AccountTypeView() {
         setBackground(Theme.solid(Theme.LIME));
 
-        // --- Lime area: outlined "FareX" (partly hidden by the panel) and back arrow ---
+        // "FareX" partly hidden by the panel and back arrow
         Text outlinedName = new Text("FareX");
         outlinedName.setFont(Theme.bold(112));
         outlinedName.setFill(Color.TRANSPARENT);
@@ -67,7 +63,7 @@ public class AccountTypeView extends StackPane {
         StackPane.setAlignment(back, Pos.TOP_LEFT);
         StackPane.setMargin(back, new Insets(14, 0, 0, 22));
 
-        // --- Dark panel ---
+        // Dark panel
         Label title = new Label("Account Type");
         title.setTextFill(Theme.WHITE);
         title.setFont(Theme.bold(26));
@@ -112,7 +108,7 @@ public class AccountTypeView extends StackPane {
         playEntrance(sheet);
     }
 
-    // Panel rises from below the screen, then each card fades in and slides up in turn
+    // Panel Animation
     private void playEntrance(VBox sheet) {
         sheet.setTranslateY(SHEET_HEIGHT);
         TranslateTransition rise = new TranslateTransition(Duration.millis(450), sheet);
@@ -144,7 +140,7 @@ public class AccountTypeView extends StackPane {
         }
     }
 
-    // ---------- One role card ----------
+    // One Role Card
 
     private class RoleCard extends HBox {
         private final String role;

@@ -2,10 +2,6 @@ package com.farex.ui;
 
 import java.util.Locale;
 
-/**
- * Stand-in for a card until the backend supplies real ones.
- * cardNumber is text, 10 digits: "0067676767" (the "00" prefix + the last 8 digits).
- */
 public class DemoCard {
 
     private final String cardNumber;
@@ -36,12 +32,10 @@ public class DemoCard {
         return expiry;
     }
 
-    /** "0067676767" -> "00 6767 6767" */
     public String getFormattedNumber() {
         return cardNumber.substring(0, 2) + " " + cardNumber.substring(2, 6) + " " + cardNumber.substring(6);
     }
 
-    /** 676.5 -> "676.50" (the peso sign is added by the screen) */
     public String getBalanceText() {
         return String.format(Locale.US, "%,.2f", balance);
     }

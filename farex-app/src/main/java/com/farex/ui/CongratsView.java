@@ -17,7 +17,6 @@ import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.TextAlignment;
 
-/** Figma "Congrats" screen: check-mark ring, dashed roads, message, and a button to Login. */
 public class CongratsView extends VBox {
 
     public CongratsView() {

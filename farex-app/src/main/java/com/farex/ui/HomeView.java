@@ -35,19 +35,15 @@ import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 
-/**
- * Figma Home content (scrolls between the fixed header and the bottom tabs).
- * Two states: with a card (card tile, "Card Active") and without one (empty panel, "No Card").
- */
 public class HomeView extends ScrollPane {
 
     private static final Color TILE = Color.web("#1C1C1C");       // tiles and rows
-    private static final Color PANEL = Color.web("#222222");      // empty-card panel (sampled from Figma)
-    private static final Color BANNER = Color.web("#212121");     // points banner (sampled from Figma)
+    private static final Color PANEL = Color.web("#222222");      // empty-card panel
+    private static final Color BANNER = Color.web("#212121");     // points banner
     private static final Color ICON_TILE = Color.web("#2A2A2A");  // small square behind row icons
     private static final Color LINE = Color.web("#2A2A2A");
 
-    private final IntConsumer showTab;   // lets a row jump to a bottom tab, e.g. showTab.accept(2)
+    private final IntConsumer showTab;
 
     public HomeView(IntConsumer showTab) {
         this.showTab = showTab;
@@ -80,10 +76,9 @@ public class HomeView extends ScrollPane {
         setStyle("-fx-background: transparent; -fx-background-color: transparent;");
     }
 
-    // ---------- Greeting + status chip ----------
+    // Greeting + status chip
 
     private Node greetingRow(DemoCard card) {
-        // "Aron Ferrancullo" -> "Mabuhay, Aron!"   (no card -> "Mabuhay!")
         String text = (card == null) ? "Mabuhay!"
                 : "Mabuhay, " + card.getHolderName().trim().split(" ")[0] + "!";
         Label greeting = new Label(text);
@@ -111,7 +106,7 @@ public class HomeView extends ScrollPane {
         return chip;
     }
 
-    // ---------- No-card panel ----------
+    // No-card panel
 
     private Node emptyCardPanel() {
         Label brand = new Label("xPress");
@@ -161,16 +156,15 @@ public class HomeView extends ScrollPane {
         return panel;
     }
 
-    // ---------- Buy Load + the two tiles ----------
+    // Buy Load + the two tiles
 
     private Node buyLoadButton() {
         Button buy = new Button("BUY LOAD");
-        Theme.limeButton(buy);                       // glow, hand cursor, text color
+        Theme.limeButton(buy);
         buy.setFont(Theme.bold(17));
         buy.setPadding(new Insets(18, 20, 18, 20));
         buy.setMaxWidth(Double.MAX_VALUE);
 
-        // Figma: lime with a slightly darker top edge. Replaces the flat color from limeButton.
         Background normal = lime("#BFF000", "#CAFF06");
         Background hover = lime("#CBFF30", "#D6FF55");
         Background pressed = lime("#A5CE00", "#AFD800");
@@ -184,7 +178,6 @@ public class HomeView extends ScrollPane {
         return buy;
     }
 
-    // Rounded lime background fading from `top` color to `bottom` color
     private Background lime(String top, String bottom) {
         LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
                 new Stop(0, Color.web(top)), new Stop(1, Color.web(bottom)));
@@ -207,7 +200,7 @@ public class HomeView extends ScrollPane {
         tile.setPadding(new Insets(18, 10, 14, 10));
         tile.setBackground(Theme.rounded(TILE, 14));
         tile.setCursor(Cursor.HAND);
-        tile.setPrefWidth(10);                     // equal pref width, so both tiles share the row evenly
+        tile.setPrefWidth(10);        
         tile.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(tile, Priority.ALWAYS);
         tile.setOnMouseClicked(e -> Navigator.go(target));
@@ -224,7 +217,7 @@ public class HomeView extends ScrollPane {
         return line;
     }
 
-    // ---------- xPress Points banner ----------
+    // xPress Points banner
 
     private Node pointsBanner(double points) {
         String pointsText = String.format(Locale.US, "%05.2f", points);   // 0 -> "00.00"
@@ -251,7 +244,6 @@ public class HomeView extends ScrollPane {
         VBox text = new VBox(2, topLine, sub);
         HBox.setHgrow(text, Priority.ALWAYS);
 
-        // Figma: gray pill, light-weight lime text
         Button redeem = new Button("Redeem");
         redeem.setBackground(Theme.rounded(Color.web("#363636"), 50));
         redeem.setTextFill(Theme.LIME);
@@ -269,7 +261,7 @@ public class HomeView extends ScrollPane {
         return banner;
     }
 
-    // ---------- Rows: View Transactions, Replace or Report Lost Card ----------
+    // Rows: View Transactions, Replace or Report Lost Card
 
     private Node infoRow(String iconName, String title, String subtitle, Runnable onClick) {
         StackPane iconTile = new StackPane(Icons.view(iconName, 22));

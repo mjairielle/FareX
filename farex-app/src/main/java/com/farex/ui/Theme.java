@@ -17,13 +17,9 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-/**
- * FareX look in plain Java (no stylesheet): colors from the Figma
- * plus small helpers so every screen styles things the same way.
- */
 public final class Theme {
 
-    public static final Color LIME = Color.web("#CAFE06");         // taken from the logo file
+    public static final Color LIME = Color.web("#CAFE06");   
     public static final Color LIME_HOVER = Color.web("#D8FF3A");
     public static final Color LIME_PRESSED = Color.web("#A9D400");
     public static final Color DARK = Color.web("#141414");
@@ -31,7 +27,7 @@ public final class Theme {
     public static final Color WHITE = Color.WHITE;
     public static final Color GRAY = Color.web("#9A9A9A");
     public static final Color ERROR = Color.web("#FF5C5C");
-    public static final Color FIELD = Color.web("#1F1F1F");         // input box background
+    public static final Color FIELD = Color.web("#1F1F1F");    
 
     private Theme() {
     }
@@ -44,7 +40,6 @@ public final class Theme {
         return new Background(new BackgroundFill(color, new CornerRadii(radius), Insets.EMPTY));
     }
 
-    /** Only the top two corners rounded (used for the dark card on login/register). */
     public static Background roundedTop(Color color, double radius) {
         CornerRadii radii = new CornerRadii(radius, radius, 0, 0, false);
         return new Background(new BackgroundFill(color, radii, Insets.EMPTY));
@@ -54,7 +49,6 @@ public final class Theme {
         return Font.font("System", FontWeight.BOLD, size);
     }
 
-    /** Big title text, e.g. Theme.headline("Your Way", Theme.LIME) */
     public static Label headline(String text, Color color) {
         Label label = new Label(text);
         label.setTextFill(color);
@@ -62,7 +56,6 @@ public final class Theme {
         return label;
     }
 
-    /** Normal small text. */
     public static Label bodyText(String text, Color color) {
         Label label = new Label(text);
         label.setTextFill(color);
@@ -70,7 +63,6 @@ public final class Theme {
         return label;
     }
 
-    /** Bold white text you can click, like "Sign up" or "Log in". */
     public static Label linkLabel(String text) {
         Label label = new Label(text);
         label.setTextFill(WHITE);
@@ -79,7 +71,6 @@ public final class Theme {
         return label;
     }
 
-    /** Lime rounded button with a glow (Get Started, Login, Sign up, ...). */
     public static void limeButton(Button button) {
         button.setBackground(rounded(LIME, 12));
         button.setTextFill(BLACK);
@@ -97,18 +88,12 @@ public final class Theme {
         button.setOnMouseReleased(e -> button.setBackground(rounded(LIME_HOVER, 12)));
     }
 
-    /**
-     * Dark rounded input box with white text. Gets a lime outline while you type in it.
-     * Works for TextField and PasswordField (PasswordField is a TextField).
-     */
     public static void inputField(TextField field, String prompt) {
         field.setPromptText(prompt);
         field.setBackground(rounded(FIELD, 10));
         field.setPadding(new Insets(14));
         field.setFont(Font.font("System", 14));
         field.setMaxWidth(Double.MAX_VALUE);
-
-        // The only inline style line: JavaFX has no Java method for text color in a TextField
         field.setStyle("-fx-text-fill: white; -fx-prompt-text-fill: #9A9A9A;");
 
         Border idleBorder = new Border(new BorderStroke(

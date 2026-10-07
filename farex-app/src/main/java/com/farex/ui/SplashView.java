@@ -4,7 +4,6 @@ import javafx.animation.PauseTransition;
 import javafx.scene.layout.StackPane;
 import javafx.util.Duration;
 
-/** Figma "Enter" screen: lime background, logo in the middle, then moves on to Welcome. */
 public class SplashView extends StackPane {
 
     public SplashView() {

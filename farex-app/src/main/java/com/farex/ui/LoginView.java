@@ -6,7 +6,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 
-/** Figma "Login" screen. Demo account: aron01@gmail.com / farex123 */
 public class LoginView extends AuthenticationScreen {
 
     public LoginView() {
@@ -28,7 +27,7 @@ public class LoginView extends AuthenticationScreen {
             } else if (!MockData.checkLogin(contact, password)) {
                 showError("Wrong email/contact number or password.");
             } else {
-                Navigator.go("dashboard");   // built in Part 4
+                Navigator.go("dashboard");
             }
         });
 

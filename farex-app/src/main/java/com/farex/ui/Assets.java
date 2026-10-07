@@ -8,16 +8,11 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.shape.Rectangle;
 
-/** Loads shared images. If the logo file is missing, shows the text "FareX" instead. */
 public final class Assets {
 
     private Assets() {
     }
 
-    /**
-     * @param size         width and height in pixels, e.g. 96
-     * @param cornerRadius rounded corners in pixels; 0 keeps square corners
-     */
     public static Node logo(double size, double cornerRadius) {
         URL url = Assets.class.getResource("images/farex_logo.png");
         if (url == null) {

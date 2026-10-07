@@ -9,19 +9,16 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
-/** Figma "Welcome" screen: "Your Fare, Your Way", Get Started button, small logo at the bottom. */
 public class WelcomeView extends BorderPane {
 
     public WelcomeView() {
         setBackground(Theme.solid(Theme.DARK));
 
-        // Headline: two lines, second one in lime
         Label line1 = Theme.headline("Your Fare,", Theme.WHITE);
         Label line2 = Theme.headline("Your Way", Theme.LIME);
         VBox headline = new VBox(0, line1, line2);
         headline.setAlignment(Pos.CENTER);
 
-        // Get Started button with an arrow on the right
         Label arrow = new Label("\u2192");
         arrow.setTextFill(Theme.BLACK);
         arrow.setFont(Theme.bold(18));
@@ -38,7 +35,6 @@ public class WelcomeView extends BorderPane {
         center.setPadding(new Insets(0, 28, 0, 28));
         setCenter(center);
 
-        // Footer: small logo + "FareX"
         Label brand = new Label("FareX");
         brand.setTextFill(Theme.WHITE);
         brand.setFont(Theme.bold(18));

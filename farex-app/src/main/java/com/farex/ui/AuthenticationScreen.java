@@ -9,11 +9,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
-/**
- * Shared layout for Login and Register: lime top with the logo and "FareX",
- * dark rounded card at the bottom. LoginView and RegisterView extend this
- * and only add their own fields with addToCard(...).
- */
 public abstract class AuthenticationScreen extends VBox {
 
     private final VBox card = new VBox(16);
@@ -22,7 +17,7 @@ public abstract class AuthenticationScreen extends VBox {
     protected final Label errorLabel = new Label();
 
     protected AuthenticationScreen() {
-        // Lime top area: logo + name, takes all the space the card doesn't use
+        // logo + name, takes all the space the card doesn't use
         Label name = new Label("FareX");
         name.setTextFill(Theme.BLACK);
         name.setFont(Theme.bold(40));
