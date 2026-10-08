@@ -11,9 +11,10 @@ public abstract class User {
         this.email = email;
     }
 
-    public String getName() {
-        return name;
-    }
+    public String getId() { return id; }
+    public String getName() { return name; }
+    public String getEmail() { return email; }
 
+    public abstract String role();
     public abstract String homeScreen();
 }

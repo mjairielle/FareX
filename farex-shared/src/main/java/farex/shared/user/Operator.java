@@ -8,8 +8,8 @@ public class Operator extends User {
         this.vehiclePlate = vehiclePlate;
     }
 
-    @Override
-    public String homeScreen() {
-        return "OperatorShift";
-    }
+    public String getVehiclePlate() { return vehiclePlate; }
+
+    @Override public String role() { return "OPERATOR"; }
+    @Override public String homeScreen() { return "OperatorShift"; }
 }

@@ -14,8 +14,12 @@ public class FarePayment extends Txn {
         this.distanceKm = distanceKm;
     }
 
+    @Override public String type() { return "FARE_PAYMENT"; }
+    @Override protected String extra1() { return operatorId; }
+    @Override protected String extra2() { return String.valueOf(distanceKm); }
+
     @Override
     public String describe() {
-        return String.format("Fare P%.2f, %.1f km", amount / 100.0, distanceKm);
+        return String.format("Fare %s, %.1f km", peso(amount), distanceKm);
     }
 }

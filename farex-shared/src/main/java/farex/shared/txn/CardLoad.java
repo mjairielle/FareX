@@ -11,8 +11,12 @@ public class CardLoad extends Txn {
         this.paymentMethod = paymentMethod;
     }
 
+    @Override public String type() { return "CARD_LOAD"; }
+    @Override protected String extra1() { return paymentMethod; }
+    @Override protected String extra2() { return ""; }
+
     @Override
     public String describe() {
-        return String.format("Loaded P%.2f via %s", amount / 100.0, paymentMethod);
+        return "Loaded " + peso(amount) + " via " + paymentMethod;
     }
 }
