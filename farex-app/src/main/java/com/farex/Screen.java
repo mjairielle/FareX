@@ -85,6 +85,7 @@ public abstract class Screen extends VBox {
 
     protected void logout() {
         Session.user = null;
+        Api.logout();
         Nav.show(new LoginScreen());
     }
 

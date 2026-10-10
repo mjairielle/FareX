@@ -16,7 +16,7 @@
         <javafx.version>16</javafx.version>
         <glisten.version>6.0.5</glisten.version>
         <attach.version>4.0.8</attach.version>
-        <mainClassName>com.farex.HelloGluon</mainClassName>
+        <mainClassName>com.farex.Main</mainClassName>
     </properties>
 
     <dependencies>

@@ -1,1 +1,0 @@
-{"nodes": [{"id": "pkg_farex_farex_backend", "label": "farex:farex-backend", "file_type": "code", "type": "package", "ecosystem": "maven", "source_file": "pom.xml", "source_location": "L1", "version": "1.0"}], "edges": []}

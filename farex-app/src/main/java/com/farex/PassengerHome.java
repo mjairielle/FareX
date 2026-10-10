@@ -15,7 +15,7 @@ public class PassengerHome extends Screen {
         User u = Session.user;
         getChildren().add(heading("Mabuhay, " + u.getName() + "!"));
 
-        List<String> cards = Session.store.cardsOf(u.getId());
+        List<String> cards = Api.cardsOf();
         if (cards.isEmpty()) {
             getChildren().addAll(text("No card yet. Add your xPress card to start loading."),
                     primary("Add Card", () -> Nav.show(new AddCardScreen())));
@@ -28,10 +28,12 @@ public class PassengerHome extends Screen {
             card.setStyle("-fx-background-color: #1c1c1c; -fx-padding: 16;");
             getChildren().addAll(card,
                     primary("BUY LOAD", () -> Nav.show(new BuyLoadScreen(uid()))),
+                    secondary("View Rewards", () -> Nav.show(new RewardsScreen(uid(), ""))),
                     secondary("Add Card", () -> Nav.show(new AddCardScreen())));
         }
 
         getChildren().addAll(
+                secondary("Trip Planner", () -> Nav.show(new TripPlannerScreen())),
                 secondary("View Transactions", () -> Nav.show(new TransactionsScreen())),
                 secondary("Log out", this::logout),
                 error);
@@ -42,6 +44,6 @@ public class PassengerHome extends Screen {
     }
 
     private void refreshBalance() {
-        balance.setText(peso(Session.store.balance(uid())));
+        balance.setText(peso(Api.balance(uid())));
     }
 }

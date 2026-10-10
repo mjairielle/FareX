@@ -42,7 +42,7 @@ public class SignupScreen extends Screen {
                     if (!pass.getText().equals(confirm.getText())) {
                         throw new IllegalArgumentException("Passwords do not match");
                     }
-                    Session.store.register(name.getText(), email.getText(), pass.getText(),
+                    Api.register(name.getText(), email.getText(), pass.getText(),
                             passenger.isSelected() ? "PASSENGER" : "OPERATOR", type.getValue(), plate.getText());
                     Nav.show(new LoginScreen("Account created. Please log in."));
                 }),

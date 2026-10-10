@@ -6,3 +6,5 @@
 *.webp
 *.svg
 *.ico
+
+./flowcharts

@@ -9,7 +9,7 @@ public class AddCardScreen extends Screen {
                 heading("Add a xPress Card"),
                 text("xPress Card Number (last 8 digits)"), digits,
                 primary("Save Card", () -> {
-                    Session.store.addCard(digits.getText().replace(" ", ""), Session.user.getId());
+                    Api.addCard(digits.getText().replace(" ", ""));
                     Nav.show(new PassengerHome());
                 }),
                 error);

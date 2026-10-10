@@ -65,6 +65,26 @@ public class Store {
         };
     }
 
+    /**
+     * Admin fixes a passenger's discount type. The one place a file is rewritten, because users are a table and not a ledger.
+     * Type must be REGULAR, STUDENT, SENIOR or PWD.
+     */
+    public void setPassengerType(String id, String type) {
+        if (!List.of("REGULAR", "STUDENT", "SENIOR", "PWD").contains(type)) throw new IllegalArgumentException("Bad passenger type");
+        try {
+            List<String> lines = new ArrayList<>(Files.readAllLines(users));
+            boolean hit = false;
+            for (int i = 1; i < lines.size(); i++) {
+                String[] r = lines.get(i).split(",", -1);
+                if (r[0].equals(id) && r[4].equals("PASSENGER")) { r[5] = type; lines.set(i, String.join(",", r)); hit = true; }
+            }
+            if (!hit) throw new IllegalArgumentException("No such passenger");
+            Files.write(users, lines);
+        } catch (java.io.IOException e) {
+            throw new RuntimeException("Cannot write " + users, e);
+        }
+    }
+
     // ---------- cards ----------
 
     /** Passenger types the last 8 digits. Card number is "00" plus those digits. */

@@ -1,6 +1,7 @@
 package com.farex;
 
 import farex.shared.user.User;
+import javafx.application.HostServices;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
@@ -8,11 +9,18 @@ import javafx.stage.Stage;
 
 public class Nav {
     private static Stage stage;
+    private static HostServices host;
 
-    public static void init(Stage s) {
+    public static void init(Stage s, HostServices h) {
         stage = s;
+        host = h;
         stage.setTitle("FareX");
         stage.setScene(new Scene(new Pane(), 360, 640));
+    }
+
+    /** Opens the payment page in the phone browser. */
+    public static void open(String url) {
+        host.showDocument(url);
     }
 
     public static void show(Parent screen) {

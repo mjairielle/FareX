@@ -13,6 +13,8 @@ public class LoginScreen extends Screen {
         setAlignment(Pos.CENTER);
         TextField email = field("Email/Contact Number");
         PasswordField pass = password("Password");
+        TextField server = field("Server address");
+        server.setText(Api.base);
 
         if (!notice.isEmpty()) {
             error.setText(notice);
@@ -21,12 +23,13 @@ public class LoginScreen extends Screen {
 
         getChildren().addAll(lime("FareX", 36), email, pass,
                 primary("Login", () -> {
-                    User u = Session.store.login(email.getText(), pass.getText())
-                            .orElseThrow(() -> new IllegalArgumentException("Wrong email or password"));
+                    Api.base = server.getText().trim();
+                    User u = Api.login(email.getText(), pass.getText());
                     Session.user = u;
                     Nav.show(Nav.home(u));
                 }),
                 link("No account yet? Sign up", () -> Nav.show(new SignupScreen())),
+                text("Server address"), server,
                 error);
     }
 }

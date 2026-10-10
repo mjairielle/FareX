@@ -1,11 +1,12 @@
 package com.farex;
 
 import farex.shared.data.Store;
-import javafx.collections.FXCollections;
 import javafx.scene.control.*;
 import javafx.scene.layout.FlowPane;
 
 public class BuyLoadScreen extends Screen {
+    private String session;
+
     public BuyLoadScreen(String uid) {
         TextField amount = field("0.00");
 
@@ -14,16 +15,19 @@ public class BuyLoadScreen extends Screen {
             chips.getChildren().add(secondary("P" + pesos, () -> amount.setText(pesos + ".00")));
         }
 
-        ComboBox<String> method = combo();
-        method.setItems(FXCollections.observableArrayList("GCash", "Maya", "Bank"));
-        method.setValue("GCash");
+        Button check = secondary("I have paid, check", () -> {
+            if (!Api.confirmLoad(session)) throw new IllegalStateException("Not paid yet. Finish paying, then tap again.");
+            Nav.show(new PassengerHome());
+        });
+        check.setVisible(false);
+        check.setManaged(false);
 
         getChildren().addAll(back(() -> Nav.show(new PassengerHome())),
                 heading("Buy Load"),
                 text("Card " + Store.formatUid(uid)),
-                lime(peso(Session.store.balance(uid)), 30),
+                lime(peso(Api.balance(uid)), 30),
                 text("Enter desired load amount (P5.00 to P5,000.00)"), amount, chips,
-                text("Payment method (simulated, no real charge)"), method,
+                text("You pick GCash, Maya or card on the payment page (PayMongo test mode, no real money)"),
                 primary("Pay", () -> {
                     double pesos;
                     try {
@@ -31,9 +35,17 @@ public class BuyLoadScreen extends Screen {
                     } catch (NumberFormatException e) {
                         throw new IllegalArgumentException("Enter a valid amount");
                     }
-                    Session.store.load(uid, Session.user.getId(), Math.round(pesos * 100), method.getValue());
-                    Nav.show(new PassengerHome());
+                    String[] s = Api.startLoad(uid, Math.round(pesos * 100));
+                    session = s[0];
+                    if (s[1].equals("fake")) {                 // server runs without PayMongo
+                        Api.confirmLoad(session);
+                        Nav.show(new PassengerHome());
+                        return;
+                    }
+                    Nav.open(s[1]);
+                    check.setVisible(true);
+                    check.setManaged(true);
                 }),
-                error);
+                check, error);
     }
 }
