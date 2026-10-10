@@ -1,5 +1,10 @@
 name: android-proof
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'proof/**'
+      - '.github/workflows/android-proof.yml'
 jobs:
   apk:
     runs-on: ubuntu-22.04
