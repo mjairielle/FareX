@@ -6,7 +6,7 @@ public class DemoCard {
 
     private final String cardNumber;
     private final String holderName;
-    private final double balance;
+    private double balance;
     private final String expiry;
 
     public DemoCard(String cardNumber, String holderName, double balance, String expiry) {
@@ -26,6 +26,11 @@ public class DemoCard {
 
     public double getBalance() {
         return balance;
+    }
+
+    // Stand-in until the backend updates balances: 676.50 + 200 -> 876.50
+    public void addLoad(double amount) {
+        balance += amount;
     }
 
     public String getExpiry() {

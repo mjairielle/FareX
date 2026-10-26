@@ -39,7 +39,13 @@ public class OtpView extends VBox {
     private int secondsLeft = START_SECONDS;
     private final Timeline timer = new Timeline(new KeyFrame(Duration.seconds(1), e -> tick()));
 
+    // Registration: the code goes to the email or number typed on the Register screen
     public OtpView() {
+        this("A verification code has been sent to", registrationContact());
+    }
+
+    // sentText is the line above, sentTo the bold line, e.g. "We sent a code to your" + "GCash Account"
+    protected OtpView(String sentText, String sentTo) {
         setBackground(Theme.solid(Theme.DARK));
         setAlignment(Pos.CENTER);
         setSpacing(16);
@@ -48,11 +54,9 @@ public class OtpView extends VBox {
         Label title = Theme.headline("Enter OTP", Theme.WHITE);
         VBox.setMargin(title, new Insets(0, 0, 12, 0));
 
-        Label sentLabel = Theme.bodyText("A verification code has been sent to", Theme.WHITE);
+        Label sentLabel = Theme.bodyText(sentText, Theme.WHITE);
 
-        String contact = MockData.getPendingContact().isEmpty()
-                ? MockData.DEMO_CONTACT : MockData.getPendingContact();
-        Label contactLabel = new Label(contact);
+        Label contactLabel = new Label(sentTo);
         contactLabel.setTextFill(Theme.WHITE);
         contactLabel.setFont(Theme.bold(14));
 
@@ -142,11 +146,26 @@ public class OtpView extends VBox {
             showError("Code expired. Tap Resend code.");
         } else if (code.equals(DEMO_CODE)) {
             timer.stop();
-            Navigator.go("accountType");
+            onCodeAccepted();
         } else {
             showError("Wrong code. Try again.");
             clearBoxes();
         }
+    }
+
+    // What happens after the right code. Registration goes on to Account Type;
+    // LoadOtpView overrides this for Buy Load.
+    protected void onCodeAccepted() {
+        Navigator.go("accountType");
+    }
+
+    protected void stopTimer() {
+        timer.stop();
+    }
+
+    private static String registrationContact() {
+        return MockData.getPendingContact().isEmpty()
+                ? MockData.DEMO_CONTACT : MockData.getPendingContact();
     }
 
     private void clearBoxes() {

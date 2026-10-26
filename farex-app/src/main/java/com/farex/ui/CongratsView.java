@@ -10,11 +10,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
 import javafx.scene.shape.CubicCurve;
-import javafx.scene.shape.Polyline;
-import javafx.scene.shape.StrokeLineCap;
-import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.TextAlignment;
 
 public class CongratsView extends VBox {
@@ -59,15 +55,7 @@ public class CongratsView extends VBox {
                 road(10, 30, 90, 0, 130, 80, 290, 35),
                 road(30, 60, 120, 30, 170, 95, 270, 70));
 
-        Circle ring = new Circle(45, 45, 42);
-        ring.setFill(Color.TRANSPARENT);
-        ring.setStroke(Theme.LIME);
-        ring.setStrokeWidth(4);
-
-        Pane icon = new Pane(ring, tick(0), tick(14));
-        icon.setPrefSize(90, 90);
-        icon.setMinSize(90, 90);
-        icon.setMaxSize(90, 90);
+        CheckRing icon = new CheckRing(90, Color.TRANSPARENT);
 
         StackPane art = new StackPane(roads, icon);
         StackPane.setAlignment(icon, Pos.TOP_CENTER);
@@ -76,17 +64,6 @@ public class CongratsView extends VBox {
         art.setPrefHeight(150);
         art.setMaxWidth(300);
         return art;
-    }
-
-    // One check mark; shifted right by dx so two of them overlap like the Figma icon
-    private Polyline tick(double dx) {
-        Polyline tick = new Polyline(24 + dx, 44, 34 + dx, 56, 52 + dx, 34);
-        tick.setFill(Color.TRANSPARENT);
-        tick.setStroke(Theme.LIME);
-        tick.setStrokeWidth(5);
-        tick.setStrokeLineCap(StrokeLineCap.ROUND);
-        tick.setStrokeLineJoin(StrokeLineJoin.ROUND);
-        return tick;
     }
 
     // Dashed curve from (sx, sy) to (ex, ey), bent by two control points
