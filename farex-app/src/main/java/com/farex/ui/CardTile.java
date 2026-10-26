@@ -28,6 +28,11 @@ public class CardTile extends StackPane {
     private static final double H = 190;
     private static final double ARC = 36;
 
+    // Text nudges in pixels. A bigger number moves that text further down.
+    private static final double XPRESS_TOP = 21;
+    private static final double BALANCE_TOP = 24;
+    private static final double EXPIRES_DROP = 3;
+
     public CardTile(DemoCard card) {
         setMinSize(W, H);
         setPrefSize(W, H);
@@ -109,9 +114,12 @@ public class CardTile extends StackPane {
         amount.setFont(Theme.bold(34));
         HBox balanceRow = new HBox(6, peso, amount);
         balanceRow.setAlignment(Pos.CENTER);
+        balanceRow.setTranslateY(-3);
 
-        VBox center = new VBox(2, small, balanceRow);
-        center.setAlignment(Pos.CENTER);
+        // Starts just below the dashed line
+        VBox center = new VBox(0, small, balanceRow);
+        center.setAlignment(Pos.TOP_CENTER);
+        BorderPane.setMargin(center, new Insets(BALANCE_TOP, 0, 0, 0));
 
         Label holderCaption = caption("CARDHOLDER");
         Label holder = new Label(card.getHolderName());
@@ -131,7 +139,8 @@ public class CardTile extends StackPane {
         Label expires = new Label(card.getExpiry());
         expires.setTextFill(Theme.WHITE);
         expires.setFont(Theme.bold(13));
-        VBox right = new VBox(2, expiresCaption, expires);
+        expiresCaption.setTranslateY(EXPIRES_DROP);
+        VBox right = new VBox(0, expiresCaption, expires);
         right.setAlignment(Pos.BOTTOM_RIGHT);
 
         Region gap = new Region();
@@ -140,7 +149,7 @@ public class CardTile extends StackPane {
         bottom.setAlignment(Pos.BOTTOM_LEFT);
 
         BorderPane layout = new BorderPane();
-        layout.setPadding(new Insets(16, 18, 16, 18));
+        layout.setPadding(new Insets(XPRESS_TOP, 18, 16, 18));
         layout.setTop(brand);
         layout.setCenter(center);
         layout.setBottom(bottom);

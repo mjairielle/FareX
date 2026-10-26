@@ -13,8 +13,6 @@ import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.effect.DropShadow;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
@@ -26,9 +24,6 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.CycleMethod;
-import javafx.scene.paint.LinearGradient;
-import javafx.scene.paint.Stop;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.StrokeLineCap;
@@ -44,12 +39,14 @@ public class HomeView extends ScrollPane {
     private static final Color LINE = Color.web("#2A2A2A");
 
     private final IntConsumer showTab;
+    private final boolean hasCard;
 
     public HomeView(IntConsumer showTab) {
         this.showTab = showTab;
 
         DemoAccount account = MockData.getCurrentAccount();
         DemoCard card = (account == null) ? null : account.getPrimaryCard();
+        hasCard = (card != null);
         double points = (account == null) ? 0 : account.getPoints();
 
         Node cardArea = (card != null) ? new CardTile(card) : emptyCardPanel();
@@ -66,7 +63,7 @@ public class HomeView extends ScrollPane {
                 infoRow("icon_transactions", "View Transactions",
                         "View your fares, loads & transfers", () -> showTab.accept(2)),
                 infoRow("icon_lost_card", "Replace or Report Lost Card",
-                        "Disable immediately & transfer leftover balance", () -> Navigator.go("lostCard")));
+                        "Disable immediately & transfer leftover balance", () -> openCardAction("lostCard")));
 
         setContent(content);
         setFitToWidth(true);
@@ -124,11 +121,9 @@ public class HomeView extends ScrollPane {
         Button addCard = new Button("Add Card", new Group(horizontal, vertical));
         addCard.setContentDisplay(ContentDisplay.LEFT);
         addCard.setGraphicTextGap(8);
-        addCard.setBackground(Theme.rounded(Color.web("#151515"), 50));
-        addCard.setTextFill(Theme.LIME);
         addCard.setFont(Theme.bold(13));
         addCard.setPadding(new Insets(8, 16, 8, 16));
-        addCard.setCursor(Cursor.HAND);
+        Theme.paintButton(addCard, "#151515", "#1E1E1E", "#0E0E0E", 50, "#CAFE06");
         addCard.setOnAction(e -> Navigator.go("addCard"));
 
         Region gap = new Region();
@@ -165,23 +160,24 @@ public class HomeView extends ScrollPane {
         buy.setPadding(new Insets(18, 20, 18, 20));
         buy.setMaxWidth(Double.MAX_VALUE);
 
-        Background normal = lime("#BFF000", "#CAFF06");
-        Background hover = lime("#CBFF30", "#D6FF55");
-        Background pressed = lime("#A5CE00", "#AFD800");
-        buy.setBackground(normal);
-        buy.setOnMouseEntered(e -> buy.setBackground(hover));
-        buy.setOnMouseExited(e -> buy.setBackground(normal));
-        buy.setOnMousePressed(e -> buy.setBackground(pressed));
-        buy.setOnMouseReleased(e -> buy.setBackground(hover));
+        // Lime with a slightly darker top edge, like the Figma
+        Theme.paintButton(buy,
+                "linear-gradient(to bottom, #BFF000, #CAFF06)",
+                "linear-gradient(to bottom, #CBFF30, #D6FF55)",
+                "linear-gradient(to bottom, #A5CE00, #AFD800)",
+                16, "black");
 
-        buy.setOnAction(e -> Navigator.go("buyLoad"));
+        buy.setOnAction(e -> openCardAction("buyLoad"));
         return buy;
     }
 
-    private Background lime(String top, String bottom) {
-        LinearGradient gradient = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web(top)), new Stop(1, Color.web(bottom)));
-        return new Background(new BackgroundFill(gradient, new CornerRadii(16), Insets.EMPTY));
+    // Card features need a card. With none, show the Warning instead.
+    private void openCardAction(String target) {
+        if (hasCard) {
+            Navigator.go(target);
+        } else {
+            Navigator.showOverlay(new WarningDialog());
+        }
     }
 
     private Node actionTiles() {
@@ -203,7 +199,7 @@ public class HomeView extends ScrollPane {
         tile.setPrefWidth(10);        
         tile.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(tile, Priority.ALWAYS);
-        tile.setOnMouseClicked(e -> Navigator.go(target));
+        tile.setOnMouseClicked(e -> openCardAction(target));
         return tile;
     }
 
@@ -245,11 +241,9 @@ public class HomeView extends ScrollPane {
         HBox.setHgrow(text, Priority.ALWAYS);
 
         Button redeem = new Button("Redeem");
-        redeem.setBackground(Theme.rounded(Color.web("#363636"), 50));
-        redeem.setTextFill(Theme.LIME);
         redeem.setFont(Font.font("System", 11));
         redeem.setPadding(new Insets(5, 14, 5, 14));
-        redeem.setCursor(Cursor.HAND);
+        Theme.paintButton(redeem, "#363636", "#404040", "#2C2C2C", 50, "#CAFE06");
         redeem.setOnAction(e -> Navigator.go("redeem"));
 
         HBox banner = new HBox(12, trophyTile, text, redeem);

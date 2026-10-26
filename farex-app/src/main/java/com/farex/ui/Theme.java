@@ -72,20 +72,31 @@ public final class Theme {
     }
 
     public static void limeButton(Button button) {
-        button.setBackground(rounded(LIME, 12));
-        button.setTextFill(BLACK);
         button.setFont(bold(16));
         button.setPadding(new Insets(14, 20, 14, 20));
-        button.setCursor(Cursor.HAND);
 
         DropShadow glow = new DropShadow(18, Color.rgb(202, 254, 6, 0.55));
         glow.setSpread(0.1);
         button.setEffect(glow);
 
-        button.setOnMouseEntered(e -> button.setBackground(rounded(LIME_HOVER, 12)));
-        button.setOnMouseExited(e -> button.setBackground(rounded(LIME, 12)));
-        button.setOnMousePressed(e -> button.setBackground(rounded(LIME_PRESSED, 12)));
-        button.setOnMouseReleased(e -> button.setBackground(rounded(LIME_HOVER, 12)));
+        paintButton(button, "#CAFE06", "#D8FF3A", "#A9D400", 12, "black");
+    }
+
+    // Colors set as inline style, so JavaFX's built-in focused look can't paint over them.
+    // A color can also be a gradient, e.g. "linear-gradient(to bottom, #BFF000, #CAFF06)".
+    public static void paintButton(Button button, String normal, String hover, String pressed,
+                                   double radius, String textColor) {
+        String shared = "-fx-background-radius: " + radius + "; -fx-background-insets: 0; "
+                + "-fx-text-fill: " + textColor + "; "
+                + "-fx-focus-color: transparent; -fx-faint-focus-color: transparent;";
+        Runnable repaint = () -> {
+            String fill = button.isPressed() ? pressed : (button.isHover() ? hover : normal);
+            button.setStyle("-fx-background-color: " + fill + "; " + shared);
+        };
+        repaint.run();
+        button.hoverProperty().addListener((obs, was, now) -> repaint.run());
+        button.pressedProperty().addListener((obs, was, now) -> repaint.run());
+        button.setCursor(Cursor.HAND);
     }
 
     public static void inputField(TextField field, String prompt) {

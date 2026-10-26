@@ -5,7 +5,9 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.effect.GaussianBlur;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
@@ -15,6 +17,7 @@ public final class Navigator {
 
     private static StackPane container;
     private static final Map<String, Supplier<Parent>> screens = new HashMap<>();
+    private static Node overlay;
 
     private Navigator() {
     }
@@ -31,6 +34,23 @@ public final class Navigator {
         Supplier<Parent> factory = screens.get(name);
         Parent screen = (factory != null) ? factory.get() : comingSoon(name);
         container.getChildren().setAll(screen);
+        overlay = null;
+    }
+
+    // Puts a dialog on top of the current screen and blurs the screen behind it
+    public static void showOverlay(Node dialog) {
+        closeOverlay();
+        container.getChildren().get(0).setEffect(new GaussianBlur(14));
+        overlay = dialog;
+        container.getChildren().add(dialog);
+    }
+
+    public static void closeOverlay() {
+        if (overlay != null) {
+            container.getChildren().remove(overlay);
+            overlay = null;
+        }
+        container.getChildren().get(0).setEffect(null);
     }
 
     private static Parent comingSoon(String name) {
