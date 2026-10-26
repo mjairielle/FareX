@@ -15,6 +15,8 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
+import java.util.function.Consumer;
+
 public class CardNumberField extends HBox {
 
     private static final String PREFIX = "00";
@@ -25,6 +27,7 @@ public class CardNumberField extends HBox {
             Theme.LIME, BorderStrokeStyle.SOLID, new CornerRadii(8), new BorderWidths(1.5)));
 
     private final TextField field = new TextField();
+    private Consumer<String> onDigitsChanged;
 
     public CardNumberField() {
         setAlignment(Pos.CENTER_LEFT);
@@ -68,6 +71,12 @@ public class CardNumberField extends HBox {
             }
         });
 
+        field.textProperty().addListener((obs, oldText, newText) -> {
+            if (onDigitsChanged != null) {
+                onDigitsChanged.accept(getDigits());
+            }
+        });
+
         field.focusedProperty().addListener((obs, was, now) ->
                 setBorder(now ? FOCUS_BORDER : IDLE_BORDER));
     }
@@ -90,6 +99,10 @@ public class CardNumberField extends HBox {
 
     public void setOnEnter(Runnable action) {
         field.setOnAction(e -> action.run());
+    }
+
+    public void setOnDigitsChanged(Consumer<String> action) {
+        onDigitsChanged = action;
     }
 
     public void focusField() {

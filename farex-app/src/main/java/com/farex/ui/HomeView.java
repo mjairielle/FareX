@@ -167,7 +167,10 @@ public class HomeView extends ScrollPane {
                 "linear-gradient(to bottom, #A5CE00, #AFD800)",
                 16, "black");
 
-        buy.setOnAction(e -> openCardAction("buyLoad"));
+        buy.setOnAction(e -> {
+            BuyLoadState.clear();
+            openCardAction("buyLoad");
+        });
         return buy;
     }
 
@@ -244,6 +247,7 @@ public class HomeView extends ScrollPane {
         redeem.setFont(Font.font("System", 11));
         redeem.setPadding(new Insets(5, 14, 5, 14));
         Theme.paintButton(redeem, "#363636", "#404040", "#2C2C2C", 50, "#CAFE06");
+        redeem.setMinWidth(Region.USE_PREF_SIZE);
         redeem.setOnAction(e -> Navigator.go("redeem"));
 
         HBox banner = new HBox(12, trophyTile, text, redeem);
