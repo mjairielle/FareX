@@ -36,7 +36,7 @@ public class FarexApp extends Application {
         stage.setResizable(false);
         stage.show();
 
-        Navigator.go("accountType");
+        Navigator.go("splash");
     }
 
     public static void main(String[] args) {
