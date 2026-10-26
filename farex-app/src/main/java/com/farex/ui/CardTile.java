@@ -29,7 +29,7 @@ public class CardTile extends StackPane {
     private static final double ARC = 36;
 
     // Text nudges in pixels. A bigger number moves that text further down.
-    private static final double XPRESS_TOP = 21;
+    private static final double XPRESS_TOP = 26;
     private static final double BALANCE_TOP = 24;
     private static final double EXPIRES_DROP = 3;
 
