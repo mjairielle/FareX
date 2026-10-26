@@ -25,7 +25,8 @@ public class FarexApp extends Application {
         Navigator.register("buyLoad", BuyLoadView::new);
         Navigator.register("loadPayment", PaymentMethodView::new);
         Navigator.register("loadAccount", AccountNumberView::new);
-        Navigator.register("loadAmount", () -> new PlaceholderView("Buy Load", "loadAccount"));
+        Navigator.register("loadAmount", LoadAmountView::new);
+        Navigator.register("loadReview", () -> new PlaceholderView("Review", "loadAmount"));
         Navigator.register("allCards", () -> new PlaceholderView("View All Cards", "dashboard"));
         Navigator.register("fetchLoad", () -> new PlaceholderView("Fetch Load", "dashboard"));
         Navigator.register("redeem", () -> new PlaceholderView("Redeem Points", "dashboard"));
