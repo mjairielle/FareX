@@ -49,10 +49,15 @@ public class Leg {
 
     @Override
     public String toString() {
+        return describe(PassengerType.REGULAR);
+    }
+
+    /** One-line summary priced for a given passenger. */
+    public String describe(PassengerType type) {
         return String.format("%s: %s -> %s (%.1f km, PHP %.2f, %.0f min)",
                 route.getName(),
                 boardStop.getName(),
                 alightStop.getName(),
-                distanceKm, fare, minutes);
+                distanceKm, getFareFor(type), minutes);
     }
 }

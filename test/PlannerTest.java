@@ -303,6 +303,65 @@ public class PlannerTest {
         check("route visiting a stop twice is rejected", rejected, "was accepted");
         System.out.println();
 
+        // =============== 12. passenger + card ===============
+        System.out.println("12. Passenger plans a trip and pays with a card");
+        Passenger student = new Passenger("ACC-1", "Juan", PassengerType.STUDENT);
+        Passenger regular = new Passenger("ACC-2", "Maria", PassengerType.REGULAR);
+
+        boolean noPlanner = false;
+        try { student.planTrip(zapote, ayala); } catch (IllegalStateException e) { noPlanner = true; }
+        check("planTrip without a planner fails loudly", noPlanner, "returned instead");
+
+        TripPlanner shared = new TripPlanner(graph);
+        student.setTripPlanner(shared);
+        regular.setTripPlanner(shared);
+
+        List<TripOption> studentTrips = student.planTrip(zapote, ayala);
+        check("planTrip returns alternatives", studentTrips.size() > 1, "got " + studentTrips.size());
+        check("planTrip unreachable -> empty, not null",
+              student.planTrip(zapote, boondock).isEmpty(), "returned a trip");
+
+        TripOption direct = null;
+        for (TripOption o : studentTrips) if (o.getTransfers() == 0) direct = o;
+        check("student pays the discounted fare",
+              student.fareFor(direct) == direct.getTotalFareFor(PassengerType.STUDENT)
+                  && student.fareFor(direct) < regular.fareFor(direct),
+              student.fareFor(direct) + " vs regular " + regular.fareFor(direct));
+
+        // Balance between the student and regular fare: enough for one, not the other.
+        double between = (student.fareFor(direct) + regular.fareFor(direct)) / 2;
+        student.attachCard(new XPressCard("CARD-S", "ACC-1", between));
+        regular.attachCard(new XPressCard("CARD-R", "ACC-2", between));
+        check("inquireBalance reads the linked card", student.inquireBalance("CARD-S") == between,
+              "got " + student.inquireBalance("CARD-S"));
+        check("same balance: student can afford, regular cannot",
+              student.canAfford(direct, "CARD-S") && !regular.canAfford(direct, "CARD-R"), "wrong");
+        check("regular shortfall = regular fare - balance",
+              Math.abs(regular.shortfall(direct, "CARD-R") - (regular.fareFor(direct) - between)) < 1e-9,
+              "got " + regular.shortfall(direct, "CARD-R"));
+
+        boolean wrongOwner = false;
+        try { student.attachCard(new XPressCard("CARD-X", "ACC-2", 100)); }
+        catch (IllegalArgumentException e) { wrongOwner = true; }
+        check("cannot attach someone else's card", wrongOwner, "attached");
+
+        boolean unlinked = false;
+        try { student.canAfford(direct, "NOPE"); } catch (IllegalArgumentException e) { unlinked = true; }
+        check("unlinked card is rejected", unlinked, "accepted");
+
+        XPressCard lost = new XPressCard("CARD-L", "ACC-1", 500);
+        student.attachCard(lost);
+        lost.freeze();
+        boolean frozen = false;
+        try { student.canAfford(direct, "CARD-L"); } catch (IllegalStateException e) { frozen = true; }
+        check("frozen card cannot pay", frozen, "accepted");
+
+        String receipt = direct.toDetailedString(PassengerType.STUDENT);
+        check("student breakdown shows the student total",
+              receipt.contains(String.format("PHP %.2f (STUDENT fare)", student.fareFor(direct))), receipt);
+        System.out.println(receipt);
+        System.out.println();
+
         System.out.println("================================");
         System.out.printf("PASSED %d   FAILED %d%n", passed, failed);
         System.out.println("================================");

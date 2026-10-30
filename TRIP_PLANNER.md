@@ -14,12 +14,12 @@ From the repo root (sources are at the root in `package FareX`, tests in `test/`
 
 ```bash
 javac -Xlint:all -encoding UTF-8 -d out *.java test/*.java
-java -cp out FareX.PlannerTest     # 45 assertions on a hand-built Las Piñas/Makati network
+java -cp out FareX.PlannerTest     # 56 assertions on a hand-built Las Piñas/Makati network
 java -cp out FareX.StressTest      # 300 random networks, 2244 queries, vs BFS + exhaustive fare search
 java -cp out FareX.LoaderTest      # loads data/*.csv and plans a real trip
 ```
 
-Last run (2026-10-30, JDK 26): `PASSED 45  FAILED 0`, `STRESS PASS`, 0 of 2212 queries had a
+Last run (2026-10-30, JDK 26): `PASSED 56  FAILED 0`, `STRESS PASS`, 0 of 2212 queries had a
 cheaper trip than the planner found, slowest `findPaths` call ~14 ms.
 
 ---
@@ -150,13 +150,38 @@ student ranking can in rare near-ties differ by up to ₱0.25 per leg from what 
 search would pick. Accepted as negligible; if it ever matters, pass `PassengerType` into
 `findPaths` and through to `cheapestByFare`.
 
-### 6c. Affordability check
+### 6c. Affordability check — DONE (planner side)
 
-`TripPlanner.shortfall(option, type, balance)` exists and is tested, discount included. It needs
-wiring to the real card balance — `XPressCard` in the repo, and the passenger's `PassengerType`
-from `Passenger`. `Passenger.planTrip(a, b)` is still a stub returning `null`; that's the natural
-place to call `TripPlanner`. This is the feature that makes FareX one system instead of two
-projects stapled together, so it's worth doing properly.
+The planner is wired to the passenger and the card. This is the feature that makes FareX one
+system instead of two projects stapled together.
+
+```java
+TripPlanner planner = new TripPlanner(graph);      // once, at startup (ServerApp)
+passenger.setTripPlanner(planner);                 // shared by every passenger
+
+List<TripOption> trips = passenger.planTrip(a, b); // up to 3 alternatives, never null
+double pay  = passenger.fareFor(trip);             // their fare: student/senior/PWD discounted
+boolean ok  = passenger.canAfford(trip, cardUID);  // against that card's balance
+double need = passenger.shortfall(trip, cardUID);  // pesos to load, 0.0 if covered
+String text = trip.toDetailedString(passenger.getPassengerType()); // breakdown at their price
+```
+
+Rules: the card must be linked to that passenger (else `IllegalArgumentException`) and `ACTIVE`
+(a frozen card throws `IllegalStateException`). `planTrip` without a planner set throws instead
+of returning `null`. `PlannerTest` §12 covers all of it, including "same balance: the student can
+afford the trip, the regular passenger can't."
+
+What I added to the group's classes, kept to the minimum the planner needs:
+
+- `Passenger`: two constructors (default sets `Role.PASSENGER`), `getAccountID`,
+  `getPassengerType`, `getLinkedCards`, `attachCard(XPressCard)`, `setTripPlanner`, and real
+  bodies for `inquireBalance` and `planTrip`; plus `fareFor`, `shortfall`, `canAfford`.
+- `XPressCard`: two constructors, getters, `isUsable()`, and `freeze()` now sets `FROZEN`.
+
+**Left for the ticketing side:** `linkCard(cardUID)` still needs to look the card up in the card
+repository; when it can, it should finish by calling `attachCard(card)`. `verifySignature`,
+`writeBalance`, and loading/fetching are untouched. `getBalance()` reads the card as last synced;
+if balances can be stale, call `fetchLoad` before `canAfford`.
 
 ### 6d. Service hours
 
@@ -233,6 +258,10 @@ reads as rigor, not weakness.
   out of class names either way so renaming stays a one-line change.
 - J03 in `data/` runs Southmall → Sucat → ATC, which doubles back north. Fine for testing, not
   real geography; replace when 6e lands.
-- UI is someone else's. The planner's entry points are `TripPlanner.plan(origin, destination)`
-  and `planAllPreferences(origin, destination)`; both return `List<TripOption>`, and
-  `TripOption.toDetailedString()` gives a ready-made per-leg breakdown to print.
+- UI is someone else's. The easiest entry point is `Passenger.planTrip(a, b)` (see §6c); under
+  it are `TripPlanner.plan(origin, destination)` and `planAllPreferences(origin, destination)`,
+  both returning `List<TripOption>`. `TripOption.toDetailedString(passengerType)` gives a
+  ready-made per-leg breakdown at that passenger's fare.
+- `ServerApp.start()` and `TripHandler.queryRoutes()` are stubs. Startup should do
+  `RouteLoader.load(...)` → `RouteGraph.build(...)` → `new TripPlanner(graph)` once, print
+  `loader.getWarnings()`, and hand the planner to each `Passenger`.

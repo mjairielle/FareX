@@ -88,17 +88,23 @@ public class TripOption {
         return sb.toString();
     }
 
-    /** Per-leg breakdown for the UI. */
+    /** Per-leg breakdown for the UI, at the regular fare. */
     public String toDetailedString() {
+        return toDetailedString(PassengerType.REGULAR);
+    }
+
+    /** Per-leg breakdown for the UI, priced for a given passenger. */
+    public String toDetailedString(PassengerType type) {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < legs.size(); i++) {
-            sb.append("  ").append(i + 1).append(". ").append(legs.get(i)).append('\n');
+            sb.append("  ").append(i + 1).append(". ").append(legs.get(i).describe(type)).append('\n');
             if (i < legs.size() - 1) {
                 sb.append("     [transfer]\n");
             }
         }
-        sb.append(String.format("  TOTAL: PHP %.2f | %.1f km | %.0f min | %d transfer(s)",
-                totalFare, totalDistance, estimatedTime, transfers));
+        String who = FareCalculator.isDiscounted(type) ? " (" + type + " fare)" : "";
+        sb.append(String.format("  TOTAL: PHP %.2f%s | %.1f km | %.0f min | %d transfer(s)",
+                getTotalFareFor(type), who, totalDistance, estimatedTime, transfers));
         return sb.toString();
     }
 
