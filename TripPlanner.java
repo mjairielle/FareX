@@ -6,8 +6,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/**
+ * Takes raw candidate journeys from RouteGraph and turns them into the
+ * short, sensible list a commuter actually wants to see.
+ */
 public class TripPlanner {
 
+    /** What the commuter is optimising for. */
     public enum Preference {
         CHEAPEST,
         FASTEST,
@@ -25,11 +30,19 @@ public class TripPlanner {
 
     public Preference getPreference() { return preference; }
     public void setPreference(Preference preference) { this.preference = preference; }
-    
+
+    /**
+     * Full planning call: ask the graph for candidates, then rank them.
+     * Will throw until RouteGraph.findPaths is implemented.
+     */
     public List<TripOption> plan(Stop origin, Stop destination) {
         return rank(graph.findPaths(origin, destination));
     }
 
+    /**
+     * Dedupe, sort by the current preference, cap at 3.
+     * Null-safe because findPaths may legitimately return nothing.
+     */
     public List<TripOption> rank(List<TripOption> candidates) {
         List<TripOption> ranked = new ArrayList<>();
         if (candidates == null || candidates.isEmpty()) return ranked;
@@ -51,6 +64,10 @@ public class TripPlanner {
         return ranked;
     }
 
+    /**
+     * Each preference leads with its own metric, then falls back to the
+     * others so ties break sensibly instead of arbitrarily.
+     */
     private Comparator<TripOption> comparatorFor(Preference pref) {
         switch (pref) {
             case FASTEST:
@@ -74,6 +91,10 @@ public class TripPlanner {
         }
     }
 
+    /**
+     * Run all three preferences and merge the winners.
+     * This is how you show "3 alternatives" instead of 3 near-identical routes.
+     */
     public List<TripOption> planAllPreferences(Stop origin, Stop destination) {
         List<TripOption> candidates = graph.findPaths(origin, destination);
         if (candidates == null || candidates.isEmpty()) return new ArrayList<>();
@@ -94,6 +115,12 @@ public class TripPlanner {
         return merged;
     }
 
+    /**
+     * Can this card afford the trip? Returns the shortfall in pesos,
+     * or 0.0 if the balance covers it.
+     *
+     * This is the seam where the planner meets the ticketing half of FareX.
+     */
     public static double shortfall(TripOption option, double cardBalance) {
         double needed = option.getTotalFare() - cardBalance;
         return needed > 0 ? needed : 0.0;

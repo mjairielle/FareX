@@ -1,0 +1,8 @@
+route_id,name,base_fare,base_km,per_km_rate,avg_speed_kph,active
+# Fares: LTFRB fare guides effective 2026-09-28 (via parkinganph.com/guides/fare-matrix, checked 2026-10-30).
+# Modern jeepney: PHP 17.00 first 4 km, PHP 2.40/km after. Aircon city bus: PHP 18.00 first 5 km, PHP 2.98/km after.
+# Fares are rounded to the nearest 25 centavos in Route.fareFor().
+J01,Zapote - Alabang,17.00,4.0,2.40,15,true
+J02,Zapote - Ayala via Baclaran,17.00,4.0,2.40,12,true
+J03,Southmall - Sucat,17.00,4.0,2.40,14,true
+B01,Alabang - Ayala Express,18.00,5.0,2.98,40,true
