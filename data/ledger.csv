@@ -1,0 +1,2 @@
+uuid,type,accountId,cardUid,amount,balanceBefore,balanceAfter,time,extra1,extra2
+c303200b-8b86-4c26-afef-3af85ce6fb44,CARD_LOAD,p1,0067676767,50000,0,50000,2026-10-30T12:48:52.684095500Z,Seed,
