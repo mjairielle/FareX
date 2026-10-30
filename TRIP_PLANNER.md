@@ -14,12 +14,12 @@ From the repo root (sources are at the root in `package FareX`, tests in `test/`
 
 ```bash
 javac -Xlint:all -encoding UTF-8 -d out *.java test/*.java
-java -cp out FareX.PlannerTest     # 29 assertions on a hand-built Las Piñas/Makati network
+java -cp out FareX.PlannerTest     # 45 assertions on a hand-built Las Piñas/Makati network
 java -cp out FareX.StressTest      # 300 random networks, 2244 queries, vs BFS + exhaustive fare search
 java -cp out FareX.LoaderTest      # loads data/*.csv and plans a real trip
 ```
 
-Last run (2026-10-30, JDK 26): `PASSED 29  FAILED 0`, `STRESS PASS`, 0 of 2212 queries had a
+Last run (2026-10-30, JDK 26): `PASSED 45  FAILED 0`, `STRESS PASS`, 0 of 2212 queries had a
 cheaper trip than the planner found, slowest `findPaths` call ~14 ms.
 
 ---
@@ -111,44 +111,52 @@ an empty warnings list is a real signal the data is clean.
 
 ## 6. Next up, in priority order
 
-### 6a. Wire in `FareCalculator` (decided: FareCalculator owns the formula)
+### 6a. `FareCalculator` owns the formula — DONE
 
-Right now the formula (including the ₱0.25 rounding) lives in `Route.fareFor(double km)`. It is
-called from two places: the `Leg` constructor (displayed fare) and `RouteGraph.cheapestByFare`
-(the search). Both must use the same formula, or the search optimises a different fare than the
-one shown.
+There is exactly one copy of the fare formula: `FareCalculator.compute(km, PassengerType,
+FareTable)`. Everything else delegates:
 
-In the repo, `FareCalculator` is still a stub: `compute(double distanceKm, PassengerType type,
-FareTable ft)` returns `0.0`, and `FareTable` has `baseFare` and `ratePerKm` but **no `baseKm`**
-(4 km for jeeps, 5 km for buses), no getters and no constructor. To finish this:
+- `FareTable` is one LTFRB scale: `baseFare`, `baseKm`, `ratePerKm`, `effectiveDate`
+  (immutable; constructor + getters). Per-km-only tiers are `baseFare 0, baseKm 0`.
+- `Route` builds its `FareTable` from the `routes.csv` columns; `Route.fareFor(km)` and
+  `fareFor(km, type)` just call `FareCalculator`.
+- `Leg` (displayed fare) and `RouteGraph.cheapestByFare` (the search) both go through
+  `Route.fareFor`, so the search optimises exactly the fare that's shown.
+- `addRideEdges`' `perKmRate * km` is informational only (§3) — not a copy of the formula.
 
-1. Add `baseKm` to `FareTable`, plus a constructor and getters.
-2. Implement `FareCalculator.compute` with the same formula and rounding as `Route.fareFor`.
-3. Have `Route.fareFor` delegate to it (a `Route` holds or builds its `FareTable`), so `Leg` and
-   the search both go through `FareCalculator` with no other changes.
-4. `addRideEdges`' `perKmRate * km` is informational only now (§3) — not a copy of the formula.
+`Admin.publishFareTable(FareTable)` already takes this type, so the admin side can publish a new
+scale without a new class. `effectiveDate` is `null` for routes built from `routes.csv`, which has
+no date column yet; add `effective_date` if you need to keep old and new matrices side by side.
 
-Two copies of a fare formula that silently drift apart is exactly the kind of bug that shows up
-during a defense.
+### 6b. Discounts (student / senior / PWD) — DONE
 
-### 6b. Discounts (student / senior / PWD)
+20% statutory discount, using the repo's `PassengerType`. `STUDENT`, `SENIOR` and `PWD` get it;
+`REGULAR` and `null` don't.
 
-20% statutory discount. `PassengerType.java` already exists in the repo — use it rather than a
-new enum. Apply it in the same place as 6a so there's one fare path, not two.
+The LTFRB prints the discounted fare as its own column, and the rule that reproduces it is:
+discount the **scale** — `0.8 × base` and `0.8 × rate`, each rounded to the centavo — then apply the
+normal formula and round the total to ₱0.25. Taking 20% off the rounded regular fare is wrong:
+aircon bus at 20 km is ₱50.00 in the guide, but `0.8 × 62.75` would give ₱50.25.
+`PlannerTest` §8b checks 8 scales against every regular and student figure the matrix page prints
+(5/10/20/50 km and the 20 km student fare): all 40 match.
 
-Do **not** apply the discount to the search weights. Discounting every candidate by the same
-percentage can't change their order, so it only belongs in the displayed fare.
+API: `leg.getFareFor(type)`, `trip.getTotalFareFor(type)` (each leg discounted and rounded on its
+own, since each boarding is a separate fare), `TripPlanner.shortfall(trip, type, balance)`.
+`getFare()` / `getTotalFare()` stay the regular figures. (They're `…For` rather than overloads so
+`TripOption::getTotalFare` method references in the comparators stay unambiguous.)
 
-The LTFRB prints the discounted fare as its own column, discounting the *scale* first and
-rounding afterwards: a ₱14.00 jeep minimum becomes `14.00 × 0.8 = 11.20`, then rounds to ₱11.25.
-So do `roundToQuarter(0.8 × rawFare)`, **not** `0.8 × roundedFare`. The fare-matrix page gives
-reference values to test against (e.g. traditional jeep 20 km: ₱46.00 regular, ₱36.75 student).
+The search ranks by the **regular** fare. Because discounted fares are rounded per leg, the
+student ranking can in rare near-ties differ by up to ₱0.25 per leg from what a student-specific
+search would pick. Accepted as negligible; if it ever matters, pass `PassengerType` into
+`findPaths` and through to `cheapestByFare`.
 
 ### 6c. Affordability check
 
-`TripPlanner.shortfall(option, balance)` already exists and is tested. It needs wiring to the
-real card balance — `XPressCard` in the repo. This is the feature that makes FareX one system
-instead of two projects stapled together, so it's worth doing properly.
+`TripPlanner.shortfall(option, type, balance)` exists and is tested, discount included. It needs
+wiring to the real card balance — `XPressCard` in the repo, and the passenger's `PassengerType`
+from `Passenger`. `Passenger.planTrip(a, b)` is still a stub returning `null`; that's the natural
+place to call `TripPlanner`. This is the feature that makes FareX one system instead of two
+projects stapled together, so it's worth doing properly.
 
 ### 6d. Service hours
 
@@ -211,7 +219,8 @@ reads as rigor, not weakness.
 | `ROAD_WINDING_FACTOR` | `Stop` | 1.3 | straight-line → road correction |
 | `DEFAULT_TRANSFER_MINUTES` | `TripOption` | 5.0 | default wait + walk per transfer |
 | `transferMinutes` | `RouteGraph` | 5.0 | settable before `build()`; used by the search **and** passed to every `TripOption`, so they can't drift |
-| fare rounding | `Route.roundToQuarter` | ₱0.25 | LTFRB nearest-25-centavo rule, half up |
+| fare rounding | `FareCalculator.roundToQuarter` | ₱0.25 | LTFRB nearest-25-centavo rule, half up |
+| `DISCOUNT_RATE` | `FareCalculator` | 0.20 | student / senior / PWD, applied to the scale before rounding |
 | transfer weight | `RouteGraph.weightOf` | 1000.0 | large constant for FEWEST_TRANSFERS |
 | `MAX_OPTIONS` | `TripPlanner` | 3 | how many results the user sees |
 | `avg_speed_kph` | `data/routes.csv` | 12–40 | 15 km/h is realistic for Manila traffic |

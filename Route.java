@@ -16,11 +16,12 @@ public class Route {
     private final List<Stop> stopsInOrder;
     private final List<Vehicle> activeVehicles;
 
-    // Fare parameters. Loaded from routes.csv so rates can change
+    /** Shared and stateless; the formula itself lives in FareCalculator. */
+    private static final FareCalculator FARES = new FareCalculator();
+
+    // Fare scale. Loaded from routes.csv so rates can change
     // without recompiling. See fareFor().
-    private final double baseFare;   // flat fare for the first baseKm
-    private final double baseKm;     // distance covered by baseFare
-    private final double perKmRate;  // charged per km beyond baseKm
+    private final FareTable fareTable;
 
     // Average operating speed in km/h, used to estimate travel time.
     private final double averageSpeedKph;
@@ -49,9 +50,8 @@ public class Route {
             }
         }
         this.activeVehicles = new ArrayList<>();
-        this.baseFare = baseFare;
-        this.baseKm = baseKm;
-        this.perKmRate = perKmRate;
+        // No effective date: routes.csv carries rates only. See TRIP_PLANNER.md.
+        this.fareTable = new FareTable(baseFare, baseKm, perKmRate, null);
         this.averageSpeedKph = averageSpeedKph;
     }
 
@@ -60,9 +60,10 @@ public class Route {
     public boolean isActive()  { return active; }
     public void setActive(boolean active) { this.active = active; }
 
-    public double getBaseFare()        { return baseFare; }
-    public double getBaseKm()          { return baseKm; }
-    public double getPerKmRate()       { return perKmRate; }
+    public FareTable getFareTable()    { return fareTable; }
+    public double getBaseFare()        { return fareTable.getBaseFare(); }
+    public double getBaseKm()          { return fareTable.getBaseKm(); }
+    public double getPerKmRate()       { return fareTable.getRatePerKm(); }
     public double getAverageSpeedKph() { return averageSpeedKph; }
 
     /** Unmodifiable so nobody can reorder the sequence by accident. */
@@ -118,25 +119,17 @@ public class Route {
         return getDistance(stopsInOrder.get(0), stopsInOrder.get(stopsInOrder.size() - 1));
     }
 
-    /**
-     * Fare for riding a given distance on this route.
-     *
-     * NOTE: if your group's FareCalculator owns the fare formula, delete this
-     * method and have the planner call FareCalculator instead. Keeping two
-     * copies of the formula is how they drift apart.
-     */
+    /** Regular fare for riding a given distance on this route. */
     public double fareFor(double km) {
-        if (km <= baseKm) return roundToQuarter(baseFare);
-        return roundToQuarter(baseFare + ((km - baseKm) * perKmRate));
+        return fareFor(km, PassengerType.REGULAR);
     }
 
     /**
-     * LTFRB rounds every published fare to the nearest 25 centavos, half up:
-     * a computed PHP 52.35 is collected as 52.25, PHP 11.20 as 11.25.
-     * The epsilon keeps 0.125-boundary values from flooring on float error.
+     * Fare for riding a given distance on this route as a given passenger.
+     * A thin delegate: FareCalculator owns the formula, so there is one copy.
      */
-    public static double roundToQuarter(double pesos) {
-        return Math.floor(pesos * 4.0 + 0.5 + 1e-9) / 4.0;
+    public double fareFor(double km, PassengerType type) {
+        return FARES.compute(km, type, fareTable);
     }
 
     /** Fare for riding the route end to end. */

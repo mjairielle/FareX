@@ -52,6 +52,18 @@ public class TripOption {
     public double getEstimatedTime() { return estimatedTime; }
     public int getTransfers()        { return transfers; }
 
+    /**
+     * Total fare as a given passenger: each leg is discounted and rounded on
+     * its own, because each boarding is a separate fare paid to a separate
+     * conductor. getTotalFare() is the regular-passenger figure.
+     */
+    public double getTotalFareFor(PassengerType type) {
+        if (!FareCalculator.isDiscounted(type)) return totalFare;
+        double total = 0.0;
+        for (Leg leg : legs) total += leg.getFareFor(type);
+        return total;
+    }
+
     public Stop getOrigin() {
         return legs.isEmpty() ? null : legs.get(0).getBoardStop();
     }

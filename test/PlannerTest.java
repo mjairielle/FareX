@@ -194,8 +194,68 @@ public class PlannerTest {
         check("modern jeep 10 km = PHP 31.50", modernJeep.fareFor(10) == 31.50, "got " + modernJeep.fareFor(10));
         check("trad jeep 12 km = PHP 30.00",   tradJeep.fareFor(12)   == 30.00, "got " + tradJeep.fareFor(12));
         check("aircon bus 20 km = PHP 62.75",  airconBus.fareFor(20)  == 62.75, "got " + airconBus.fareFor(20));
-        check("52.35 rounds to 52.25", Route.roundToQuarter(52.35) == 52.25, "got " + Route.roundToQuarter(52.35));
-        check("11.20 rounds to 11.25", Route.roundToQuarter(11.20) == 11.25, "got " + Route.roundToQuarter(11.20));
+        check("52.35 rounds to 52.25", FareCalculator.roundToQuarter(52.35) == 52.25,
+              "got " + FareCalculator.roundToQuarter(52.35));
+        check("11.20 rounds to 11.25", FareCalculator.roundToQuarter(11.20) == 11.25,
+              "got " + FareCalculator.roundToQuarter(11.20));
+        System.out.println();
+
+        // =============== 8b. FareCalculator vs the printed table ===============
+        // "What common trips cost", parkinganph.com/guides/fare-matrix (2026-09-28 scales).
+        // Each row: base, baseKm, rate, then regular at 5/10/20/50 km, then student at 20 km.
+        System.out.println("8b. FareCalculator reproduces the published table");
+        FareCalculator calc = new FareCalculator();
+        Object[][] matrix = {
+            {"PUJ",            14.00, 4.0, 2.00,  16.00, 26.00, 46.00, 106.00, 36.75},
+            {"Modern PUJ",     17.00, 4.0, 2.40,  19.50, 31.50, 55.50, 127.50, 44.25},
+            {"Ordinary bus",   15.00, 5.0, 2.49,  15.00, 27.50, 52.25, 127.00, 41.75},
+            {"Aircon bus",     18.00, 5.0, 2.98,  18.00, 33.00, 62.75, 152.00, 50.00},
+            {"Prov. ordinary", 12.00, 5.0, 2.20,  12.00, 23.00, 45.00, 111.00, 36.00},
+            {"Prov. aircon",    0.00, 0.0, 2.45,  12.25, 24.50, 49.00, 122.50, 39.25},
+            {"Luxury",          0.00, 0.0, 3.35,  16.75, 33.50, 67.00, 167.50, 53.50},
+            {"Modern UV",       0.00, 0.0, 3.00,  15.00, 30.00, 60.00, 150.00, 48.00},
+        };
+        double[] kms = {5, 10, 20, 50};
+        for (Object[] row : matrix) {
+            FareTable ft = new FareTable((double) row[1], (double) row[2], (double) row[3], null);
+            String wrong = "";
+            for (int i = 0; i < kms.length; i++) {
+                double got = calc.compute(kms[i], PassengerType.REGULAR, ft);
+                if (got != (double) row[4 + i]) wrong += kms[i] + "km=" + got + " ";
+            }
+            double student = calc.compute(20, PassengerType.STUDENT, ft);
+            if (student != (double) row[8]) wrong += "student20km=" + student;
+            check(row[0] + " matches all 5 printed fares", wrong.isEmpty(), wrong);
+        }
+        FareTable puj = new FareTable(14.00, 4.0, 2.00, null);
+        check("PUJ minimum, student = PHP 11.25", calc.compute(3, PassengerType.STUDENT, puj) == 11.25,
+              "got " + calc.compute(3, PassengerType.STUDENT, puj));
+        check("PUJ 10 km, student = PHP 20.75", calc.compute(10, PassengerType.STUDENT, puj) == 20.75,
+              "got " + calc.compute(10, PassengerType.STUDENT, puj));
+        check("senior and PWD get the student fare",
+              calc.compute(20, PassengerType.SENIOR, puj) == 36.75
+                  && calc.compute(20, PassengerType.PWD, puj) == 36.75, "differs");
+        check("null passenger type pays regular", calc.compute(20, null, puj) == 46.00, "differs");
+        System.out.println();
+
+        // =============== 8c. discounts reach the trip ===============
+        System.out.println("8c. Discounted trip totals");
+        TripOption twoLegs = null;
+        for (TripOption o : options) if (o.getTransfers() == 1) twoLegs = o;
+        double perLeg = 0;
+        for (Leg leg : twoLegs.getLegs()) perLeg += leg.getRoute().fareFor(leg.getDistanceKm(), PassengerType.STUDENT);
+        check("student total = sum of per-leg student fares", twoLegs.getTotalFareFor(PassengerType.STUDENT) == perLeg,
+              "got " + twoLegs.getTotalFareFor(PassengerType.STUDENT) + " vs " + perLeg);
+        check("student total is below regular", twoLegs.getTotalFareFor(PassengerType.STUDENT) < twoLegs.getTotalFare(),
+              "not discounted");
+        check("REGULAR total equals getTotalFare()",
+              twoLegs.getTotalFareFor(PassengerType.REGULAR) == twoLegs.getTotalFare(), "differs");
+        double balance = twoLegs.getTotalFareFor(PassengerType.STUDENT);
+        check("student balance covers student fare but not regular",
+              TripPlanner.shortfall(twoLegs, PassengerType.STUDENT, balance) == 0.0
+                  && TripPlanner.shortfall(twoLegs, balance) > 0.0, "wrong shortfall");
+        System.out.printf("    %s%n    regular PHP %.2f, student/senior/PWD PHP %.2f%n",
+                twoLegs, twoLegs.getTotalFare(), twoLegs.getTotalFareFor(PassengerType.STUDENT));
         System.out.println();
 
         // =============== 9. exact fare search ===============

@@ -34,6 +34,11 @@ public class Leg {
     public double getFare()      { return fare; }
     public double getMinutes()   { return minutes; }
 
+    /** Fare for this ride as a given passenger (student/senior/PWD get the concession). */
+    public double getFareFor(PassengerType type) {
+        return FareCalculator.isDiscounted(type) ? route.fareFor(distanceKm, type) : fare;
+    }
+
     /** How many stops you stay on board for. Useful for the UI. */
     public int getStopCount() {
         int i = route.indexOf(boardStop);

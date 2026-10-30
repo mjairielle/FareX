@@ -122,7 +122,12 @@ public class TripPlanner {
      * This is the seam where the planner meets the ticketing half of FareX.
      */
     public static double shortfall(TripOption option, double cardBalance) {
-        double needed = option.getTotalFare() - cardBalance;
+        return shortfall(option, PassengerType.REGULAR, cardBalance);
+    }
+
+    /** Same, for a passenger who may be entitled to the 20% concession. */
+    public static double shortfall(TripOption option, PassengerType type, double cardBalance) {
+        double needed = option.getTotalFareFor(type) - cardBalance;
         return needed > 0 ? needed : 0.0;
     }
 }
