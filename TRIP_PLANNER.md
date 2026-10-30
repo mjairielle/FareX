@@ -17,10 +17,12 @@ javac -Xlint:all -encoding UTF-8 -d out *.java test/*.java
 java -cp out FareX.PlannerTest     # 56 assertions on a hand-built Las Piñas/Makati network
 java -cp out FareX.StressTest      # 300 random networks, 2244 queries, vs BFS + exhaustive fare search
 java -cp out FareX.LoaderTest      # loads data/*.csv and plans a real trip
+java -cp out FareX.StartupTest     # 17 assertions: ServerApp startup, bad/dirty data folders
+java -cp out FareX.ServerApp       # start the app on data/ (or pass another folder)
 ```
 
-Last run (2026-10-30, JDK 26): `PASSED 56  FAILED 0`, `STRESS PASS`, 0 of 2212 queries had a
-cheaper trip than the planner found, slowest `findPaths` call ~14 ms.
+Last run (2026-10-30, JDK 26): `PASSED 56  FAILED 0`, `STRESS PASS`, `StartupTest` 17/17,
+0 of 2212 queries had a cheaper trip than the planner found, slowest `findPaths` call ~14 ms.
 
 ---
 
@@ -156,8 +158,11 @@ The planner is wired to the passenger and the card. This is the feature that mak
 system instead of two projects stapled together.
 
 ```java
-TripPlanner planner = new TripPlanner(graph);      // once, at startup (ServerApp)
-passenger.setTripPlanner(planner);                 // shared by every passenger
+ServerApp app = new ServerApp("data");             // once, at startup
+app.start();                                       // CSVs -> graph -> one shared TripPlanner
+app.registerPassenger(passenger);                  // after login; sets the shared planner
+
+Stop a = app.findStop("S01"), b = app.findStop("S07"); // UI stop IDs -> Stop
 
 List<TripOption> trips = passenger.planTrip(a, b); // up to 3 alternatives, never null
 double pay  = passenger.fareFor(trip);             // their fare: student/senior/PWD discounted
@@ -262,6 +267,15 @@ reads as rigor, not weakness.
   it are `TripPlanner.plan(origin, destination)` and `planAllPreferences(origin, destination)`,
   both returning `List<TripOption>`. `TripOption.toDetailedString(passengerType)` gives a
   ready-made per-leg breakdown at that passenger's fare.
-- `ServerApp.start()` and `TripHandler.queryRoutes()` are stubs. Startup should do
-  `RouteLoader.load(...)` → `RouteGraph.build(...)` → `new TripPlanner(graph)` once, print
-  `loader.getWarnings()`, and hand the planner to each `Passenger`.
+- **Startup is done.** `ServerApp.start()` loads `data/*.csv` → builds the graph → creates one
+  `TripPlanner`, prints every loader warning and a one-line summary. It fails loudly
+  (`IllegalStateException` naming the folder) if a file is missing or no route survives loading,
+  rather than starting with an empty network; all-routes-inactive starts but warns. Calling
+  `start()` twice is a no-op. `getStops()` / `findStop(id)` map UI selections to `Stop`s.
+  Whoever writes login (`AuthHandler`) should call `app.registerPassenger(p)` after a passenger
+  signs in.
+- **No live reload.** Disabling a route or publishing a new `FareTable` means restarting the app;
+  `TripPlanner` holds its graph for life. If that's needed, add `ServerApp.reload()` that builds a
+  new graph + planner and re-registers passengers.
+- `TripHandler.queryRoutes()` is still a stub — it belongs to whoever owns the request layer, and
+  should just call `passenger.planTrip(...)`.
