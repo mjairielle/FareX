@@ -63,6 +63,36 @@ public class TransactionsScreen extends Screen {
         );
 
         refreshRows();
+<<<<<<< Updated upstream
+    }
+
+    private void refreshRows() {
+        rows.getChildren().clear();
+        String sel = cardFilter.getValue();
+        String targetUid = (sel == null || sel.equals("All Transactions")) ? null : sel.replace(" ", "");
+
+        List<Txn> filtered = targetUid == null
+                ? allTxns
+                : allTxns.stream().filter(t -> targetUid.equals(t.getCardUid())).toList();
+
+        if (filtered.isEmpty()) {
+            rows.getChildren().add(text("No transactions found."));
+            return;
+        }
+
+        long totalFare = 0;
+        long totalLoad = 0;
+        for (Txn t : filtered) {
+            if ("FARE_PAYMENT".equals(t.type())) totalFare += t.getAmount();
+            else if ("CARD_LOAD".equals(t.type())) totalLoad += t.getAmount();
+            rows.getChildren().add(receiptRow(t));
+        }
+
+        Label summary = lime(String.format("Showing %d record(s)  |  Fares: %s  |  Loaded: %s",
+                filtered.size(), peso(totalFare), peso(totalLoad)), 11);
+        rows.getChildren().add(0, summary);
+=======
+>>>>>>> Stashed changes
     }
 
     private void refreshRows() {

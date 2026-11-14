@@ -94,4 +94,7 @@ public class ProfileScreen extends Screen {
         getChildren().addAll(infoCard, cardsCard, notice, btnLogout, error);
     }
 }
+<<<<<<< Updated upstream
 
+=======
+>>>>>>> Stashed changes
