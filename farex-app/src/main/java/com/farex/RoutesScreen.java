@@ -149,8 +149,4 @@ public class RoutesScreen extends Screen {
 
         routeContent.getChildren().addAll(overviewCard, vehicleCard, stopsCard, fareCard);
     }
-<<<<<<< Updated upstream
 }
-=======
-}
->>>>>>> Stashed changes

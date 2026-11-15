@@ -198,7 +198,7 @@ public final class Api {
 
     public static String[] tapMissed(String uid) { return tapResult(call("POST", "/tap/missed", form("uid", uid))); }
 
-    private static String[] tapResult(String r) { return new String[]{field(r, "describe", ""), field(r, "balance", "0"), field(r, "onBoard", "0"), field(r, "points", "0")}; }
+    private static String[] tapResult(String r) { return new String[]{field(r, "describe", ""), field(r, "balance", "0"), field(r, "onBoard", "0"), field(r, "points", "0"), field(r, "fare", "0")}; }
 
     public static List<BoardedPassenger> operatorBoarded() {
         List<BoardedPassenger> out = new ArrayList<>();

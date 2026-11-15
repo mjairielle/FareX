@@ -1,0 +1,9 @@
+target/
+build-server/
+*.class
+*.jar
+*.log
+.idea/
+*.iml
+.vscode/
+tempCodeRunnerFile.*

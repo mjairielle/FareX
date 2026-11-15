@@ -113,7 +113,7 @@ public final class Main {
     static String tapResult(Txn t, TapDesk d) {
         String[] row = t.toRow();
         long pts = rewards.earn(t.getAccountId(), row[0], Double.parseDouble(row[9]), Instant.now());
-        return json("describe", t.describe(), "balance", String.valueOf(t.getBalanceAfter()), "onBoard", String.valueOf(d.onBoard()), "points", String.valueOf(pts));
+        return json("describe", t.describe(), "balance", String.valueOf(t.getBalanceAfter()), "onBoard", String.valueOf(d.onBoard()), "points", String.valueOf(pts), "fare", String.valueOf(t.getAmount()));
     }
 
     public static void main(String[] a) throws Exception {

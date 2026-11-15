@@ -123,7 +123,4 @@ public class OperatorDemo {
         System.out.println("ALL OPERATOR AND APPLICATION CHECKS PASSED!");
     }
 }
-<<<<<<< Updated upstream
 
-=======
->>>>>>> Stashed changes

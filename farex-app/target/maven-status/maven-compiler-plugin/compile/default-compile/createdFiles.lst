@@ -1,1 +1,15 @@
-com\farex\HelloGluon.class
+com\farex\operator\OfflineQueue.class
+com\farex\Api$PlanCard.class
+com\farex\Api$RouteDetail.class
+com\farex\Api.class
+com\farex\operator\ShiftSession.class
+com\farex\Api$BoardedPassenger.class
+com\farex\operator\PinLock.class
+com\farex\Api$ApiException.class
+com\farex\Api$FareRuleInfo.class
+com\farex\Api$Points.class
+com\farex\Api$VehicleInfo.class
+com\farex\Api$TapInResult.class
+com\farex\operator\GpsSimulator.class
+com\farex\Session.class
+com\farex\Api$StopCoord.class

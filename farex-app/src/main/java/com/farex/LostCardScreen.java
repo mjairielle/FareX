@@ -68,7 +68,4 @@ public class LostCardScreen extends Screen {
         getChildren().add(primary("Done", () -> Nav.show(new PassengerHome())));
     }
 }
-<<<<<<< Updated upstream
 
-=======
->>>>>>> Stashed changes
