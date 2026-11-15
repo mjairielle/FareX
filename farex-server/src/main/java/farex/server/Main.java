@@ -1,6 +1,7 @@
 package farex.server;
 
 import com.sun.net.httpserver.*;
+import farex.shared.card.CardPayload;
 import farex.shared.data.*;
 import farex.shared.fare.*;
 import farex.shared.plan.TripPlanner;
@@ -31,6 +32,8 @@ public final class Main {
     static final Map<String, User> tokens = new HashMap<>();
     static final Map<String, TapDesk> desks = new HashMap<>();
     static final String SUSPENDED_H = "userId,action,time";
+    // shortcut: dev default key, set CARD_KEY in .env before any real card is written
+    static final byte[] CARD_KEY = Env.get("CARD_KEY", "farex-dev-card-key").getBytes(java.nio.charset.StandardCharsets.UTF_8);
     static final String PENDING_H = "sessionId,accountId,cardUid,cents";
 
     interface Act { String run(User u, Map<String, String> p) throws Exception; }
@@ -245,6 +248,22 @@ public final class Main {
             store.load(pd[2], u.getId(), Long.parseLong(pd[3]), "PayMongo");
             Csv.append(dir.resolve("credited.csv"), "sessionId", id);
             return json("status", "paid", "cents", String.valueOf(store.balance(pd[2])));
+        });
+
+        // Signed bytes the app writes to the card after a load, and the check an operator runs on a tap.
+        route(s, "/card/payload", "GET", "ANY", (u, p) -> {
+            String uid = req(p, "uid");
+            mayUse(u, uid);
+            byte[] sealed = CardPayload.seal(uid, store.balance(uid), store.txnCount(uid), CARD_KEY);
+            return json("payload", HexFormat.of().formatHex(sealed));
+        });
+        route(s, "/card/verify", "POST", "OPERATOR", (u, p) -> {
+            String uid = req(p, "uid");
+            byte[] bytes;
+            try { bytes = HexFormat.of().parseHex(req(p, "payload")); } catch (IllegalArgumentException e) { throw new IllegalArgumentException("bad payload"); }
+            var d = CardPayload.open(uid, bytes, CARD_KEY);
+            if (d.isEmpty()) return json("valid", "false");
+            return json("valid", "true", "cents", String.valueOf(d.get().cents()), "counter", String.valueOf(d.get().counter()));
         });
 
         route(s, "/tap/in", "POST", "OPERATOR", (u, p) -> {

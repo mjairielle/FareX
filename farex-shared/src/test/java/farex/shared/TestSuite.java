@@ -19,6 +19,7 @@ public class TestSuite {
                 farex.shared.reward.RewardsTest.class,
                 farex.shared.fare.FareRuleTest.class,
                 farex.shared.txn.TxnTest.class,
+                farex.shared.card.CardPayloadTest.class,
                 farex.shared.user.UserTest.class
         };
 

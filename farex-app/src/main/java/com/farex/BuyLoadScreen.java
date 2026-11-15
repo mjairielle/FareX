@@ -17,6 +17,7 @@ public class BuyLoadScreen extends Screen {
 
         Button check = secondary("I have paid, check", () -> {
             if (!Api.confirmLoad(session)) throw new IllegalStateException("Not paid yet. Finish paying, then tap again.");
+            Nfc.rewrite(uid);
             Nav.show(new PassengerHome());
         });
         check.setVisible(false);
@@ -39,6 +40,7 @@ public class BuyLoadScreen extends Screen {
                     session = s[0];
                     if (s[1].equals("fake")) {                 // server runs without PayMongo
                         Api.confirmLoad(session);
+                        Nfc.rewrite(uid);
                         Nav.show(new PassengerHome());
                         return;
                     }

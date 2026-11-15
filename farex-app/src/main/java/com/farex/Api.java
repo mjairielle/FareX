@@ -118,6 +118,17 @@ public final class Api {
         return "paid".equals(field(call("POST", "/load/confirm", form("sessionId", sessionId)), "status", ""));
     }
 
+    // ---------- card bytes ----------
+
+    /** Hex of the signed 16 bytes to write on the card. */
+    public static String cardPayload(String uid) { return field(call("GET", "/card/payload?uid=" + uid, null), "payload", ""); }
+
+    /** Operator check of bytes read off a card. Returns the balance on the card, or -1 when tampered. */
+    public static long verifyCard(String uid, String payloadHex) {
+        String r = call("POST", "/card/verify", form("uid", uid, "payload", payloadHex));
+        return "true".equals(field(r, "valid", "false")) ? Long.parseLong(field(r, "cents", "0")) : -1;
+    }
+
     // ---------- rewards ----------
 
     public record Points(long points, double multiplier) {}

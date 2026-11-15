@@ -617,6 +617,7 @@ public class OperatorScreen extends Screen {
     // ==========================================
     private void handleTapIn(ComboBox<CardItem> picker, TextField manualField) {
         String id = resolveIdInput(picker, manualField);
+        Nfc.checkOnTap(id);
         Api.TapInResult res = Api.tapInDetailed(id, gps.getCurrentStopIdx());
         shift.recordBoarded();
         manualInputId = "";
@@ -627,12 +628,14 @@ public class OperatorScreen extends Screen {
 
     private void handleTapOut(ComboBox<CardItem> picker, TextField manualField) {
         String id = resolveIdInput(picker, manualField);
+        Nfc.checkOnTap(id);
         handleDirectTapOut(id);
     }
 
     private void handleDirectTapOut(String uid) {
         String[] r = Api.tapOut(uid, gps.getCurrentStopIdx());
         recordLocalTxn(uid, r);
+        Nfc.rewrite(uid);
         manualInputId = "";
         setSuccess(r[0] + "\nNew Balance: " + peso(Long.parseLong(r[1])) + "\n+" + r[3] + " Reward Points\nOn Board: "
                 + r[2]);
@@ -647,6 +650,7 @@ public class OperatorScreen extends Screen {
     private void handleDirectMissed(String uid) {
         String[] r = Api.tapMissed(uid);
         recordLocalTxn(uid, r);
+        Nfc.rewrite(uid);
         manualInputId = "";
         setSuccess("FALLBACK MAX FARE APPLIED (No tap out)\n" + r[0] + "\nNew Balance: " + peso(Long.parseLong(r[1]))
                 + "\nOn Board: " + r[2]);

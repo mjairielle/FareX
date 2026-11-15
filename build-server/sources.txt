@@ -1,3 +1,6 @@
+C:\Users\Jai\Documents\GitHub\FareX\farex-shared\src\main\java\farex\shared\card\CardIO.java
+C:\Users\Jai\Documents\GitHub\FareX\farex-shared\src\main\java\farex\shared\card\CardPayload.java
+C:\Users\Jai\Documents\GitHub\FareX\farex-shared\src\main\java\farex\shared\card\SimCardIO.java
 C:\Users\Jai\Documents\GitHub\FareX\farex-shared\src\main\java\farex\shared\data\Csv.java
 C:\Users\Jai\Documents\GitHub\FareX\farex-shared\src\main\java\farex\shared\data\OperatorDemo.java
 C:\Users\Jai\Documents\GitHub\FareX\farex-shared\src\main\java\farex\shared\data\RouteBook.java

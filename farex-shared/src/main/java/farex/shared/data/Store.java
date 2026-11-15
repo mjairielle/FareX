@@ -184,6 +184,13 @@ public class Store {
         return bal;
     }
 
+    /** Ledger rows for this card. Goes up on every load or fare, so it is the card's write counter. */
+    public int txnCount(String uid) {
+        int n = 0;
+        for (String[] r : Csv.read(ledger)) if (r[3].equals(uid)) n++;
+        return n;
+    }
+
     public Txn load(String uid, String accountId, long amount, String method) {
         if (isCardFrozen(uid)) throw new IllegalStateException("Card is frozen / reported lost");
         if (amount < 500 || amount > 500000) throw new IllegalArgumentException("Amount must be P5.00 to P5,000.00");
