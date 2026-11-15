@@ -119,10 +119,10 @@ public class Store {
 
     // ---------- cards ----------
 
-    /** Passenger types the last 8 digits. Card number is "00" plus those digits. */
-    public String addCard(String last8, String ownerId) {
-        if (!last8.matches("\\d{8}")) throw new IllegalArgumentException("Enter exactly 8 digits");
-        String uid = "00" + last8;
+    /** Card id is the NFC chip's own UID, 4 or 7 bytes as hex. Spaces and colons are ignored. */
+    public String addCard(String tagUid, String ownerId) {
+        String uid = tagUid.replaceAll("[\\s:]", "").toUpperCase(java.util.Locale.ROOT);
+        if (!uid.matches("[0-9A-F]{8}|[0-9A-F]{14}")) throw new IllegalArgumentException("Card UID must be 8 or 14 hex characters");
         if (ownerOf(uid) != null) throw new IllegalArgumentException("Card is already linked to an account");
         Csv.append(cards, H_CARDS, uid, ownerId);
         return uid;
@@ -139,10 +139,10 @@ public class Store {
     }
 
     /** Freezes old card, issues replacement, transfers remaining balance to new card. */
-    public String replaceLostCard(String oldUid, String newLast8, String ownerId) {
+    public String replaceLostCard(String oldUid, String newTagUid, String ownerId) {
         if (!ownerId.equals(ownerOf(oldUid))) throw new IllegalArgumentException("Card does not belong to this account");
         freezeCard(oldUid);
-        String newUid = addCard(newLast8, ownerId);
+        String newUid = addCard(newTagUid, ownerId);
         long bal = balance(oldUid);
         if (bal > 0) {
             Txn t1 = new FarePayment(UUID.randomUUID().toString(), ownerId, oldUid, bal, bal, 0,
@@ -173,7 +173,8 @@ public class Store {
     }
 
     public static String formatUid(String uid) {
-        return uid.substring(0, 2) + " " + uid.substring(2, 6) + " " + uid.substring(6);
+        if (uid.matches("\\d{10}")) return uid.substring(0, 2) + " " + uid.substring(2, 6) + " " + uid.substring(6); // seeded cards
+        return uid.replaceAll("(..)(?!$)", "$1 ");
     }
 
     // ---------- money ----------

@@ -12,7 +12,7 @@ import javafx.scene.layout.VBox;
  */
 public class LostCardScreen extends Screen {
     private final ComboBox<String> cardSelector = combo();
-    private final TextField newCardField = field("Enter replacement card last 8 digits");
+    private final TextField newCardField = field("Replacement card UID, e.g. 53 89 CB 02");
     private final Label notice = lime("", 13);
 
     public LostCardScreen() {
@@ -39,7 +39,7 @@ public class LostCardScreen extends Screen {
         form.getChildren().addAll(
                 text("Select Lost Card:"),
                 cardSelector,
-                text("Replacement Card Last 8 Digits:"),
+                text("Replacement Card UID (8 hex characters):"),
                 newCardField,
                 primary("FREEZE & TRANSFER BALANCE", this::handleLostCard)
         );
@@ -50,12 +50,9 @@ public class LostCardScreen extends Screen {
     private void handleLostCard() {
         String sel = cardSelector.getValue();
         if (sel == null) throw new IllegalStateException("Please select a card to report");
-        String oldUid = sel.substring(0, 12).replace(" ", "");
+        String oldUid = sel.substring(0, sel.indexOf(" (")).replace(" ", "");
 
-        String newLast8 = newCardField.getText().trim();
-        if (!newLast8.matches("\\d{8}")) throw new IllegalArgumentException("Replacement card needs exactly 8 digits");
-
-        String[] res = Api.reportLostCard(oldUid, newLast8);
+        String[] res = Api.reportLostCard(oldUid, newCardField.getText());
         String newUid = res[0];
         long newBal = Long.parseLong(res[1]);
 

@@ -83,11 +83,11 @@ public final class Api {
 
     public static List<String> cardsOf() { return lines(call("GET", "/cards", null)); }
 
-    public static void addCard(String last8) { call("POST", "/cards/add", form("last8", last8)); }
+    public static void addCard(String tagUid) { call("POST", "/cards/add", form("uid", tagUid)); }
 
     /** Returns {newUid, balanceCents}. */
-    public static String[] reportLostCard(String oldUid, String newLast8) {
-        String r = call("POST", "/cards/lost", form("oldUid", oldUid, "newLast8", newLast8));
+    public static String[] reportLostCard(String oldUid, String newTagUid) {
+        String r = call("POST", "/cards/lost", form("oldUid", oldUid, "newUid", newTagUid));
         return new String[]{field(r, "newUid", ""), field(r, "cents", "0")};
     }
 

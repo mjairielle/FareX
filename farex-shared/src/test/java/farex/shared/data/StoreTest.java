@@ -47,6 +47,15 @@ public class StoreTest {
     }
 
     @Test
+    void testCardIdIsTagUid() {
+        assertEquals("5389CB02", store.addCard("53:89:cb:02", "p1"));
+        assertThrows(IllegalArgumentException.class, () -> store.addCard("5389CB0", "p1"));
+        assertThrows(IllegalArgumentException.class, () -> store.addCard("53 89 CB 02", "p1"), "already linked");
+        assertEquals("53 89 CB 02", Store.formatUid("5389CB02"));
+        assertEquals("00 6767 6767", Store.formatUid("0067676767"));
+    }
+
+    @Test
     void testCardFreezingAndReplacement() {
         assertFalse(store.isCardFrozen("0067676767"));
         store.freezeCard("0067676767");

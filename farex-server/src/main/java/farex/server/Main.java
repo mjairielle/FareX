@@ -154,11 +154,11 @@ public final class Main {
             return json("name", name);
         });
         route(s, "/cards", "GET", "PASSENGER", (u, p) -> String.join("\n", store.cardsOf(u.getId())));
-        route(s, "/cards/add", "POST", "PASSENGER", (u, p) -> json("uid", store.addCard(req(p, "last8"), u.getId())));
+        route(s, "/cards/add", "POST", "PASSENGER", (u, p) -> json("uid", store.addCard(req(p, "uid"), u.getId())));
         route(s, "/cards/lost", "POST", "PASSENGER", (u, p) -> {
             String oldUid = req(p, "oldUid");
-            String newLast8 = req(p, "newLast8");
-            String newUid = store.replaceLostCard(oldUid, newLast8, u.getId());
+            String newTagUid = req(p, "newUid");
+            String newUid = store.replaceLostCard(oldUid, newTagUid, u.getId());
             return json("newUid", newUid, "cents", String.valueOf(store.balance(newUid)));
         });
         route(s, "/routes", "GET", "ANY", (u, p) -> {
