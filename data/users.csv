@@ -1,0 +1,9 @@
+id,name,email,passwordHash,role,passengerType,vehiclePlate
+a1,Admin,admin@mail.com,240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9,ADMIN,,
+p1,Ana,ana@mail.com,03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4,PASSENGER,STUDENT,
+o1,Ben,ben@mail.com,03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4,OPERATOR,,ABC-123
+1b2959c3,Mark Jairielle Equizabal,markjairielle.equizabal@gmail.com,10a67c696feb07b63fa1da835dbb4bb62c260e0ae08f87fc0d89dba6785b2b58,OPERATOR,,1
+e8f4602b,Mark Jairielle Felix Equizabal,markjairielle.equizabal@tup.edu.ph,10a67c696feb07b63fa1da835dbb4bb62c260e0ae08f87fc0d89dba6785b2b58,PASSENGER,STUDENT,
+bc12b1cf,Mark Jairielle Felix Equizabal,markjairielle@gmail.com,10a67c696feb07b63fa1da835dbb4bb62c260e0ae08f87fc0d89dba6785b2b58,OPERATOR,,1
+0fe8330f,Jai,markjairielle17@gmail.com,03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4,OPERATOR,,1234
+2c34d21a,Jai Jai,marksjairielle@gmail.com,03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4,OPERATOR,,12345

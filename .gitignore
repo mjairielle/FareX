@@ -1,4 +1,13 @@
-.target/
-.idea/
-.vscode/
+# ----- Build output -----
+target/
+build-server/
 .gluonfx/
+*.class
+*.jar
+*.log
+
+# ----- Editors -----
+.idea/
+*.iml
+.vscode/
+tempCodeRunnerFile.*
