@@ -52,8 +52,16 @@ public class FarexApp extends Application {
             return shell;
         });
         Navigator.register("operatorMode", () -> new PlaceholderView("Operator’s Mode", "profile"));
-        Navigator.register("accountInfo", () -> new PlaceholderView("Account Information", "profile"));   // Part 22
-        Navigator.register("privacy", () -> new PlaceholderView("Privacy & Security", "profile"));         // Part 22
+        Navigator.register("accountInfo", AccountInfoView::new);
+        Navigator.register("accountEdit", AccountEditView::new);
+        Navigator.register("privacy", PrivacyView::new);
+        Navigator.register("changePassword", ChangePasswordView::new);
+        Navigator.register("passwordChanged", PasswordChangedView::new);
+        Navigator.register("locationAccess", LocationAccessView::new);
+        Navigator.register("notificationPrefs", NotificationPrefsView::new);
+        Navigator.register("terms", TermsView::new);
+        Navigator.register("deleteAccount", DeleteAccountView::new);
+        Navigator.register("accountDeleted", AccountDeletedView::new);
         Navigator.register("tripMap", TripMapView::new);
         Navigator.register("tripNew", () -> {          // from Routes: start a fresh plan
             TripState.clear();

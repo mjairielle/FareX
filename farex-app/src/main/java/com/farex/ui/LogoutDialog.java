@@ -59,13 +59,19 @@ public class LogoutDialog extends StackPane {
         getChildren().add(box);
     }
 
-    // After log out (or delete account): forget every in-progress flow, then go to Welcome
+    // After log out: forget every in-progress flow, then go to Welcome
     public static void leaveAccount() {
+        clearFlows();
+        Navigator.go("welcome");
+    }
+
+    // Also used by Delete account, which shows "Account deleted!" before Welcome
+    public static void clearFlows() {
         BuyLoadState.clear();
         FetchLoadState.clear();
         RedeemState.clear();
         LostCardState.clear();
         TripState.clear();
-        Navigator.go("welcome");
+        ProfileState.clearDraft();
     }
 }

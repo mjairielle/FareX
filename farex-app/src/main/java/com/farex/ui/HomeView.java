@@ -54,7 +54,7 @@ public class HomeView extends ScrollPane {
         VBox content = new VBox(16);
         content.setPadding(new Insets(6, 20, 20, 20));
         content.getChildren().addAll(
-                greetingRow(card),
+                greetingRow(account, card),
                 cardArea,
                 buyLoadButton(),
                 actionTiles(),
@@ -75,9 +75,15 @@ public class HomeView extends ScrollPane {
 
     // Greeting + status chip
 
-    private Node greetingRow(DemoCard card) {
-        String text = (card == null) ? "Mabuhay!"
-                : "Mabuhay, " + card.getHolderName().trim().split(" ")[0] + "!";
+    // "Aron Ferrancullo" -> "Mabuhay, Aron!" (the profile name, so edits in Account Information show here)
+    private Node greetingRow(DemoAccount account, DemoCard card) {
+        String name = "";
+        if (account != null && !"FareX User".equals(account.getFullName())) {
+            name = account.getFullName();
+        } else if (card != null) {
+            name = card.getHolderName();
+        }
+        String text = name.trim().isEmpty() ? "Mabuhay!" : "Mabuhay, " + name.trim().split(" ")[0] + "!";
         Label greeting = new Label(text);
         greeting.setTextFill(Theme.WHITE);
         greeting.setFont(Theme.bold(22));
