@@ -46,6 +46,14 @@ public class FarexApp extends Application {
             shell.showTab(1);
             return shell;
         });
+        Navigator.register("profile", () -> {         // the main screen, opened on its Profile tab
+            MainShell shell = new MainShell();
+            shell.showTab(3);
+            return shell;
+        });
+        Navigator.register("operatorMode", () -> new PlaceholderView("Operator’s Mode", "profile"));
+        Navigator.register("accountInfo", () -> new PlaceholderView("Account Information", "profile"));   // Part 22
+        Navigator.register("privacy", () -> new PlaceholderView("Privacy & Security", "profile"));         // Part 22
         Navigator.register("tripMap", TripMapView::new);
         Navigator.register("tripNew", () -> {          // from Routes: start a fresh plan
             TripState.clear();

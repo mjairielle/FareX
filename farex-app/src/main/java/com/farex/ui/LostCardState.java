@@ -104,6 +104,8 @@ public final class LostCardState {
             account.replaceCard(old, replacement);
             account.addNotification(new DemoNotification("Card Replaced",
                     "Your balance moved to **" + FetchUi.masked(replacement) + "**.", false));
+            account.addTransaction(DemoTransaction.TRANSFER, "Balance Transfer",
+                    "Old xPress Card → New xPress Card", transferredAmount);
         }
     }
 

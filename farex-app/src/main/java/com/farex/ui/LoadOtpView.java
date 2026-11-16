@@ -47,6 +47,7 @@ public class LoadOtpView extends OtpView {
                 BuyLoadState.getMethod(), MockData.nextReference());
         BuyLoadState.getCard().addPendingLoad(load);
         addPaidNotification();
+        addTransaction();
         Navigator.go("loadReceipt");
     }
 
@@ -61,5 +62,16 @@ public class LoadOtpView extends OtpView {
         String message = String.format(Locale.US, "You have paid **₱%,.2f** using %s.",
                 BuyLoadState.getAmount(), using);
         account.addNotification(new DemoNotification("Buy Load Transaction", message, false));
+    }
+
+    // Transactions tab: "Buy Load  4:05 PM | GCash  + ₱ 200.00"
+    private void addTransaction() {
+        DemoAccount account = MockData.getCurrentAccount();
+        if (account == null) {
+            return;
+        }
+        String method = BuyLoadState.getMethod();
+        String via = "Others".equals(method) ? "Card/e-Wallet" : method;
+        account.addTransaction(DemoTransaction.LOAD, "Buy Load", via, BuyLoadState.getAmount());
     }
 }

@@ -58,6 +58,8 @@ public final class RedeemState {
         getCard().addPendingLoad(new PendingLoad(selected, "Points", lastReference));
         account.addNotification(new DemoNotification("Rewards Claimed",
                 "You have claimed **" + FetchUi.peso(selected) + "** rewards.", false));
+        account.addTransaction(DemoTransaction.REWARD, "Points Redeemed",
+                FetchUi.pts(selected) + " → transit credit", selected);
     }
 
     // ----- Leaving -----

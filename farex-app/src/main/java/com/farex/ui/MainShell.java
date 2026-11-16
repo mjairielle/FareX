@@ -68,8 +68,10 @@ public class MainShell extends BorderPane {
             content = new HomeView(this::showTab);
         } else if (index == 1) {
             content = new RoutesView();
+        } else if (index == 2) {
+            content = new TransactionsView();
         } else {
-            content = placeholderContent(TITLES[index]);
+            content = new ProfileView();
         }
         contentArea.getChildren().setAll(content);
     }

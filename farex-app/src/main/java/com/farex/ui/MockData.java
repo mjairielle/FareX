@@ -1,5 +1,6 @@
 package com.farex.ui;
 
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -27,6 +28,8 @@ public final class MockData {
 
     static {
         DemoAccount demo = new DemoAccount(DEMO_CONTACT, DEMO_PASSWORD);
+        demo.setFullName("Aron Ferrancullo");
+        demo.setPhone("09123456789");
         DemoCard aron = new DemoCard("0067676767", "Aron Ferrancullo", 676.50, "09/29");
         aron.addPendingLoad(new PendingLoad(200.00, "GCash", "FX-LD-1024"));   // ready to fetch
         demo.addCard(aron);
@@ -35,6 +38,7 @@ public final class MockData {
         demo.addCard(new DemoCard("0031313131", "Andrei Ng", 0.00, "11/29"));
         addSampleMessages(demo, true);    // bottom: "Other Messages"
         addSampleMessages(demo, false);   // top: "Latest"
+        addSampleTransactions(demo);
         accounts.put(DEMO_CONTACT.toLowerCase(), demo);
     }
 
@@ -46,6 +50,26 @@ public final class MockData {
                 "You have claimed **₱50.00** rewards.", read));
         account.addNotification(new DemoNotification("Buy Load Transaction",
                 "You have paid **₱300.00** using GCash.", read));
+    }
+
+    // The Transactions history from the Figma (Sept 23-25, 2026), oldest first so the newest ends on top
+    private static void addSampleTransactions(DemoAccount account) {
+        String trip = "Location → Location";
+        sample(account, "2026-09-23T07:10", DemoTransaction.FARE, "Pay Fare", trip, -13);
+        sample(account, "2026-09-23T09:30", DemoTransaction.FARE, "Pay Fare", trip, -21);
+        sample(account, "2026-09-23T13:15", DemoTransaction.FARE, "Pay Fare", trip, -11);
+        sample(account, "2026-09-23T17:40", DemoTransaction.FARE, "Pay Fare", trip, -15);
+        sample(account, "2026-09-24T08:05", DemoTransaction.FARE, "Pay Fare", trip, -11);
+        sample(account, "2026-09-24T14:20", DemoTransaction.TRANSFER, "Balance Transfer",
+                "Old xPress Card → New xPress Card", 325);
+        sample(account, "2026-09-25T08:43", DemoTransaction.FARE, "Pay Fare", "8:43 AM | " + trip, -35);
+        sample(account, "2026-09-25T10:00", DemoTransaction.LOAD, "Buy Load", "10:00 AM | BPI", 200);
+        sample(account, "2026-09-25T15:00", DemoTransaction.LOAD, "Buy Load", "3:00 PM | GCash", 500);
+    }
+
+    private static void sample(DemoAccount account, String when, String kind, String title,
+                               String detail, double amount) {
+        account.addTransaction(new DemoTransaction(LocalDateTime.parse(when), kind, title, detail, amount));
     }
 
     private MockData() {
@@ -68,6 +92,18 @@ public final class MockData {
 
     public static DemoAccount getCurrentAccount() {
         return currentAccount;
+    }
+
+    public static void logout() {
+        currentAccount = null;
+    }
+
+    /** Delete account: removes it until the app restarts, so its login stops working. */
+    public static void deleteCurrentAccount() {
+        if (currentAccount != null) {
+            accounts.remove(currentAccount.getContact().toLowerCase());
+            currentAccount = null;
+        }
     }
 
     public static void setPendingContact(String contact) {
