@@ -12,6 +12,7 @@ public abstract class SubScreen extends VBox {
 
     protected final VBox body = new VBox(16);
 
+    // backTarget = null -> no back arrow (result screens like "Load fetched successfully")
     protected SubScreen(String title, String backTarget) {
         setBackground(Theme.solid(Theme.DARK));
 
@@ -19,19 +20,22 @@ public abstract class SubScreen extends VBox {
         titleLabel.setTextFill(Theme.BLACK);
         titleLabel.setFont(Theme.bold(16));
 
-        Label back = new Label("\u2039");
-        back.setTextFill(Theme.BLACK);
-        back.setFont(Theme.bold(36));
-        back.setCursor(Cursor.HAND);
-        back.setOnMouseClicked(e -> Navigator.go(backTarget));
-        StackPane.setAlignment(back, Pos.CENTER_LEFT);
-        StackPane.setMargin(back, new Insets(0, 0, 4, 20));
-
-        StackPane header = new StackPane(titleLabel, back);
+        StackPane header = new StackPane(titleLabel);
         header.setBackground(Theme.solid(Theme.LIME));
         header.setMinHeight(76);
         header.setPrefHeight(76);
         header.setMaxHeight(76);
+
+        if (backTarget != null) {
+            Label back = new Label("‹");
+            back.setTextFill(Theme.BLACK);
+            back.setFont(Theme.bold(36));
+            back.setCursor(Cursor.HAND);
+            back.setOnMouseClicked(e -> Navigator.go(backTarget));
+            StackPane.setAlignment(back, Pos.CENTER_LEFT);
+            StackPane.setMargin(back, new Insets(0, 0, 4, 20));
+            header.getChildren().add(back);
+        }
 
         body.setPadding(new Insets(28, 20, 24, 20));
         VBox.setVgrow(body, Priority.ALWAYS);

@@ -13,6 +13,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 
 // Shared pieces for the Fetch Load screens: titles, gray panels, label/value rows, buttons
 final class FetchUi {
@@ -51,6 +52,20 @@ final class FetchUi {
         label.setTextFill(color);
         label.setFont(Theme.bold(11));
         return label;
+    }
+
+    // Icon, big title and a centered sentence, e.g. the warning sign + "Couldn't fetch your load"
+    static VBox resultHeader(Node icon, String titleText, String text) {
+        Label title = title(titleText);
+        title.setFont(Theme.bold(20));
+        Label sentence = subtitle(text);
+        sentence.setTextAlignment(TextAlignment.CENTER);
+        sentence.setMaxWidth(260);
+
+        VBox header = new VBox(12, icon, title, sentence);
+        header.setAlignment(Pos.TOP_CENTER);
+        VBox.setMargin(header, new Insets(46, 0, 0, 0));
+        return header;
     }
 
     // ----- Panels -----

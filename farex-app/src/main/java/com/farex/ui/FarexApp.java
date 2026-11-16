@@ -32,7 +32,15 @@ public class FarexApp extends Application {
         Navigator.register("allCards", AllCardsView::new);
         Navigator.register("fetchLoad", FetchLoadState::start);           // from Home
         Navigator.register("fetchCurrent", FetchLoadState::currentScreen); // after picking a card
-        Navigator.register("fetchHold", () -> new PlaceholderView("Fetch Load", "fetchCurrent"));
+        Navigator.register("fetchHold", FetchHoldView::new);
+        Navigator.register("fetchProgress", FetchProgressView::new);
+        Navigator.register("fetchSuccess", FetchSuccessView::new);
+        Navigator.register("fetchFailed", FetchFailedView::new);
+        Navigator.register("transactions", () -> {   // the main screen, opened on its Transactions tab
+            MainShell shell = new MainShell();
+            shell.showTab(2);
+            return shell;
+        });
         Navigator.register("redeem", () -> new PlaceholderView("Redeem Points", "dashboard"));
         Navigator.register("lostCard", () -> new PlaceholderView("Replace or Report Lost Card", "dashboard"));
         Navigator.register("notifications", NotificationsView::new);
