@@ -18,6 +18,17 @@ public final class TripState {
     private static TripPlace destination;
     private static int routeIndex = 0;   // 0 = Shortest distance, 1 = Fewest transfers, 2 = Cheapest fare
 
+    // Answer to "Allow FareX to use your location?"; kept until the app closes
+    private static boolean locationAllowed = false;
+
+    public static boolean isLocationAllowed() {
+        return locationAllowed;
+    }
+
+    public static void setLocationAllowed(boolean allowed) {
+        locationAllowed = allowed;
+    }
+
     private TripState() {
     }
 
