@@ -34,6 +34,7 @@ public class OtpView extends VBox {
             Theme.LIME, BorderStrokeStyle.SOLID, new CornerRadii(8), new BorderWidths(2)));
 
     private final TextField[] boxes = new TextField[6];
+    private final HBox boxRow = new HBox(8);
     private final Label timerLabel = new Label();
     private final Label errorLabel = new Label();
     private int secondsLeft = START_SECONDS;
@@ -64,7 +65,6 @@ public class OtpView extends VBox {
         timerLabel.setFont(Theme.bold(14));
         timerLabel.setText(formatTime(secondsLeft));
 
-        HBox boxRow = new HBox(8);
         boxRow.setAlignment(Pos.CENTER);
         for (int i = 0; i < boxes.length; i++) {
             boxes[i] = createBox(i);
@@ -91,6 +91,20 @@ public class OtpView extends VBox {
         Platform.runLater(() -> boxes[0].requestFocus());
     }
 
+    // ----- Pieces a child screen can place in its own layout (see LostCardOtpView) -----
+
+    protected HBox getCodeBoxes() {
+        return boxRow;
+    }
+
+    protected Label getTimerLabel() {
+        return timerLabel;
+    }
+
+    protected Label getErrorLabel() {
+        return errorLabel;
+    }
+
     // One digit box. index = its position (0 to 5)
     private TextField createBox(int index) {
         TextField box = new TextField();
@@ -101,7 +115,7 @@ public class OtpView extends VBox {
         box.setAlignment(Pos.CENTER);
         box.setBackground(Theme.rounded(Theme.FIELD, 8));
         box.setFont(Theme.bold(20));
-        box.setStyle("-fx-text-fill: white;"); 
+        box.setStyle("-fx-text-fill: white;");
         box.setBorder(IDLE_BORDER);
 
         box.textProperty().addListener((obs, oldText, newText) -> {
@@ -109,13 +123,13 @@ public class OtpView extends VBox {
                 box.setText(oldText);
                 return;
             }
-            if (newText.length() > 1) { 
+            if (newText.length() > 1) {
                 box.setText(newText.substring(newText.length() - 1));
                 return;
             }
             box.setBorder(newText.isEmpty() ? IDLE_BORDER : FILLED_BORDER);
             if (newText.length() == 1 && index < boxes.length - 1) {
-                boxes[index + 1].requestFocus(); 
+                boxes[index + 1].requestFocus();
             }
             checkCode();
         });
@@ -153,6 +167,15 @@ public class OtpView extends VBox {
         }
     }
 
+    // For a "Verify" button: checks now, or asks for the missing digits ("1234" -> error)
+    protected void verifyNow() {
+        if (enteredCode().length() < boxes.length) {
+            showError("Enter all 6 digits of the code.");
+        } else {
+            checkCode();
+        }
+    }
+
     // What happens after the right code. Registration goes on to Account Type;
     // LoadOtpView overrides this for Buy Load.
     protected void onCodeAccepted() {
@@ -175,7 +198,7 @@ public class OtpView extends VBox {
         boxes[0].requestFocus();
     }
 
-    private void resendCode() {
+    protected void resendCode() {
         secondsLeft = START_SECONDS;
         timerLabel.setText(formatTime(secondsLeft));
         errorLabel.setVisible(false);

@@ -3,6 +3,7 @@ package com.farex.ui;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -21,14 +22,23 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
-// Pop-up list of the account's cards. Each row shows whether that card has load waiting.
+// Pop-up list of the account's cards. By default each row shows whether that card has load
+// waiting; another screen can pass its own right-side text (Lost Card shows Active / Frozen).
 // Tapping a row closes the pop-up and hands the card to onPick.
 public class CardPickerDialog extends StackPane {
 
     private static final Border SELECTED = new Border(new BorderStroke(
             Theme.LIME, BorderStrokeStyle.SOLID, new CornerRadii(8), new BorderWidths(1.5)));
 
+    private final Function<DemoCard, Label> statusOf;
+
+    // Fetch Load: "₱200.00 pending" / "No pending load"
     public CardPickerDialog(DemoCard selected, Consumer<DemoCard> onPick) {
+        this(selected, onPick, CardPickerDialog::pendingStatus);
+    }
+
+    public CardPickerDialog(DemoCard selected, Consumer<DemoCard> onPick, Function<DemoCard, Label> statusOf) {
+        this.statusOf = statusOf;
         // Dim layer over the blurred screen; it also stops clicks reaching the screen below
         setBackground(Theme.solid(Color.rgb(0, 0, 0, 0.45)));
 
@@ -71,12 +81,7 @@ public class CardPickerDialog extends StackPane {
         VBox left = new VBox(2, name, number);
         HBox.setHgrow(left, Priority.ALWAYS);
 
-        PendingLoad load = card.getPendingLoad();
-        Label status = (load == null)
-                ? FetchUi.small("No pending load", Theme.GRAY)
-                : FetchUi.smallBold(FetchUi.peso(load.getAmount()) + " pending", Theme.LIME);
-
-        HBox row = new HBox(8, left, status);
+        HBox row = new HBox(8, left, statusOf.apply(card));
         row.setAlignment(Pos.CENTER_LEFT);
         row.setPadding(new Insets(10, 12, 10, 12));
         row.setBackground(Theme.rounded(Color.web("#262626"), 8));
@@ -89,5 +94,12 @@ public class CardPickerDialog extends StackPane {
             onPick.accept(card);
         });
         return row;
+    }
+
+    private static Label pendingStatus(DemoCard card) {
+        PendingLoad load = card.getPendingLoad();
+        return (load == null)
+                ? FetchUi.small("No pending load", Theme.GRAY)
+                : FetchUi.smallBold(FetchUi.peso(load.getAmount()) + " pending", Theme.LIME);
     }
 }

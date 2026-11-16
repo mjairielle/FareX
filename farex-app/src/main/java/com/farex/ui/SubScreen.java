@@ -16,6 +16,15 @@ public abstract class SubScreen extends VBox {
     protected SubScreen(String title, String backTarget) {
         setBackground(Theme.solid(Theme.DARK));
 
+        body.setPadding(new Insets(28, 20, 24, 20));
+        VBox.setVgrow(body, Priority.ALWAYS);
+
+        getChildren().addAll(header(title, backTarget), body);
+    }
+
+    // The lime bar with the title and back arrow. Static so screens that can't extend
+    // SubScreen (LostCardOtpView extends OtpView) can use the same header.
+    public static StackPane header(String title, String backTarget) {
         Label titleLabel = new Label(title);
         titleLabel.setTextFill(Theme.BLACK);
         titleLabel.setFont(Theme.bold(16));
@@ -36,10 +45,6 @@ public abstract class SubScreen extends VBox {
             StackPane.setMargin(back, new Insets(0, 0, 4, 20));
             header.getChildren().add(back);
         }
-
-        body.setPadding(new Insets(28, 20, 24, 20));
-        VBox.setVgrow(body, Priority.ALWAYS);
-
-        getChildren().addAll(header, body);
+        return header;
     }
 }

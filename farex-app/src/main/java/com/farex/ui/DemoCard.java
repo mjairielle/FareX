@@ -11,6 +11,8 @@ public class DemoCard {
     private double balance;
     private final String expiry;
     private final List<PendingLoad> pendingLoads = new ArrayList<>();
+    private boolean frozen = false;
+    private String freezeReference = "";
 
     public DemoCard(String cardNumber, String holderName, double balance, String expiry) {
         this.cardNumber = cardNumber;
@@ -74,5 +76,22 @@ public class DemoCard {
         if (pendingLoads.remove(load)) {
             addLoad(load.getAmount());
         }
+    }
+
+    // ----- Lost card -----
+
+    // Reported lost: the card is blocked, its balance waits for a replacement card
+    public void freeze(String reportReference) {
+        frozen = true;
+        freezeReference = reportReference;
+    }
+
+    public boolean isFrozen() {
+        return frozen;
+    }
+
+    // "FX-LC-1026"
+    public String getFreezeReference() {
+        return freezeReference;
     }
 }

@@ -51,7 +51,15 @@ public class FarexApp extends Application {
         Navigator.register("redeemSuccess", RedeemSuccessView::new);
         Navigator.register("redeemFailed", RedeemFailedView::new);
         Navigator.register("redeemNotEnough", RedeemNotEnoughView::new);
-        Navigator.register("lostCard", () -> new PlaceholderView("Replace or Report Lost Card", "dashboard"));
+        Navigator.register("lostCard", LostCardState::start);             // from Home
+        Navigator.register("lostCurrent", LostCardState::currentScreen);   // after picking a card
+        Navigator.register("lostChoose", LostChooseView::new);
+        Navigator.register("lostConfirm", LostConfirmView::new);
+        Navigator.register("lostOtp", LostCardOtpView::new);
+        Navigator.register("lostProgress", LostProgressView::new);
+        Navigator.register("lostReported", LostReportedView::new);
+        Navigator.register("lostFailed", LostFailedView::new);
+        Navigator.register("lostReplace", () -> new PlaceholderView("Replace or Report Lost Card", "dashboard"));
         Navigator.register("notifications", NotificationsView::new);
 
         Scene scene = new Scene(root, 360, 720);
