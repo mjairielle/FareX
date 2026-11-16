@@ -3,7 +3,9 @@ package com.farex.ui;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
+import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -33,7 +35,17 @@ public class CardTile extends StackPane {
     private static final double BALANCE_TOP = 24;
     private static final double EXPIRES_DROP = 3;
 
+    // Logo in the middle of a plain card (View All Cards, "Other cards")
+    private static final double LOGO_SIZE = 54;
+    private static final double LOGO_RING = 68;
+
+    // Full card: glow, lines, balance and copy icon (Home, My Card)
     public CardTile(DemoCard card) {
+        this(card, true);
+    }
+
+    // showBalance = false -> plain card with the FareX logo instead of the balance
+    public CardTile(DemoCard card, boolean showBalance) {
         setMinSize(W, H);
         setPrefSize(W, H);
         setMaxSize(W, H);
@@ -44,15 +56,19 @@ public class CardTile extends StackPane {
         clip.setArcHeight(ARC);
         setClip(clip);
 
-        getChildren().addAll(backgroundLayer(), textLayer(card));
+        getChildren().addAll(backgroundLayer(showBalance), textLayer(card, showBalance));
     }
 
     // Background
 
-    private Pane backgroundLayer() {
+    private Pane backgroundLayer(boolean full) {
         Rectangle base = new Rectangle(W, H);
         base.setFill(new LinearGradient(0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
                 new Stop(0, Color.web("#1F1F1F")), new Stop(1, Color.web("#161616"))));
+
+        if (!full) {
+            return new Pane(base);   // plain card: no glow, no lines
+        }
 
         Rectangle oliveGlow = new Rectangle(W, H);       // top-right
         oliveGlow.setFill(new RadialGradient(0, 0, 0.84, 0.12, 0.42, true, CycleMethod.NO_CYCLE,
@@ -97,29 +113,10 @@ public class CardTile extends StackPane {
 
     // Text
 
-    private BorderPane textLayer(DemoCard card) {
+    private BorderPane textLayer(DemoCard card, boolean showBalance) {
         Label brand = new Label("xPress");
         brand.setTextFill(Theme.WHITE);
         brand.setFont(Theme.bold(14));
-
-        Label small = new Label("AVAILABLE TRANSIT BALANCE");
-        small.setTextFill(Color.web("#B8C7A0"));
-        small.setFont(Font.font("System", 9));
-
-        Label peso = new Label("\u20B1");
-        peso.setTextFill(Theme.LIME);
-        peso.setFont(Theme.bold(24));
-        Label amount = new Label(card.getBalanceText());
-        amount.setTextFill(Theme.LIME);
-        amount.setFont(Theme.bold(34));
-        HBox balanceRow = new HBox(6, peso, amount);
-        balanceRow.setAlignment(Pos.CENTER);
-        balanceRow.setTranslateY(-3);
-
-        // Starts just below the dashed line
-        VBox center = new VBox(0, small, balanceRow);
-        center.setAlignment(Pos.TOP_CENTER);
-        BorderPane.setMargin(center, new Insets(BALANCE_TOP, 0, 0, 0));
 
         Label holderCaption = caption("CARDHOLDER");
         Label holder = new Label(card.getHolderName());
@@ -129,9 +126,12 @@ public class CardTile extends StackPane {
         Label number = new Label(card.getFormattedNumber());
         number.setTextFill(Color.web("#D6D6D6"));
         number.setFont(Font.font("Consolas", 12));
-        HBox numberRow = new HBox(6, number, Icons.view("icon_copy", 12));
+        HBox numberRow = new HBox(6, number);
         numberRow.setAlignment(Pos.CENTER_LEFT);
-        numberRow.setCursor(Cursor.HAND);
+        if (showBalance) {
+            numberRow.getChildren().add(Icons.view("icon_copy", 12));
+            numberRow.setCursor(Cursor.HAND);
+        }
 
         VBox left = new VBox(2, holderCaption, holder, numberRow);
 
@@ -151,9 +151,42 @@ public class CardTile extends StackPane {
         BorderPane layout = new BorderPane();
         layout.setPadding(new Insets(XPRESS_TOP, 18, 16, 18));
         layout.setTop(brand);
-        layout.setCenter(center);
+        layout.setCenter(showBalance ? balanceBox(card) : logoBadge());
         layout.setBottom(bottom);
         return layout;
+    }
+
+    private Node balanceBox(DemoCard card) {
+        Label small = new Label("AVAILABLE TRANSIT BALANCE");
+        small.setTextFill(Color.web("#B8C7A0"));
+        small.setFont(Font.font("System", 9));
+
+        Label peso = new Label("₱");
+        peso.setTextFill(Theme.LIME);
+        peso.setFont(Theme.bold(24));
+        Label amount = new Label(card.getBalanceText());
+        amount.setTextFill(Theme.LIME);
+        amount.setFont(Theme.bold(34));
+        HBox balanceRow = new HBox(6, peso, amount);
+        balanceRow.setAlignment(Pos.CENTER);
+        balanceRow.setTranslateY(-3);
+
+        // Starts just below the dashed line
+        VBox center = new VBox(0, small, balanceRow);
+        center.setAlignment(Pos.TOP_CENTER);
+        BorderPane.setMargin(center, new Insets(BALANCE_TOP, 0, 0, 0));
+        return center;
+    }
+
+    // Round lime logo inside a dark ring with a soft glow
+    private Node logoBadge() {
+        Circle ring = new Circle(LOGO_RING / 2, Color.web("#111111"));
+        ring.setEffect(new DropShadow(18, Color.rgb(202, 254, 6, 0.25)));
+
+        StackPane badge = new StackPane(ring, Assets.logo(LOGO_SIZE, LOGO_SIZE / 2));
+        badge.setMaxSize(LOGO_RING, LOGO_RING);
+        BorderPane.setAlignment(badge, Pos.CENTER);
+        return badge;
     }
 
     private Label caption(String text) {

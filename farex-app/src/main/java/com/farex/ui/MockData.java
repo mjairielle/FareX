@@ -25,8 +25,8 @@ public final class MockData {
     static {
         DemoAccount demo = new DemoAccount(DEMO_CONTACT, DEMO_PASSWORD);
         demo.addCard(new DemoCard("0067676767", "Aron Ferrancullo", 676.50, "09/29"));
-        demo.addCard(new DemoCard("0011111111", "Aron Ferrancullo", 150.00, "09/29"));
-        demo.addCard(new DemoCard("0031313131", "Aron Ferrancullo", 0.00, "09/29"));
+        demo.addCard(new DemoCard("0011111111", "Kenn Urbano", 150.00, "10/29"));
+        demo.addCard(new DemoCard("0031313131", "Andrei Ng", 0.00, "11/29"));
         accounts.put(DEMO_CONTACT.toLowerCase(), demo);
     }
 

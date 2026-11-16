@@ -29,7 +29,7 @@ public class FarexApp extends Application {
         Navigator.register("loadReview", ReviewView::new);
         Navigator.register("loadOtp", LoadOtpView::new);
         Navigator.register("loadReceipt", LoadReceiptView::new);
-        Navigator.register("allCards", () -> new PlaceholderView("View All Cards", "dashboard"));
+        Navigator.register("allCards", AllCardsView::new);
         Navigator.register("fetchLoad", () -> new PlaceholderView("Fetch Load", "dashboard"));
         Navigator.register("redeem", () -> new PlaceholderView("Redeem Points", "dashboard"));
         Navigator.register("lostCard", () -> new PlaceholderView("Replace or Report Lost Card", "dashboard"));
