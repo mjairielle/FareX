@@ -27,7 +27,19 @@ public final class MockData {
         demo.addCard(new DemoCard("0067676767", "Aron Ferrancullo", 676.50, "09/29"));
         demo.addCard(new DemoCard("0011111111", "Kenn Urbano", 150.00, "10/29"));
         demo.addCard(new DemoCard("0031313131", "Andrei Ng", 0.00, "11/29"));
+        addSampleMessages(demo, true);    // bottom: "Other Messages"
+        addSampleMessages(demo, false);   // top: "Latest"
         accounts.put(DEMO_CONTACT.toLowerCase(), demo);
+    }
+
+    // The three messages from the Figma. Each one goes on top, so they are added last-first.
+    private static void addSampleMessages(DemoAccount account, boolean read) {
+        account.addNotification(new DemoNotification("Load Fetched",
+                "Your load has been **successfully** fetched.", read));
+        account.addNotification(new DemoNotification("Rewards Claimed",
+                "You have claimed **₱50.00** rewards.", read));
+        account.addNotification(new DemoNotification("Buy Load Transaction",
+                "You have paid **₱300.00** using GCash.", read));
     }
 
     private MockData() {

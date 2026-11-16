@@ -33,7 +33,7 @@ public class FarexApp extends Application {
         Navigator.register("fetchLoad", () -> new PlaceholderView("Fetch Load", "dashboard"));
         Navigator.register("redeem", () -> new PlaceholderView("Redeem Points", "dashboard"));
         Navigator.register("lostCard", () -> new PlaceholderView("Replace or Report Lost Card", "dashboard"));
-        Navigator.register("notifications", () -> new PlaceholderView("Notifications", "dashboard"));
+        Navigator.register("notifications", NotificationsView::new);
 
         Scene scene = new Scene(root, 360, 720);
 

@@ -1,5 +1,7 @@
 package com.farex.ui;
 
+import java.util.Locale;
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -40,6 +42,20 @@ public class LoadOtpView extends OtpView {
     @Override
     protected void onCodeAccepted() {
         BuyLoadState.getCard().addLoad(BuyLoadState.getAmount());
+        addPaidNotification();
         Navigator.go("loadReceipt");
+    }
+
+    // ₱200 with GCash -> "You have paid ₱200.00 using GCash."
+    private void addPaidNotification() {
+        DemoAccount account = MockData.getCurrentAccount();
+        if (account == null) {
+            return;
+        }
+        String method = BuyLoadState.getMethod();
+        String using = "Others".equals(method) ? "your card/e-wallet" : method;
+        String message = String.format(Locale.US, "You have paid **₱%,.2f** using %s.",
+                BuyLoadState.getAmount(), using);
+        account.addNotification(new DemoNotification("Buy Load Transaction", message, false));
     }
 }

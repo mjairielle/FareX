@@ -8,6 +8,7 @@ public class DemoAccount {
     private final String contact;
     private final String password;
     private final List<DemoCard> cards = new ArrayList<>();
+    private final List<DemoNotification> notifications = new ArrayList<>();
     private final double points = 0;
 
     public DemoAccount(String contact, String password) {
@@ -41,5 +42,14 @@ public class DemoAccount {
 
     public double getPoints() {
         return points;
+    }
+
+    // Newest first: a new message goes to the top of the list
+    public List<DemoNotification> getNotifications() {
+        return notifications;
+    }
+
+    public void addNotification(DemoNotification notification) {
+        notifications.add(0, notification);
     }
 }
