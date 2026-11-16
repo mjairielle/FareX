@@ -80,8 +80,8 @@ public class WarningDialog extends StackPane {
         return flow;
     }
 
-    // Rounded lime triangle with an exclamation mark
-    private Group warningIcon() {
+    // Rounded lime triangle with an exclamation mark (also used on the Fetch Load screens)
+    public static Group warningIcon() {
         Polygon triangle = new Polygon(32, 4, 60, 52, 4, 52);
         triangle.setFill(Color.TRANSPARENT);
         triangle.setStroke(Theme.LIME);

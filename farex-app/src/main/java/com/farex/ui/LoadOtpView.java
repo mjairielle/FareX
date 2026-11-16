@@ -10,7 +10,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 // Buy Load, step 6: the registration OTP screen, but the right code (123456)
-// adds the load and opens the receipt
+// saves a pending load and opens the receipt
 public class LoadOtpView extends OtpView {
 
     public LoadOtpView() {
@@ -39,9 +39,13 @@ public class LoadOtpView extends OtpView {
         return "Others".equals(method) ? "Card/e-Wallet Account" : method + " Account";
     }
 
+    // Paying does not change the balance yet: the ₱200 waits as a pending load
+    // until it is collected with Fetch Load (676.50 stays 676.50 until then)
     @Override
     protected void onCodeAccepted() {
-        BuyLoadState.getCard().addLoad(BuyLoadState.getAmount());
+        PendingLoad load = new PendingLoad(BuyLoadState.getAmount(),
+                BuyLoadState.getMethod(), MockData.nextReference());
+        BuyLoadState.getCard().addPendingLoad(load);
         addPaidNotification();
         Navigator.go("loadReceipt");
     }
