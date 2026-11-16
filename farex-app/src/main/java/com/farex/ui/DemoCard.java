@@ -94,4 +94,14 @@ public class DemoCard {
     public String getFreezeReference() {
         return freezeReference;
     }
+
+    // Replacement: ₱676.50 (and any load still waiting) moves to the new card; this one keeps ₱0.00
+    public void transferTo(DemoCard replacement) {
+        replacement.addLoad(balance);
+        balance = 0;
+        for (PendingLoad load : pendingLoads) {
+            replacement.addPendingLoad(load);
+        }
+        pendingLoads.clear();
+    }
 }

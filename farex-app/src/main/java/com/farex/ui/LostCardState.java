@@ -3,8 +3,8 @@ package com.farex.ui;
 import javafx.scene.Parent;
 import javafx.scene.control.Label;
 
-// Remembers the Lost Card choices (card, reason) and freezes the card.
-// A card that is already frozen skips straight to "Get a replacement card".
+// Remembers the Lost Card choices (card, reason, new card number), freezes the old card
+// and moves its balance to the replacement. A frozen card skips to "Get a replacement card".
 public final class LostCardState {
 
     public static final String LOST = "Lost or stolen";
@@ -12,6 +12,12 @@ public final class LostCardState {
 
     private static DemoCard card;
     private static String reason = LOST;
+
+    // Replacement: the typed number, the new card, and the transfer reference
+    private static String newCardNumber = "";
+    private static DemoCard replacement;
+    private static String transferReference = "";
+    private static double transferredAmount;
 
     private LostCardState() {
     }
@@ -37,10 +43,41 @@ public final class LostCardState {
         reason = newReason;
     }
 
+    public static String getNewCardNumber() {
+        return newCardNumber;
+    }
+
+    public static void setNewCardNumber(String fullNumber) {
+        newCardNumber = fullNumber;
+    }
+
+    // "0088428842" -> "•••• 8842"
+    public static String maskedNewCard() {
+        return "•••• " + newCardNumber.substring(newCardNumber.length() - 4);
+    }
+
+    public static DemoCard getReplacement() {
+        return replacement;
+    }
+
+    public static String getTransferReference() {
+        return transferReference;
+    }
+
+    public static double getTransferredAmount() {
+        return transferredAmount;
+    }
+
     public static void clear() {
         card = null;
         reason = LOST;
+        newCardNumber = "";
+        replacement = null;
+        transferReference = "";
+        transferredAmount = 0;
     }
+
+    // ----- Actions -----
 
     // Report confirmed: •••• 6767 is frozen as FX-LC-1026, plus a notification
     public static void freeze() {
@@ -51,6 +88,22 @@ public final class LostCardState {
         if (account != null) {
             account.addNotification(new DemoNotification("Card Frozen",
                     "Your card **" + FetchUi.masked(current) + "** has been frozen.", false));
+        }
+    }
+
+    // Transfer confirmed: new card 0088428842 gets ₱676.50 and takes the old card's place
+    public static void transfer() {
+        DemoCard old = getCard();
+        replacement = new DemoCard(newCardNumber, old.getHolderName(), 0.00, old.getExpiry());
+        transferredAmount = old.getBalance();
+        old.transferTo(replacement);
+        transferReference = MockData.nextReference("TR");
+
+        DemoAccount account = MockData.getCurrentAccount();
+        if (account != null) {
+            account.replaceCard(old, replacement);
+            account.addNotification(new DemoNotification("Card Replaced",
+                    "Your balance moved to **" + FetchUi.masked(replacement) + "**.", false));
         }
     }
 
@@ -65,7 +118,7 @@ public final class LostCardState {
     public static Parent currentScreen() {
         DemoCard current = getCard();
         if (current != null && current.isFrozen()) {
-            return new PlaceholderView("Replace or Report Lost Card", "dashboard");   // 07, Part 17
+            return new LostReplaceView();
         }
         return new LostChooseView();
     }
