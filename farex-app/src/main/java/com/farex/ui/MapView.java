@@ -25,6 +25,8 @@ public class MapView extends Pane {
     private static final String IMAGE = "images/map_manila.png";
     private static final double ART_WIDTH = 360;   // the drawing is made for the phone width
 
+    private ImageView photo;   // the map picture, when map_manila.png exists
+
     // Full background: grows to fill its parent
     public MapView() {
         this(0);
@@ -34,11 +36,10 @@ public class MapView extends Pane {
     public MapView(double radius) {
         URL url = MapView.class.getResource(IMAGE);
         if (url != null) {
-            ImageView image = new ImageView(new Image(url.toExternalForm()));
-            image.setPreserveRatio(true);
-            image.setSmooth(true);
-            image.setFitWidth(ART_WIDTH);
-            getChildren().add(image);
+            photo = new ImageView(new Image(url.toExternalForm()));
+            photo.setPreserveRatio(true);
+            photo.setSmooth(true);
+            getChildren().add(photo);
         } else {
             getChildren().add(placeholder());
         }
@@ -60,6 +61,30 @@ public class MapView extends Pane {
         setPrefSize(width, height);
         setMinSize(width, height);
         setMaxSize(width, height);
+    }
+
+    // ----- Picture sizing -----
+
+    // "Cover": grow the picture until it fills the whole area, centered; extra edges are clipped.
+    // Example: 403 x 610 picture in a 360 x 640 area -> scale = max(360/403, 640/610) = 1.05
+    // -> drawn 423 x 640, moved 31 px left so the middle shows.
+    @Override
+    protected void layoutChildren() {
+        super.layoutChildren();
+        if (photo == null || photo.getImage() == null) {
+            return;
+        }
+        double w = getWidth();
+        double h = getHeight();
+        double imageW = photo.getImage().getWidth();
+        double imageH = photo.getImage().getHeight();
+        if (w <= 0 || h <= 0 || imageW <= 0 || imageH <= 0) {
+            return;
+        }
+        double scale = Math.max(w / imageW, h / imageH);
+        photo.setFitWidth(imageW * scale);
+        photo.setFitHeight(imageH * scale);
+        photo.relocate((w - imageW * scale) / 2, (h - imageH * scale) / 2);
     }
 
     // ----- Placeholder drawing (on a 360 x 720 area) -----
