@@ -54,7 +54,13 @@ public class FarexApp extends Application {
         Navigator.register("tripPlanner", TripPlannerView::new);       // keeps the chosen stops
         Navigator.register("tripStart", () -> new TripPickView(true));
         Navigator.register("tripDestination", () -> new TripPickView(false));
-        Navigator.register("tripSearching", () -> new PlaceholderView("Trip Planner", "tripPlanner"));   // Part 19
+        Navigator.register("tripSearching", TripSearchView::new);
+        Navigator.register("tripRoutes", TripRoutesView::new);
+        Navigator.register("tripRoute", TripRouteView::new);          // details of the chosen route
+        Navigator.register("tripNoRoute", TripNoRouteView::new);
+        Navigator.register("tripOffline", TripOfflineView::new);
+        Navigator.register("tripLocation", () -> new PlaceholderView("Trip Planner", "tripRoute"));   // Part 20
+        Navigator.register("tripRouteMap", () -> new PlaceholderView("Trip Planner", "tripRoute"));   // Part 20
         Navigator.register("redeem", () -> {           // from Home: start with 100 pts selected
             RedeemState.clear();
             return new RedeemChooseView();

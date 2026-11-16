@@ -110,8 +110,21 @@ public abstract class ProgressScreen extends SubScreen {
             if (e.getCode() == KeyCode.ESCAPE) {
                 timeline.stop();
                 onFailed();
+            } else {
+                onOtherKey(e.getCode());
             }
         });
         Platform.runLater(this::requestFocus);
+    }
+
+    // A child screen can react to more demo keys (Trip search: N = no route found)
+    protected void onOtherKey(KeyCode code) {
+    }
+
+    // Stop the steps without finishing, e.g. "Cancel search"
+    protected void stopSteps() {
+        if (timeline != null) {
+            timeline.stop();
+        }
     }
 }
