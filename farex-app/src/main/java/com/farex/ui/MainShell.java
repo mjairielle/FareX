@@ -63,7 +63,14 @@ public class MainShell extends BorderPane {
         for (int i = 0; i < tabs.size(); i++) {
             tabs.get(i).setActive(i == index);
         }
-        Node content = (index == 0) ? new HomeView(this::showTab) : placeholderContent(TITLES[index]);
+        Node content;
+        if (index == 0) {
+            content = new HomeView(this::showTab);
+        } else if (index == 1) {
+            content = new RoutesView();
+        } else {
+            content = placeholderContent(TITLES[index]);
+        }
         contentArea.getChildren().setAll(content);
     }
 

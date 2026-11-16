@@ -41,6 +41,20 @@ public class FarexApp extends Application {
             shell.showTab(2);
             return shell;
         });
+        Navigator.register("routes", () -> {          // the main screen, opened on its Routes tab
+            MainShell shell = new MainShell();
+            shell.showTab(1);
+            return shell;
+        });
+        Navigator.register("tripMap", TripMapView::new);
+        Navigator.register("tripNew", () -> {          // from Routes: start a fresh plan
+            TripState.clear();
+            return new TripPlannerView();
+        });
+        Navigator.register("tripPlanner", TripPlannerView::new);       // keeps the chosen stops
+        Navigator.register("tripStart", () -> new TripPickView(true));
+        Navigator.register("tripDestination", () -> new TripPickView(false));
+        Navigator.register("tripSearching", () -> new PlaceholderView("Trip Planner", "tripPlanner"));   // Part 19
         Navigator.register("redeem", () -> {           // from Home: start with 100 pts selected
             RedeemState.clear();
             return new RedeemChooseView();
