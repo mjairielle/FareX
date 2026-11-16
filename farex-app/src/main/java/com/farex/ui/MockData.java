@@ -22,7 +22,7 @@ public final class MockData {
     // The email/number typed on the Register screen, shown later on the OTP screen
     private static String pendingContact = "";
 
-    // Load references: the demo's waiting load is FX-LD-1024, the next purchase gets FX-LD-1025
+    // References: the demo's waiting load is FX-LD-1024, the next one gets 1025
     private static int nextReference = 1025;
 
     static {
@@ -30,6 +30,7 @@ public final class MockData {
         DemoCard aron = new DemoCard("0067676767", "Aron Ferrancullo", 676.50, "09/29");
         aron.addPendingLoad(new PendingLoad(200.00, "GCash", "FX-LD-1024"));   // ready to fetch
         demo.addCard(aron);
+        demo.addPoints(250);
         demo.addCard(new DemoCard("0011111111", "Kenn Urbano", 150.00, "10/29"));
         demo.addCard(new DemoCard("0031313131", "Andrei Ng", 0.00, "11/29"));
         addSampleMessages(demo, true);    // bottom: "Other Messages"
@@ -79,6 +80,11 @@ public final class MockData {
 
     // "FX-LD-1025", then "FX-LD-1026", ...
     public static String nextReference() {
-        return "FX-LD-" + nextReference++;
+        return nextReference("LD");
+    }
+
+    // One counter for every kind: load "LD", redeem "RD", ... -> "FX-RD-1025"
+    public static String nextReference(String kind) {
+        return "FX-" + kind + "-" + nextReference++;
     }
 }

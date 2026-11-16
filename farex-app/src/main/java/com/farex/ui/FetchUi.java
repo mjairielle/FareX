@@ -12,10 +12,15 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.Group;
+import javafx.scene.shape.Polyline;
+import javafx.scene.shape.StrokeLineCap;
+import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 
-// Shared pieces for the Fetch Load screens: titles, gray panels, label/value rows, buttons
+// Shared pieces for the Fetch Load, Redeem and Lost Card screens:
+// titles, gray panels, label/value rows, buttons, result icons
 final class FetchUi {
 
     static final Color PANEL = Color.web("#1E1E1E");
@@ -66,6 +71,22 @@ final class FetchUi {
         header.setAlignment(Pos.TOP_CENTER);
         VBox.setMargin(header, new Insets(46, 0, 0, 0));
         return header;
+    }
+
+    // Two overlapping lime check marks (same shape as CheckRing, without the ring)
+    static Group doubleCheck() {
+        return new Group(tick(0), tick(14));
+    }
+
+    private static Polyline tick(double dx) {
+        double k = 1.1;
+        Polyline tick = new Polyline((4 + dx) * k, 14 * k, (14 + dx) * k, 26 * k, (32 + dx) * k, 4 * k);
+        tick.setFill(Color.TRANSPARENT);
+        tick.setStroke(Theme.LIME);
+        tick.setStrokeWidth(5);
+        tick.setStrokeLineCap(StrokeLineCap.ROUND);
+        tick.setStrokeLineJoin(StrokeLineJoin.ROUND);
+        return tick;
     }
 
     // ----- Panels -----
@@ -137,7 +158,16 @@ final class FetchUi {
     }
 
     // "GCash" -> "Paid via GCash"; "Others" -> "Paid via card/e-wallet"
+    // "Points" (a redeemed reward) -> "From xPress Points"
     static String paidVia(String method) {
+        if ("Points".equals(method)) {
+            return "From xPress Points";
+        }
         return "Paid via " + ("Others".equals(method) ? "card/e-wallet" : method);
+    }
+
+    // 100 -> "100 pts"
+    static String pts(int points) {
+        return points + " pts";
     }
 }

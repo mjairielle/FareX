@@ -9,7 +9,7 @@ public class DemoAccount {
     private final String password;
     private final List<DemoCard> cards = new ArrayList<>();
     private final List<DemoNotification> notifications = new ArrayList<>();
-    private final double points = 0;
+    private int points = 0;   // xPress Points, 1 point = ₱1 of transit credit
 
     public DemoAccount(String contact, String password) {
         this.contact = contact;
@@ -40,8 +40,23 @@ public class DemoAccount {
         return cards.isEmpty() ? null : cards.get(0);
     }
 
+    // Home shows this as "250.00 xPress Points"
     public double getPoints() {
         return points;
+    }
+
+    // Redeem uses whole points: 250
+    public int getPointBalance() {
+        return points;
+    }
+
+    public void addPoints(int amount) {
+        points += amount;
+    }
+
+    // 250 - 100 -> 150
+    public void deductPoints(int amount) {
+        points -= amount;
     }
 
     // Newest first: a new message goes to the top of the list

@@ -1,11 +1,6 @@
 package com.farex.ui;
 
-import javafx.scene.Group;
 import javafx.scene.control.Label;
-import javafx.scene.paint.Color;
-import javafx.scene.shape.Polyline;
-import javafx.scene.shape.StrokeLineCap;
-import javafx.scene.shape.StrokeLineJoin;
 
 // Fetch Load / 04: ₱200.00 added, ₱676.50 -> ₱876.50
 public class FetchSuccessView extends SubScreen {
@@ -22,7 +17,7 @@ public class FetchSuccessView extends SubScreen {
 
         body.setSpacing(12);
         body.getChildren().addAll(
-                FetchUi.resultHeader(doubleCheck(),
+                FetchUi.resultHeader(FetchUi.doubleCheck(),
                         "Load fetched successfully",
                         "Your xPress card is updated and ready for your next trip."),
                 FetchUi.spacer(),
@@ -38,21 +33,5 @@ public class FetchSuccessView extends SubScreen {
                     FetchLoadState.clear();
                     Navigator.go("transactions");
                 }));
-    }
-
-    // Two overlapping lime check marks (same shape as CheckRing, without the ring)
-    private Group doubleCheck() {
-        return new Group(tick(0), tick(14));
-    }
-
-    private Polyline tick(double dx) {
-        double k = 1.1;
-        Polyline tick = new Polyline((4 + dx) * k, 14 * k, (14 + dx) * k, 26 * k, (32 + dx) * k, 4 * k);
-        tick.setFill(Color.TRANSPARENT);
-        tick.setStroke(Theme.LIME);
-        tick.setStrokeWidth(5);
-        tick.setStrokeLineCap(StrokeLineCap.ROUND);
-        tick.setStrokeLineJoin(StrokeLineJoin.ROUND);
-        return tick;
     }
 }

@@ -41,7 +41,16 @@ public class FarexApp extends Application {
             shell.showTab(2);
             return shell;
         });
-        Navigator.register("redeem", () -> new PlaceholderView("Redeem Points", "dashboard"));
+        Navigator.register("redeem", () -> {           // from Home: start with 100 pts selected
+            RedeemState.clear();
+            return new RedeemChooseView();
+        });
+        Navigator.register("redeemChoose", RedeemChooseView::new);   // back to the choice, keeps it
+        Navigator.register("redeemReview", RedeemReviewView::new);
+        Navigator.register("redeemProgress", RedeemProgressView::new);
+        Navigator.register("redeemSuccess", RedeemSuccessView::new);
+        Navigator.register("redeemFailed", RedeemFailedView::new);
+        Navigator.register("redeemNotEnough", RedeemNotEnoughView::new);
         Navigator.register("lostCard", () -> new PlaceholderView("Replace or Report Lost Card", "dashboard"));
         Navigator.register("notifications", NotificationsView::new);
 
