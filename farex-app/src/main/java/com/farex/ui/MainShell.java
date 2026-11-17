@@ -109,10 +109,21 @@ public class MainShell extends BorderPane {
 
     private Node buildNav() {
         HBox nav = new HBox();
+        styleNavBar(nav);
+
+        for (int i = 0; i < ICON_NAMES.length; i++) {
+            NavTab tab = new NavTab(i);
+            tabs.add(tab);
+            nav.getChildren().add(tab);
+        }
+        return nav;
+    }
+
+    // Figma: full-width bar stuck to the bottom edge, only the top corners rounded,
+    // light top edge, getting lighter toward the bottom. Also used by OperatorShell.
+    static void styleNavBar(HBox nav) {
         nav.setAlignment(Pos.CENTER);
         nav.setPadding(new Insets(10, 10, 14, 10));
-        // Figma: full-width bar stuck to the bottom edge, only the top corners rounded,
-        // light top edge, getting lighter toward the bottom
         CornerRadii topCorners = new CornerRadii(24, 24, 0, 0, false);
         LinearGradient barFill = new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
                 new Stop(0, Color.web("#3B3B3B")), new Stop(0.55, Color.web("#373737")),
@@ -121,13 +132,6 @@ public class MainShell extends BorderPane {
         nav.setBorder(new Border(new BorderStroke(Color.web("#5E5E5E"),
                 BorderStrokeStyle.SOLID, topCorners, new BorderWidths(1, 1, 0, 1))));
         BorderPane.setMargin(nav, new Insets(6, 0, 0, 0));
-
-        for (int i = 0; i < ICON_NAMES.length; i++) {
-            NavTab tab = new NavTab(i);
-            tabs.add(tab);
-            nav.getChildren().add(tab);
-        }
-        return nav;
     }
 
     private class NavTab extends StackPane {

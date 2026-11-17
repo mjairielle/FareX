@@ -70,7 +70,13 @@ public class FarexApp extends Application {
             OperatorState.enter();
             return new RegisterView();
         });
-        Navigator.register("operatorDashboard", () -> new PlaceholderView("Operator", "profile"));
+        Navigator.register("operatorDashboard", () -> new OperatorShell(0));
+        Navigator.register("operatorReady", () -> new OperatorShell(1));
+        Navigator.register("operatorHistory", () -> new OperatorShell(2));
+        Navigator.register("operatorShell", () -> new OperatorShell(OperatorState.getLastTab()));  // last tab shown
+        Navigator.register("operatorEndShift", OperatorEndShiftView::new);
+        Navigator.register("operatorSummary", OperatorSummaryView::new);
+        Navigator.register("operatorSync", () -> new PlaceholderView("Operator Mode", "operatorShell"));
         Navigator.register("accountInfo", AccountInfoView::new);
         Navigator.register("accountEdit", AccountEditView::new);
         Navigator.register("privacy", PrivacyView::new);
