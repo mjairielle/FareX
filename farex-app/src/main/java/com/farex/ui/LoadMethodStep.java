@@ -16,17 +16,21 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
-// Buy Load, step 2: choose how to pay
-public class PaymentMethodView extends SubScreen {
+// Buy Load, step 2 (title "Payment"): choose how to pay
+public class LoadMethodStep extends VBox {
+
+    private final Runnable onDone;
 
     private static final Border OUTLINE = new Border(new BorderStroke(
             Theme.LIME, BorderStrokeStyle.SOLID, new CornerRadii(6), new BorderWidths(1.5)));
     private static final Border NO_OUTLINE = new Border(new BorderStroke(
             Color.TRANSPARENT, BorderStrokeStyle.SOLID, new CornerRadii(6), new BorderWidths(1.5)));
 
-    public PaymentMethodView() {
-        super("Payment", "buyLoad");
-
+    // onDone runs when the step is done (BuyLoadScreen shows the following step)
+    public LoadMethodStep(Runnable onDone) {
+        super(16);
+        VBox.setVgrow(this, Priority.ALWAYS);
+        this.onDone = onDone;
         Label caption = new Label("Payment method(s)");
         caption.setTextFill(Theme.WHITE);
         caption.setFont(Theme.bold(13));
@@ -37,7 +41,7 @@ public class PaymentMethodView extends SubScreen {
                 methodRow("BPI", null, "icon_bpi", "#A42A25"),
                 methodRow("Others", "Debit/Credit Card/e-Wallet", "icon_others", "#FFFFFF"));
 
-        body.getChildren().addAll(caption, rows);
+        getChildren().addAll(caption, rows);
     }
 
     // One row: logo, name (and an optional line under it), chevron
@@ -81,7 +85,7 @@ public class PaymentMethodView extends SubScreen {
                 BuyLoadState.setAccountNumber(null);   // a new method needs a new number
             }
             BuyLoadState.setMethod(name);
-            Navigator.go("loadAccount");
+            onDone.run();
         });
         return row;
     }

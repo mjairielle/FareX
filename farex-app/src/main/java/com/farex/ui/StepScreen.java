@@ -10,14 +10,41 @@ import java.util.Deque;
 public abstract class StepScreen extends SubScreen {
 
     private final String exitRoute;
+    private final String defaultTitle;
+    private String title;
+    private boolean headerShown = true;
     private final Deque<Runnable> previous = new ArrayDeque<>();
     private Runnable current;
 
     protected StepScreen(String title, String exitRoute) {
         super(title, (Runnable) null);
         this.exitRoute = exitRoute;
+        this.defaultTitle = title;
+        this.title = title;
         // The header was built with no arrow; put one in that calls back()
-        getChildren().set(0, SubScreen.header(title, this::back));
+        rebuildHeader();
+    }
+
+    // ----- Header -----
+
+    // A step with its own Figma title, e.g. Buy Load's "Payment" step. Each new step starts
+    // with the screen's own title again.
+    protected void setTitle(String newTitle) {
+        title = newTitle;
+        rebuildHeader();
+    }
+
+    // A step drawn without the lime bar (Buy Load's OTP has its own back arrow)
+    protected void setHeaderShown(boolean shown) {
+        headerShown = shown;
+        rebuildHeader();
+    }
+
+    private void rebuildHeader() {
+        javafx.scene.layout.StackPane header = SubScreen.header(title, this::back);
+        header.setVisible(headerShown);
+        header.setManaged(headerShown);
+        getChildren().set(0, header);
     }
 
     // ----- Moving between steps -----
@@ -57,6 +84,11 @@ public abstract class StepScreen extends SubScreen {
 
     private void draw(Runnable step) {
         current = step;
+        if (!title.equals(defaultTitle) || !headerShown) {
+            title = defaultTitle;
+            headerShown = true;
+            rebuildHeader();
+        }
         body.getChildren().clear();
         body.setSpacing(12);
         step.run();

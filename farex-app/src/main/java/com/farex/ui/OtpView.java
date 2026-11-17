@@ -177,7 +177,7 @@ public class OtpView extends VBox {
     }
 
     // What happens after the right code. Registration goes on to Account Type
-    // (operators skip it: they already chose Operator Mode); LoadOtpView overrides this for Buy Load.
+    // (operators skip it: they already chose Operator Mode); LoadOtpStep overrides this for Buy Load.
     protected void onCodeAccepted() {
         if (OperatorState.isOperatorMode()) {
             SignUpState.setRole("Operator");

@@ -16,8 +16,10 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
-// Buy Load, step 3: the phone or account number for the chosen payment method
-public class AccountNumberView extends SubScreen {
+// Buy Load, step 3 (title "Payment"): the phone or account number for the chosen payment method
+public class LoadAccountStep extends VBox {
+
+    private final Runnable onDone;
 
     private static final Border IDLE_BORDER = new Border(new BorderStroke(
             Color.TRANSPARENT, BorderStrokeStyle.SOLID, new CornerRadii(8), new BorderWidths(1.5)));
@@ -28,9 +30,11 @@ public class AccountNumberView extends SubScreen {
     private final Label errorLabel = new Label();
     private final boolean isGcash = "GCash".equals(BuyLoadState.getMethod());
 
-    public AccountNumberView() {
-        super("Payment", "loadPayment");
-
+    // onDone runs when the step is done (BuyLoadScreen shows the following step)
+    public LoadAccountStep(Runnable onDone) {
+        super(16);
+        VBox.setVgrow(this, Priority.ALWAYS);
+        this.onDone = onDone;
         Label caption = new Label("Enter Phone/Account Number");
         caption.setTextFill(Theme.WHITE);
         caption.setFont(Font.font("System", 12));
@@ -72,7 +76,7 @@ public class AccountNumberView extends SubScreen {
         next.setOnAction(e -> goNext());
         field.setOnAction(e -> next.fire());
 
-        body.getChildren().addAll(caption, field, errorLabel, spacer, next);
+        getChildren().addAll(caption, field, errorLabel, spacer, next);
 
         if (BuyLoadState.getAccountNumber() != null) {   // coming back from the next step
             field.setText(BuyLoadState.getAccountNumber());
@@ -91,7 +95,7 @@ public class AccountNumberView extends SubScreen {
             return;
         }
         BuyLoadState.setAccountNumber(number);
-        Navigator.go("loadAmount");
+        onDone.run();
     }
 
     private void showError(String message) {

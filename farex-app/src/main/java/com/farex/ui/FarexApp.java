@@ -31,13 +31,7 @@ public class FarexApp extends Application {
             return new MainShell();
         });
         Navigator.register("addCard", AddCardView::new);
-        Navigator.register("buyLoad", BuyLoadView::new);
-        Navigator.register("loadPayment", PaymentMethodView::new);
-        Navigator.register("loadAccount", AccountNumberView::new);
-        Navigator.register("loadAmount", LoadAmountView::new);
-        Navigator.register("loadReview", ReviewView::new);
-        Navigator.register("loadOtp", LoadOtpView::new);
-        Navigator.register("loadReceipt", LoadReceiptView::new);
+        Navigator.register("buyLoad", BuyLoadScreen::new);            // from Home, the whole flow
         Navigator.register("allCards", AllCardsView::new);
         Navigator.register("fetchLoad", FetchLoadState::start);           // from Home, the whole flow
         Navigator.register("transactions", () -> {   // the main screen, opened on its Transactions tab

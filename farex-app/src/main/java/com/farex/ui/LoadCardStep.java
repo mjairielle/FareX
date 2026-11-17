@@ -16,16 +16,20 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
-// Buy Load, step 1: pick the card to load, by typing its number or tapping a tile
-public class BuyLoadView extends SubScreen {
+// Buy Load, step 1 (title "Buy Load"): pick the card to load, by typing its number or tapping a tile
+public class LoadCardStep extends VBox {
+
+    private final Runnable onDone;
 
     private final CardNumberField numberField = new CardNumberField();
     private final List<CardChoiceTile> tiles = new ArrayList<>();
     private final Label errorLabel = new Label();
 
-    public BuyLoadView() {
-        super("Buy Load", "dashboard");
-
+    // onDone runs when the step is done (BuyLoadScreen shows the following step)
+    public LoadCardStep(Runnable onDone) {
+        super(16);
+        VBox.setVgrow(this, Priority.ALWAYS);
+        this.onDone = onDone;
         Label caption = new Label("xPress Card Number (last 8 digits)");
         caption.setTextFill(Theme.WHITE);
         caption.setFont(Font.font("System", 12));
@@ -61,7 +65,7 @@ public class BuyLoadView extends SubScreen {
             }
         });
 
-        body.getChildren().addAll(caption, numberField, errorLabel, divider, gridTitle, cardGrid(), next);
+        getChildren().addAll(caption, numberField, errorLabel, divider, gridTitle, cardGrid(), next);
 
         // Coming back from the next step: keep the card that was picked
         DemoCard picked = BuyLoadState.getCard();
@@ -105,7 +109,7 @@ public class BuyLoadView extends SubScreen {
         for (CardChoiceTile tile : tiles) {
             if (tile.getCard().getCardNumber().equals(numberField.getFullNumber())) {
                 BuyLoadState.setCard(tile.getCard());
-                Navigator.go("loadPayment");
+                onDone.run();
                 return;
             }
         }

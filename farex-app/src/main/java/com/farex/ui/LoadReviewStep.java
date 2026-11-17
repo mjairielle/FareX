@@ -14,14 +14,18 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 
-// Buy Load, step 5: check everything before paying
-public class ReviewView extends SubScreen {
+// Buy Load, step 5 (no title): check everything before paying
+public class LoadReviewStep extends VBox {
+
+    private final Runnable onDone;
 
     private static final double SERVICE_FEE = 0.00;
 
-    public ReviewView() {
-        super("", "loadAmount");
-
+    // onDone runs when the step is done (BuyLoadScreen shows the following step)
+    public LoadReviewStep(Runnable onDone) {
+        super(16);
+        VBox.setVgrow(this, Priority.ALWAYS);
+        this.onDone = onDone;
         DemoCard card = BuyLoadState.getCard();
         double amount = BuyLoadState.getAmount();
         String method = BuyLoadState.getMethod() + " (" + BuyLoadState.getAccountNumber() + ")";
@@ -62,9 +66,9 @@ public class ReviewView extends SubScreen {
         Button confirm = new Button("Confirm");
         Theme.limeButton(confirm);
         confirm.setMaxWidth(Double.MAX_VALUE);
-        confirm.setOnAction(e -> Navigator.go("loadOtp"));
+        confirm.setOnAction(e -> onDone.run());
 
-        body.getChildren().addAll(heading, divider, panel, spacer, confirm);
+        getChildren().addAll(heading, divider, panel, spacer, confirm);
     }
 
     // "Amount ............ ₱200.00"

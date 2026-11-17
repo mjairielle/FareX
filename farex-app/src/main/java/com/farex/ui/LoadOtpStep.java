@@ -9,17 +9,21 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
-// Buy Load, step 6: the registration OTP screen, but the right code (123456)
-// saves a pending load and opens the receipt
-public class LoadOtpView extends OtpView {
+// Buy Load, step 6 (no lime header): the registration OTP screen, but the right code (123456)
+// saves a pending load, then onPaid shows the receipt
+public class LoadOtpStep extends OtpView {
 
-    public LoadOtpView() {
+    private final Runnable onPaid;
+
+    // onBack: its own back arrow (the Figma has no lime header here)
+    public LoadOtpStep(Runnable onPaid, Runnable onBack) {
         super("We sent a code to your", sentTo(BuyLoadState.getMethod()));
+        this.onPaid = onPaid;
 
         // Figma: content starts near the top, with a back arrow
         setAlignment(Pos.TOP_CENTER);
         setSpacing(22);
-        setPadding(new Insets(26, 28, 28, 28));
+        setPadding(new Insets(0, 8, 0, 8));   // the screen's body already pads the edges
 
         Label back = new Label("‹");
         back.setTextFill(Theme.WHITE);
@@ -27,7 +31,7 @@ public class LoadOtpView extends OtpView {
         back.setCursor(Cursor.HAND);
         back.setOnMouseClicked(e -> {
             stopTimer();
-            Navigator.go("loadReview");
+            onBack.run();
         });
         HBox backRow = new HBox(back);
         VBox.setMargin(backRow, new Insets(0, 0, 14, 0));
@@ -48,7 +52,7 @@ public class LoadOtpView extends OtpView {
         BuyLoadState.getCard().addPendingLoad(load);
         addPaidNotification();
         addTransaction();
-        Navigator.go("loadReceipt");
+        onPaid.run();
     }
 
     // ₱200 with GCash -> "You have paid ₱200.00 using GCash."

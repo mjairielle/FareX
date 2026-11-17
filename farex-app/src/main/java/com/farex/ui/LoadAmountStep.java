@@ -22,8 +22,10 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
-// Buy Load, step 4: how much to load
-public class LoadAmountView extends SubScreen {
+// Buy Load, step 4 (title "Buy Load"): how much to load
+public class LoadAmountStep extends VBox {
+
+    private final Runnable onDone;
 
     private static final double MIN = 5.00;
     private static final double MAX = 5000.00;
@@ -38,12 +40,14 @@ public class LoadAmountView extends SubScreen {
     private final List<Label> presetBoxes = new ArrayList<>();
     private final Label errorLabel = new Label();
 
-    public LoadAmountView() {
-        super("Buy Load", "loadAccount");
-
+    // onDone runs when the step is done (BuyLoadScreen shows the following step)
+    public LoadAmountStep(Runnable onDone) {
+        super(16);
+        VBox.setVgrow(this, Priority.ALWAYS);
+        this.onDone = onDone;
         DemoCard card = BuyLoadState.getCard();
         if (card != null) {
-            body.getChildren().add(new CardTile(card));
+            getChildren().add(new CardTile(card));
         }
 
         Label caption = new Label("Enter desired load amount");
@@ -82,7 +86,7 @@ public class LoadAmountView extends SubScreen {
             highlightPreset();
         });
 
-        body.getChildren().addAll(caption, fieldGroup, divider, presetGrid(), spacer, next);
+        getChildren().addAll(caption, fieldGroup, divider, presetGrid(), spacer, next);
 
         if (BuyLoadState.getAmount() > 0) {   // coming back from the next step
             amountField.setAmount(BuyLoadState.getAmount());
@@ -135,6 +139,6 @@ public class LoadAmountView extends SubScreen {
             return;
         }
         BuyLoadState.setAmount(amount);
-        Navigator.go("loadReview");
+        onDone.run();
     }
 }

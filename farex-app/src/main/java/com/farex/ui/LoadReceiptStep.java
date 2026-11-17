@@ -17,8 +17,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.text.Font;
 
-// Buy Load, last step: the receipt after a successful load
-public class LoadReceiptView extends SubScreen {
+// Buy Load, last step (title "Load Receipt"): the receipt after a successful load
+public class LoadReceiptStep extends VBox {
 
     // "Oct 26, 2026 • 4:05 PM"
     private static final DateTimeFormatter WHEN =
@@ -26,8 +26,9 @@ public class LoadReceiptView extends SubScreen {
     private static final double RING = 104;
     private static final double SERVICE_FEE = 0.00;
 
-    public LoadReceiptView() {
-        super("Load Receipt", "dashboard");
+    public LoadReceiptStep() {
+        super(16);
+        VBox.setVgrow(this, Priority.ALWAYS);
 
         DemoCard card = BuyLoadState.getCard();
         double amount = BuyLoadState.getAmount();
@@ -89,7 +90,7 @@ public class LoadReceiptView extends SubScreen {
             Navigator.go("dashboard");
         });
 
-        body.getChildren().addAll(receipt, spacer, done);
+        getChildren().addAll(receipt, spacer, done);
     }
 
     // "GCash" with the number in small text under it
