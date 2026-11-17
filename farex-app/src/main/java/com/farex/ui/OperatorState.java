@@ -1,6 +1,15 @@
 package com.farex.ui;
 
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Random;
+
+import javafx.animation.Animation;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
+import javafx.util.Duration;
 
 import com.farex.Api;
 import com.farex.operator.GpsSimulator;
@@ -36,6 +45,17 @@ public final class OperatorState {
     private static int passengers = 0;
     private static int trips = 0;
     private static int maxFareCount = 0;
+
+    // Who is on board right now: card or app ID -> stop index where they boarded (Part 26 fills it)
+    private static final Map<String, Integer> boarded = new LinkedHashMap<>();
+
+    // ----- GPS clock -----
+    // Ticks once a second during a shift. With Auto Drive on, Jay's GpsSimulator moves the jeep
+    // one stop every 6 ticks (6 s). The open Ready Mode screen listens so it can redraw.
+    private static final Timeline gpsClock = new Timeline(new KeyFrame(Duration.seconds(1), e -> onGpsTick()));
+    private static Runnable gpsListener = null;
+    private static double accuracyMeters = 3.0;
+    private static final Random random = new Random();
 
     static {
         // Same stops as Jay's OperatorScreen uses when the server is off
@@ -134,13 +154,18 @@ public final class OperatorState {
         passengers = 0;
         trips = 0;
         maxFareCount = 0;
+        boarded.clear();
         gps.setCurrentStopIdx(0);
+        gps.setAutoDriving(false);
+        gpsClock.setCycleCount(Animation.INDEFINITE);
+        gpsClock.play();
     }
 
     // The totals stay until the next START SHIFT, so the summary and dashboard can show them
     public static void endShift() {
         shift.end();
         gps.setAutoDriving(false);
+        gpsClock.stop();
     }
 
     // "1h 05m" or "12m"
@@ -173,6 +198,74 @@ public final class OperatorState {
 
     public static int getMaxFareCount() {
         return maxFareCount;
+    }
+
+    public static int onBoardCount() {
+        return boarded.size();
+    }
+
+    // ----- Moving along the route -----
+
+    // The Ready Mode screen registers itself here; null = nobody is listening
+    public static void setGpsListener(Runnable listener) {
+        gpsListener = listener;
+    }
+
+    // "Next Stop": Philcoa (0) -> Tandang Sora (1) ... Reaching Fairview Terminal (5) completes a trip
+    public static void nextStop() {
+        if (gps.hasNextStop()) {
+            gps.advanceStop();
+            if (isAtTerminal()) {
+                arrivedAtTerminal();
+            }
+        }
+    }
+
+    public static void previousStop() {
+        gps.rewindStop();
+    }
+
+    // At the terminal the jeep turns around: back to Philcoa for a new trip
+    public static void startNewTrip() {
+        gps.setCurrentStopIdx(0);
+        gps.setAutoDriving(false);
+    }
+
+    public static boolean isAtTerminal() {
+        return !gps.hasNextStop();
+    }
+
+    public static void toggleAutoDrive() {
+        if (isAtTerminal()) {
+            return;     // nowhere left to drive
+        }
+        gps.toggleAutoDriving();
+    }
+
+    // "Fix GPS": take a fresh reading, accuracy between ±1.5 m and ±4.0 m
+    public static void fixGps() {
+        accuracyMeters = 1.5 + random.nextInt(6) * 0.5;
+    }
+
+    // "±3.0m"
+    public static String accuracyText() {
+        return String.format(Locale.US, "±%.1fm", accuracyMeters);
+    }
+
+    private static void onGpsTick() {
+        boolean moved = gps.tick();
+        if (moved && isAtTerminal()) {
+            gps.setAutoDriving(false);
+            arrivedAtTerminal();
+        }
+        if (moved && gpsListener != null) {
+            gpsListener.run();
+        }
+    }
+
+    // One full run of the route is done
+    private static void arrivedAtTerminal() {
+        trips++;
     }
 
     // ----- Sync -----

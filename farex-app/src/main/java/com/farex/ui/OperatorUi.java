@@ -117,6 +117,17 @@ final class OperatorUi {
         return label;
     }
 
+    // ----- Buttons -----
+
+    // Black button with a thin gray border, e.g. "‹ Prev", "Fix GPS"
+    static Button outlineButton(String text, Runnable onClick) {
+        Button button = TripUi.darkButton(text, onClick);
+        button.setFont(Theme.bold(12));
+        button.setBorder(new Border(new BorderStroke(Color.web("#3A3A3A"), BorderStrokeStyle.SOLID,
+                new CornerRadii(8), new BorderWidths(1))));
+        return button;
+    }
+
     // ----- Big floating shift buttons -----
 
     // Lime "▶ START SHIFT"

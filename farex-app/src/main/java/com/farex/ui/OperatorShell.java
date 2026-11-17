@@ -46,7 +46,7 @@ public class OperatorShell extends BorderPane {
         if (index == 0) {
             content = new OperatorDashboardView(this::showTab);
         } else if (index == 1) {
-            content = placeholder("Ready Mode");
+            content = new ReadyModeView(this::showTab);
         } else {
             content = placeholder("History");
         }
