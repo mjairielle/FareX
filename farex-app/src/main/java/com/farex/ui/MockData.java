@@ -106,6 +106,18 @@ public final class MockData {
         }
     }
 
+    // Every card in every account with its owner, e.g. 0067676767 -> Aron's account.
+    // The Operator's tap terminal uses it to charge fares to real demo cards.
+    public static Map<DemoCard, DemoAccount> allCards() {
+        Map<DemoCard, DemoAccount> cards = new LinkedHashMap<>();
+        for (DemoAccount account : accounts.values()) {
+            for (DemoCard card : account.getCards()) {
+                cards.put(card, account);
+            }
+        }
+        return cards;
+    }
+
     public static void setPendingContact(String contact) {
         pendingContact = contact;
     }

@@ -24,13 +24,15 @@ import javafx.scene.shape.Polygon;
 import javafx.scene.text.Font;
 
 // Ready Mode Terminal (tab 1 of OperatorShell): boarding QR, onboard / collected counts,
-// the GPS card (current stop, Prev / Next Stop / Fix GPS, Auto Drive) and END SHIFT.
+// the GPS card (current stop, Prev / Next Stop / Fix GPS, Auto Drive), the simulated tap reader
+// and END SHIFT.
 // Before a shift starts it only shows a START SHIFT button.
 public class ReadyModeView extends StackPane {
 
     private final IntConsumer showTab;
     private final VBox gpsCard = OperatorUi.card();
     private final HBox countCards = new HBox(10);
+    private final VBox simulateCard = OperatorUi.card();
 
     public ReadyModeView(IntConsumer showTab) {
         this.showTab = showTab;
@@ -64,7 +66,7 @@ public class ReadyModeView extends StackPane {
     private void buildTerminal() {
         refreshLive();
 
-        VBox content = new VBox(10, statusRow(), titleRow(), qrCard(), countCards, gpsCard);
+        VBox content = new VBox(10, statusRow(), titleRow(), qrCard(), countCards, gpsCard, simulateCard);
         content.setPadding(new Insets(2, 18, 96, 18));   // bottom space so END SHIFT hides nothing
 
         ScrollPane scroll = new ScrollPane(content);
@@ -88,10 +90,11 @@ public class ReadyModeView extends StackPane {
         });
     }
 
-    // The parts that change: counts and the GPS card
+    // The parts that change: counts, the GPS card, the tap reader
     private void refreshLive() {
         countCards.getChildren().setAll(onboardCard(), collectedCard());
         gpsCard.getChildren().setAll(gpsContent());
+        simulateCard.getChildren().setAll(simulateContent());
     }
 
     // ----- "● SHIFT IN PROGRESS ............ ABC-123" -----
@@ -142,7 +145,7 @@ public class ReadyModeView extends StackPane {
 
     private VBox onboardCard() {
         return countCard("ONBOARD", "icon_op_people",
-                String.valueOf(OperatorState.onBoardCount()), "/ " + OperatorState.CAPACITY + " max");
+                String.valueOf(TapTerminal.onBoardCount()), "/ " + OperatorState.CAPACITY + " max");
     }
 
     private VBox collectedCard() {
@@ -228,11 +231,13 @@ public class ReadyModeView extends StackPane {
         boolean atEnd = OperatorState.isAtTerminal();
         Button next = FetchUi.limeButton(atEnd ? "New trip ↺" : "Next Stop ›", () -> {
             if (OperatorState.isAtTerminal()) {
+                TapTerminal.chargeMaxFares();     // still on board when leaving the terminal
                 OperatorState.startNewTrip();
             } else {
                 OperatorState.nextStop();
             }
             refreshLive();
+            showMaxFareIfAny();
         });
         next.setFont(Theme.bold(15));
         next.setPadding(new Insets(12, 8, 12, 8));
@@ -253,6 +258,62 @@ public class ReadyModeView extends StackPane {
         row.setAlignment(Pos.CENTER);
         VBox.setMargin(row, new Insets(4, 0, 2, 0));
         return row;
+    }
+
+    // ----- Simulated tap reader -----
+
+    // "SIMULATE CARD TAP (NFC) / QR    Preview states", the drop-down, the connection switch
+    private Node[] simulateContent() {
+        Label preview = FetchUi.smallBold("Preview states", Theme.LIME);
+        preview.setCursor(Cursor.HAND);
+        preview.setOnMouseClicked(e -> Navigator.showOverlay(new TapPreviewDialog()));
+
+        Label prompt = FetchUi.small("Choose a card or app user to tap", Theme.WHITE);
+        prompt.setFont(Font.font("System", 12));
+        Label chevron = FetchUi.smallBold("▾", Theme.WHITE);
+        chevron.setFont(Theme.bold(14));
+        HBox dropDown = spread(prompt, chevron);
+        dropDown.setPadding(new Insets(10, 12, 10, 12));
+        dropDown.setBackground(Theme.rounded(Color.web("#141414"), 8));
+        dropDown.setBorder(new javafx.scene.layout.Border(new javafx.scene.layout.BorderStroke(
+                Color.web("#3A3A3A"), javafx.scene.layout.BorderStrokeStyle.SOLID,
+                new javafx.scene.layout.CornerRadii(8), new javafx.scene.layout.BorderWidths(1))));
+        dropDown.setCursor(Cursor.HAND);
+        dropDown.setOnMouseClicked(e -> openPicker());
+
+        // Offline: cards still work (their balance is on the chip), app taps wait for sync
+        boolean online = OperatorState.isOnline();
+        Label connection = FetchUi.small("Jeep connection: " + (online ? "Online" : "Offline")
+                + " · tap to switch", online ? Theme.GRAY : OperatorUi.AMBER);
+        connection.setCursor(Cursor.HAND);
+        connection.setOnMouseClicked(e -> {
+            OperatorState.toggleOnline();
+            refreshLive();
+        });
+
+        return new Node[] {
+            OperatorUi.cardTop("SIMULATE CARD TAP (NFC) / QR", Theme.WHITE, preview),
+            dropDown,
+            connection,
+        };
+    }
+
+    private void openPicker() {
+        Navigator.showOverlay(new TapPickerDialog(this::tap));
+    }
+
+    // First tap = tap in, second = tap out; then the matching pop-up
+    private void tap(TapRider rider) {
+        TapResult result = TapTerminal.tap(rider);
+        refreshLive();
+        Navigator.showOverlay(new TapResultDialog(result, this::openPicker));
+    }
+
+    private void showMaxFareIfAny() {
+        TapResult maxFare = TapTerminal.takeMaxFareResult();
+        if (maxFare != null) {
+            Navigator.showOverlay(new TapResultDialog(maxFare, null));
+        }
     }
 
     // ----- Helpers -----

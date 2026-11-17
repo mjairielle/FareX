@@ -38,6 +38,11 @@ public class DemoCard {
         balance += amount;
     }
 
+    // A jeepney fare tapped by an operator: 676.50 - 13.00 -> 663.50
+    public void payFare(double amount) {
+        balance -= amount;
+    }
+
     public String getExpiry() {
         return expiry;
     }

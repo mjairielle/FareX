@@ -23,6 +23,8 @@ public class OperatorEndShiftView extends SubScreen {
 
         body.getChildren().addAll(heading, warning, syncPanel(pending), FetchUi.spacer(),
                 FetchUi.limeButton("End shift", () -> {
+                    TapTerminal.chargeMaxFares();     // anyone still on board pays the max fare
+                    TapTerminal.takeMaxFareResult();  // counted in the summary; no pop-up
                     OperatorState.endShift();
                     Navigator.go("operatorSummary");
                 }),

@@ -1,9 +1,9 @@
 package com.farex.ui;
 
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Random;
 
 import javafx.animation.Animation;
@@ -46,8 +46,11 @@ public final class OperatorState {
     private static int trips = 0;
     private static int maxFareCount = 0;
 
-    // Who is on board right now: card or app ID -> stop index where they boarded (Part 26 fills it)
-    private static final Map<String, Integer> boarded = new LinkedHashMap<>();
+    // Fares collected this shift, newest first
+    private static final List<ShiftRecord> records = new ArrayList<>();
+
+    // The jeep's connection. Offline: app taps are saved but not confirmed (cards still work)
+    private static boolean online = true;
 
     // ----- GPS clock -----
     // Ticks once a second during a shift. With Auto Drive on, Jay's GpsSimulator moves the jeep
@@ -154,7 +157,7 @@ public final class OperatorState {
         passengers = 0;
         trips = 0;
         maxFareCount = 0;
-        boarded.clear();
+        records.clear();
         gps.setCurrentStopIdx(0);
         gps.setAutoDriving(false);
         gpsClock.setCycleCount(Animation.INDEFINITE);
@@ -200,8 +203,42 @@ public final class OperatorState {
         return maxFareCount;
     }
 
-    public static int onBoardCount() {
-        return boarded.size();
+    // ----- Recording taps (called by TapTerminal) -----
+
+    // A passenger tapped in: "TOTAL BOARDED" goes up by 1
+    public static void addBoarded() {
+        passengers++;
+        shift.recordBoarded();
+    }
+
+    // A fare was charged. Confirmed money goes into the Card or App total right away;
+    // an offline app fare waits for sync. Every record also waits in the offline queue.
+    public static void addFare(ShiftRecord record) {
+        records.add(0, record);
+        if (!record.isPaymentPending()) {
+            if (record.isApp()) {
+                appCents += record.getCents();
+            } else {
+                cardCents += record.getCents();
+            }
+        }
+        if (record.isMaxFare()) {
+            maxFareCount++;
+        }
+        offlineQueue.enqueue(new String[] {record.getTime().toString(), record.isApp() ? "App" : "Card",
+                record.getWho(), record.getFrom(), record.getTo(), String.valueOf(record.getCents())});
+    }
+
+    public static List<ShiftRecord> getRecords() {
+        return Collections.unmodifiableList(records);
+    }
+
+    public static boolean isOnline() {
+        return online;
+    }
+
+    public static void toggleOnline() {
+        online = !online;
     }
 
     // ----- Moving along the route -----
