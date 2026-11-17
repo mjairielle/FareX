@@ -9,7 +9,7 @@ import javafx.scene.layout.VBox;
 public class AccountDeletedView extends SubScreen {
 
     public AccountDeletedView() {
-        super("Account Deleted", null);   // no back arrow: there is no account to go back to
+        super("Account Deleted", (String) null);   // no back arrow: there is no account to go back to
 
         VBox message = FetchUi.resultHeader(FetchUi.doubleCheck(), "Account deleted!",
                 "Your FareX account has been permanently deleted. You’re now signed out.");

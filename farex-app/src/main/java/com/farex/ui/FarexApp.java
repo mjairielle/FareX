@@ -39,12 +39,7 @@ public class FarexApp extends Application {
         Navigator.register("loadOtp", LoadOtpView::new);
         Navigator.register("loadReceipt", LoadReceiptView::new);
         Navigator.register("allCards", AllCardsView::new);
-        Navigator.register("fetchLoad", FetchLoadState::start);           // from Home
-        Navigator.register("fetchCurrent", FetchLoadState::currentScreen); // after picking a card
-        Navigator.register("fetchHold", FetchHoldView::new);
-        Navigator.register("fetchProgress", FetchProgressView::new);
-        Navigator.register("fetchSuccess", FetchSuccessView::new);
-        Navigator.register("fetchFailed", FetchFailedView::new);
+        Navigator.register("fetchLoad", FetchLoadState::start);           // from Home, the whole flow
         Navigator.register("transactions", () -> {   // the main screen, opened on its Transactions tab
             MainShell shell = new MainShell();
             shell.showTab(2);

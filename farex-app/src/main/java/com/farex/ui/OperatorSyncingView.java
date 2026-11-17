@@ -27,7 +27,7 @@ public class OperatorSyncingView extends SubScreen {
     private int uploaded = 0;
 
     public OperatorSyncingView() {
-        super("Operator Mode", null);
+        super("Operator Mode", (String) null);
 
         // ----- Progress bar: gray track, lime fill -----
         fill.setBackground(Theme.rounded(Theme.LIME, 4));

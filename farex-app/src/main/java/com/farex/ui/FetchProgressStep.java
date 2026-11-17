@@ -4,18 +4,21 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
-// Fetch Load / 03: a fake card read. The steps light up one by one, then the load is added.
-// Demo: pressing Esc acts like the card being pulled away -> "Couldn't fetch your load"
-public class FetchProgressView extends ProgressScreen {
+// Fetch Load / 03 "Fetching your load…": a fake card read. The steps light up one by one,
+// then the load is added. Demo: Esc acts like the card being pulled away.
+public class FetchProgressStep extends ProgressStep {
 
     private final PendingLoad load;
+    private final Runnable onSuccess;
+    private final Runnable onFailure;
 
-    public FetchProgressView() {
-        super("Fetch Load", "fetchHold");
+    public FetchProgressStep(Runnable onSuccess, Runnable onFailure) {
+        this.onSuccess = onSuccess;
+        this.onFailure = onFailure;
 
         DemoCard card = FetchLoadState.getCard();
         load = card.getPendingLoad();
-        FetchLoadState.setLastLoad(load);   // the failure screen shows this one
+        FetchLoadState.setLastLoad(load);   // the failure pop-up shows this one
 
         VBox heading = new VBox(8,
                 FetchUi.title("Fetching your load…"),
@@ -33,8 +36,7 @@ public class FetchProgressView extends ProgressScreen {
                 "Confirm updated balance"));
         panel.setPadding(new Insets(16, 14, 18, 14));
 
-        body.setSpacing(12);
-        body.getChildren().addAll(
+        getChildren().addAll(
                 heading,
                 panel,
                 FetchUi.note("If the connection drops, check the fetch status before trying again. "
@@ -48,11 +50,11 @@ public class FetchProgressView extends ProgressScreen {
     @Override
     protected void onFinished() {
         FetchLoadState.collect(load);
-        Navigator.go("fetchSuccess");
+        onSuccess.run();
     }
 
     @Override
     protected void onFailed() {
-        Navigator.go("fetchFailed");
+        onFailure.run();
     }
 }

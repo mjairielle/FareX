@@ -4,7 +4,7 @@ package com.farex.ui;
 public class LostTransferFailedView extends SubScreen {
 
     public LostTransferFailedView() {
-        super("Replace or Report Lost Card", null);   // no back arrow, like the Figma
+        super("Replace or Report Lost Card", (String) null);   // no back arrow, like the Figma
 
         DemoCard card = LostCardState.getCard();
 

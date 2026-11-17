@@ -4,7 +4,7 @@ package com.farex.ui;
 public class LostReplacedView extends SubScreen {
 
     public LostReplacedView() {
-        super("Replace or Report Lost Card", null);   // no back arrow: the transfer is done
+        super("Replace or Report Lost Card", (String) null);   // no back arrow: the transfer is done
 
         DemoCard oldCard = LostCardState.getCard();
         DemoCard newCard = LostCardState.getReplacement();
