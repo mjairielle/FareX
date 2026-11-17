@@ -5,11 +5,12 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
-// Profile / 01: name, email and phone (read-only), with an Edit button
+// Profile / 01: name, email and phone (read-only), with an Edit button.
+// Also opened from the Operator Dashboard ("Edit"); then back goes to the dashboard.
 public class AccountInfoView extends SubScreen {
 
     public AccountInfoView() {
-        super("Account Information", "profile");
+        super("Account Information", OperatorState.homeRoute());
 
         DemoAccount account = MockData.getCurrentAccount();
 

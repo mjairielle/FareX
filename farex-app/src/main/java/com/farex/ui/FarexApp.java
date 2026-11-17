@@ -15,12 +15,21 @@ public class FarexApp extends Application {
 
         Navigator.register("splash", SplashView::new);
         Navigator.register("welcome", WelcomeView::new);
-        Navigator.register("login", LoginView::new);
-        Navigator.register("register", RegisterView::new);
+        Navigator.register("login", () -> {           // passenger login (leaves Operator Mode)
+            OperatorState.leave();
+            return new LoginView();
+        });
+        Navigator.register("register", () -> {
+            OperatorState.leave();
+            return new RegisterView();
+        });
         Navigator.register("otp", OtpView::new);
         Navigator.register("accountType", AccountTypeView::new);
         Navigator.register("congrats", CongratsView::new);
-        Navigator.register("dashboard", MainShell::new);
+        Navigator.register("dashboard", () -> {       // passenger main screen (leaves Operator Mode)
+            OperatorState.leave();
+            return new MainShell();
+        });
         Navigator.register("addCard", AddCardView::new);
         Navigator.register("buyLoad", BuyLoadView::new);
         Navigator.register("loadPayment", PaymentMethodView::new);
@@ -47,11 +56,21 @@ public class FarexApp extends Application {
             return shell;
         });
         Navigator.register("profile", () -> {         // the main screen, opened on its Profile tab
+            OperatorState.leave();
             MainShell shell = new MainShell();
             shell.showTab(3);
             return shell;
         });
-        Navigator.register("operatorMode", () -> new PlaceholderView("Operator’s Mode", "profile"));
+        Navigator.register("operatorMode", OperatorIntroView::new);    // "Switch to Operator Mode?"
+        Navigator.register("operatorLogin", () -> {
+            OperatorState.enter();
+            return new LoginView();
+        });
+        Navigator.register("operatorRegister", () -> {
+            OperatorState.enter();
+            return new RegisterView();
+        });
+        Navigator.register("operatorDashboard", () -> new PlaceholderView("Operator", "profile"));
         Navigator.register("accountInfo", AccountInfoView::new);
         Navigator.register("accountEdit", AccountEditView::new);
         Navigator.register("privacy", PrivacyView::new);

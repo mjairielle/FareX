@@ -43,7 +43,7 @@ public class RegisterView extends AuthenticationScreen {
 
         Label question = Theme.bodyText("Already have an account?", Theme.GRAY);
         Label logIn = Theme.linkLabel("Log in");
-        logIn.setOnMouseClicked(e -> Navigator.go("login"));
+        logIn.setOnMouseClicked(e -> Navigator.go(OperatorState.loginRoute()));
         HBox bottom = new HBox(6, question, logIn);
         bottom.setAlignment(Pos.CENTER);
 

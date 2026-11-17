@@ -27,7 +27,7 @@ public class LoginView extends AuthenticationScreen {
             } else if (!MockData.checkLogin(contact, password)) {
                 showError("Wrong email/contact number or password.");
             } else {
-                Navigator.go("dashboard");
+                Navigator.go(OperatorState.afterLoginRoute());
             }
         });
 
@@ -37,10 +37,20 @@ public class LoginView extends AuthenticationScreen {
 
         Label question = Theme.bodyText("Didn't have an account yet?", Theme.GRAY);
         Label signUp = Theme.linkLabel("Sign up");
-        signUp.setOnMouseClicked(e -> Navigator.go("register"));
+        signUp.setOnMouseClicked(e -> Navigator.go(OperatorState.registerRoute()));
         HBox bottom = new HBox(6, question, signUp);
         bottom.setAlignment(Pos.CENTER);
 
         addToCard(contactBox, passwordBox, errorLabel, loginButton, bottom);
+
+        // Operator login only: "Back to Passenger Mode"
+        if (OperatorState.isOperatorMode()) {
+            Label backTo = Theme.bodyText("Back to", Theme.GRAY);
+            Label passenger = Theme.linkLabel("Passenger Mode");
+            passenger.setOnMouseClicked(e -> Navigator.go("profile"));
+            HBox backRow = new HBox(6, backTo, passenger);
+            backRow.setAlignment(Pos.CENTER);
+            addToCard(backRow);
+        }
     }
 }

@@ -40,7 +40,7 @@ public class CongratsView extends VBox {
         Button startButton = new Button("Let's start the new journey!");
         Theme.limeButton(startButton);
         startButton.setMaxWidth(Double.MAX_VALUE);
-        startButton.setOnAction(e -> Navigator.go("login"));
+        startButton.setOnAction(e -> Navigator.go(OperatorState.loginRoute()));
 
         getChildren().addAll(topSpacer, buildArt(), title, message, bottomSpacer, startButton);
     }
