@@ -14,10 +14,16 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
 
-// Pretend phone permission prompt. Allow -> 15 Trip in progress, Don't allow -> 14 Tracking unavailable
+// Pretend phone permission prompt. Allow -> onAllowed (trip in progress),
+// Don't allow -> onDenied ("Tracking unavailable")
 public class LocationPermissionDialog extends StackPane {
 
-    public LocationPermissionDialog() {
+    private final Runnable onAllowed;
+    private final Runnable onDenied;
+
+    public LocationPermissionDialog(Runnable onAllowed, Runnable onDenied) {
+        this.onAllowed = onAllowed;
+        this.onDenied = onDenied;
         setBackground(Theme.solid(Color.rgb(0, 0, 0, 0.45)));
 
         Label title = new Label("Allow FareX to use your location?");
@@ -59,15 +65,19 @@ public class LocationPermissionDialog extends StackPane {
     private void answer(boolean allowed) {
         TripState.setLocationAllowed(allowed);
         Navigator.closeOverlay();
-        Navigator.go(allowed ? "tripTracking" : "tripNoLocation");
+        if (allowed) {
+            onAllowed.run();
+        } else {
+            onDenied.run();
+        }
     }
 
     // "Allow location" / "Enable location": ask, unless already allowed earlier
-    public static void ask() {
+    public static void ask(Runnable onAllowed, Runnable onDenied) {
         if (TripState.isLocationAllowed()) {
-            Navigator.go("tripTracking");
+            onAllowed.run();
         } else {
-            Navigator.showOverlay(new LocationPermissionDialog());
+            Navigator.showOverlay(new LocationPermissionDialog(onAllowed, onDenied));
         }
     }
 }

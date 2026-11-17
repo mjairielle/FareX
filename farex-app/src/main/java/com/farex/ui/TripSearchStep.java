@@ -4,12 +4,18 @@ import javafx.geometry.Insets;
 import javafx.scene.input.KeyCode;
 import javafx.scene.layout.VBox;
 
-// Trip Planner / 06: fake route search.
-// Success -> 07 Choose your route. Demo keys: N -> 11 No route found, Esc -> 12 Connection lost
-public class TripSearchView extends ProgressScreen {
+// Trip Planner / 06 "Searching routes…": fake route search.
+// Demo keys: N = no route found, Esc = connection lost.
+public class TripSearchStep extends ProgressStep {
 
-    public TripSearchView() {
-        super("Trip Planner", "tripPlanner");
+    private final Runnable onFound;
+    private final Runnable onConnectionLost;
+    private final Runnable onNoRoute;
+
+    public TripSearchStep(Runnable onFound, Runnable onConnectionLost, Runnable onNoRoute, Runnable onCancel) {
+        this.onFound = onFound;
+        this.onConnectionLost = onConnectionLost;
+        this.onNoRoute = onNoRoute;
 
         VBox heading = new VBox(8,
                 FetchUi.title("Searching routes…"),
@@ -29,8 +35,7 @@ public class TripSearchView extends ProgressScreen {
                 FetchUi.subtitle("Fare and travel time are estimates, not live transport information."));
         tip.setSpacing(4);
 
-        body.setSpacing(12);
-        body.getChildren().addAll(
+        getChildren().addAll(
                 heading,
                 panel,
                 tip,
@@ -38,7 +43,7 @@ public class TripSearchView extends ProgressScreen {
                 FetchUi.spacer(),
                 FetchUi.link("Cancel search", () -> {
                     stopSteps();
-                    Navigator.go("tripPlanner");
+                    onCancel.run();
                 }));
 
         start(1);
@@ -47,19 +52,19 @@ public class TripSearchView extends ProgressScreen {
     @Override
     protected void onFinished() {
         TripState.setRouteIndex(0);   // the first route starts highlighted
-        Navigator.go("tripRoutes");
+        onFound.run();
     }
 
     @Override
     protected void onFailed() {
-        Navigator.go("tripOffline");
+        onConnectionLost.run();
     }
 
     @Override
     protected void onOtherKey(KeyCode code) {
         if (code == KeyCode.N) {
             stopSteps();
-            Navigator.go("tripNoRoute");
+            onNoRoute.run();
         }
     }
 }

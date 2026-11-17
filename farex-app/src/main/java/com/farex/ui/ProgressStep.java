@@ -16,8 +16,8 @@ import javafx.util.Duration;
 // Base for the "…ing" steps (Fetching your load, Redeeming your points, ...) shown inside a
 // StepScreen. It lights up numbered steps one by one, then calls onFinished().
 // Demo: Esc acts like the connection dropping and calls onFailed().
-// Each child decides what finishing and failing mean.
-// (Same idea as ProgressScreen, but a part of a screen instead of a whole page.)
+// Each child decides what finishing and failing mean: FetchProgressStep, RedeemProgressStep,
+// LostFreezeStep, LostTransferStep, TripSearchStep.
 public abstract class ProgressStep extends VBox {
 
     private static final Color WAITING = Color.web("#BDBDBD");

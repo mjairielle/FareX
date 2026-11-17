@@ -70,26 +70,11 @@ public class FarexApp extends Application {
         Navigator.register("changePassword", ChangePasswordView::new);
         Navigator.register("terms", TermsView::new);
         Navigator.register("deleteAccount", DeleteAccountView::new);
-        Navigator.register("tripMap", TripMapView::new);
-        Navigator.register("tripNew", () -> {          // from Routes: start a fresh plan
+        Navigator.register("tripMap", TripMapView::new);              // Explore map (from Routes)
+        Navigator.register("tripNew", () -> {          // from Routes: the whole planner, fresh
             TripState.clear();
-            return new TripPlannerView();
+            return new TripScreen();
         });
-        Navigator.register("tripPlanner", TripPlannerView::new);       // keeps the chosen stops
-        Navigator.register("tripStart", () -> new TripPickView(true));
-        Navigator.register("tripDestination", () -> new TripPickView(false));
-        Navigator.register("tripSearching", TripSearchView::new);
-        Navigator.register("tripRoutes", TripRoutesView::new);
-        Navigator.register("tripRoute", TripRouteView::new);          // details of the chosen route
-        Navigator.register("tripNoRoute", TripNoRouteView::new);
-        Navigator.register("tripOffline", TripOfflineView::new);
-        Navigator.register("tripLocation", TripLocationView::new);
-        Navigator.register("tripNoLocation", TripNoLocationView::new);
-        Navigator.register("tripTracking", TripTrackingView::new);
-        Navigator.register("tripOffRoute", TripOffRouteView::new);
-        Navigator.register("tripEndConfirm", TripEndView::new);
-        Navigator.register("tripArrived", TripArrivedView::new);
-        Navigator.register("tripRouteMap", TripRouteMapView::new);
         Navigator.register("redeem", () -> {           // from Home: the whole flow, 100 pts selected
             RedeemState.clear();
             return new RedeemScreen();

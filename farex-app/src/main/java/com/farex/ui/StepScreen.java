@@ -13,6 +13,7 @@ public abstract class StepScreen extends SubScreen {
     private final String defaultTitle;
     private String title;
     private boolean headerShown = true;
+    private final javafx.geometry.Insets defaultPadding;
     private final Deque<Runnable> previous = new ArrayDeque<>();
     private Runnable current;
 
@@ -20,6 +21,7 @@ public abstract class StepScreen extends SubScreen {
         super(title, (Runnable) null);
         this.exitRoute = exitRoute;
         this.defaultTitle = title;
+        this.defaultPadding = body.getPadding();
         this.title = title;
         // The header was built with no arrow; put one in that calls back()
         rebuildHeader();
@@ -57,6 +59,12 @@ public abstract class StepScreen extends SubScreen {
         draw(step);
     }
 
+    // Swap the current step for another without remembering it, e.g. "Searching…" -> the results,
+    // so back from the results skips the search
+    protected void replaceStep(Runnable step) {
+        draw(step);
+    }
+
     // Start over at this step and forget the history, e.g. after picking another card
     protected void restartAt(Runnable step) {
         previous.clear();
@@ -91,6 +99,7 @@ public abstract class StepScreen extends SubScreen {
         }
         body.getChildren().clear();
         body.setSpacing(12);
+        body.setPadding(defaultPadding);   // a full-screen step (a map) can remove it
         step.run();
     }
 }
