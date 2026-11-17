@@ -5,6 +5,38 @@ import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
 import javafx.stage.Stage;
 
+import com.farex.ui.auth.AccountTypeView;
+import com.farex.ui.auth.CongratsView;
+import com.farex.ui.auth.LoginView;
+import com.farex.ui.auth.RegisterView;
+import com.farex.ui.auth.SplashView;
+import com.farex.ui.auth.WelcomeView;
+import com.farex.ui.common.Navigator;
+import com.farex.ui.common.OtpView;
+import com.farex.ui.common.Theme;
+import com.farex.ui.fetch.FetchLoadState;
+import com.farex.ui.home.AddCardView;
+import com.farex.ui.home.AllCardsView;
+import com.farex.ui.home.MainShell;
+import com.farex.ui.home.NotificationsView;
+import com.farex.ui.load.BuyLoadScreen;
+import com.farex.ui.lostcard.LostCardState;
+import com.farex.ui.operator.OperatorIntroView;
+import com.farex.ui.operator.OperatorShell;
+import com.farex.ui.operator.OperatorState;
+import com.farex.ui.operator.OperatorSummaryView;
+import com.farex.ui.operator.OperatorSyncScreen;
+import com.farex.ui.profile.AccountScreen;
+import com.farex.ui.profile.ChangePasswordView;
+import com.farex.ui.profile.DeleteAccountView;
+import com.farex.ui.profile.PrivacyView;
+import com.farex.ui.profile.TermsView;
+import com.farex.ui.redeem.RedeemScreen;
+import com.farex.ui.redeem.RedeemState;
+import com.farex.ui.trip.TripMapView;
+import com.farex.ui.trip.TripScreen;
+import com.farex.ui.trip.TripState;
+
 public class FarexApp extends Application {
 
     @Override
