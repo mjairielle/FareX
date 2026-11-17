@@ -27,8 +27,8 @@ public abstract class SubScreen extends VBox {
         getChildren().addAll(header(title, onBack), body);
     }
 
-    // The lime bar with the title and back arrow. Static so screens that can't extend
-    // SubScreen (LostCardOtpView extends OtpView) can use the same header.
+    // The lime bar with the title and back arrow. Static so StepScreen can rebuild it
+    // with its own back action, and other screens can borrow the same header.
     public static StackPane header(String title, String backTarget) {
         return header(title, (backTarget == null) ? null : () -> Navigator.go(backTarget));
     }

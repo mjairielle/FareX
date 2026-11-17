@@ -1,7 +1,6 @@
 package com.farex.ui;
 
 import javafx.scene.Parent;
-import javafx.scene.control.Label;
 
 // Remembers the Lost Card choices (card, reason, new card number), freezes the old card
 // and moves its balance to the replacement. A frozen card skips to "Get a replacement card".
@@ -109,34 +108,12 @@ public final class LostCardState {
         }
     }
 
-    // ----- Screens -----
+    // ----- Opening and leaving -----
 
     // From Home: start again with the first card
     public static Parent start() {
         clear();
-        return currentScreen();
-    }
-
-    public static Parent currentScreen() {
-        DemoCard current = getCard();
-        if (current != null && current.isFrozen()) {
-            return new LostReplaceView();
-        }
-        return new LostChooseView();
-    }
-
-    // "Change": the card list shows Active / Frozen on the right
-    public static void pickCard() {
-        Navigator.showOverlay(new CardPickerDialog(getCard(), picked -> {
-            setCard(picked);
-            Navigator.go("lostCurrent");
-        }, LostCardState::statusLabel));
-    }
-
-    private static Label statusLabel(DemoCard c) {
-        return c.isFrozen()
-                ? FetchUi.smallBold("Frozen", Theme.ERROR)
-                : FetchUi.smallBold("Active", Theme.LIME);
+        return new LostCardScreen();
     }
 
     public static void goHome() {

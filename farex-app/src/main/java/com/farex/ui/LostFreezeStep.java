@@ -3,11 +3,16 @@ package com.farex.ui;
 import javafx.geometry.Insets;
 import javafx.scene.layout.VBox;
 
-// Lost Card / 04: fake server freeze. Esc (demo) -> "Report not confirmed"
-public class LostProgressView extends ProgressScreen {
+// Lost Card / 04 "Protecting your card…": fake server freeze.
+// Demo: Esc acts like the connection dropping.
+public class LostFreezeStep extends ProgressStep {
 
-    public LostProgressView() {
-        super("Replace or Report Lost Card", "lostConfirm");
+    private final Runnable onSuccess;
+    private final Runnable onFailure;
+
+    public LostFreezeStep(Runnable onSuccess, Runnable onFailure) {
+        this.onSuccess = onSuccess;
+        this.onFailure = onFailure;
 
         DemoCard card = LostCardState.getCard();
 
@@ -23,8 +28,7 @@ public class LostProgressView extends ProgressScreen {
                 "Secure remaining ledger balance"));
         panel.setPadding(new Insets(16, 14, 18, 14));
 
-        body.setSpacing(12);
-        body.getChildren().addAll(
+        getChildren().addAll(
                 heading,
                 panel,
                 FetchUi.note("Your card is not confirmed frozen yet. If the connection fails, "
@@ -38,11 +42,11 @@ public class LostProgressView extends ProgressScreen {
     @Override
     protected void onFinished() {
         LostCardState.freeze();
-        Navigator.go("lostReported");
+        onSuccess.run();
     }
 
     @Override
     protected void onFailed() {
-        Navigator.go("lostFailed");
+        onFailure.run();
     }
 }

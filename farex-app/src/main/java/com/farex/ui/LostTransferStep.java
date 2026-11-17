@@ -4,11 +4,16 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
-// Lost Card / 10: fake balance transfer. Esc (demo) -> "Transfer not confirmed"
-public class LostTransferView extends ProgressScreen {
+// Lost Card / 10 "Transferring your balance…": fake balance transfer.
+// Demo: Esc acts like the connection dropping.
+public class LostTransferStep extends ProgressStep {
 
-    public LostTransferView() {
-        super("Replace or Report Lost Card", "lostTransferReview");
+    private final Runnable onSuccess;
+    private final Runnable onFailure;
+
+    public LostTransferStep(Runnable onSuccess, Runnable onFailure) {
+        this.onSuccess = onSuccess;
+        this.onFailure = onFailure;
 
         DemoCard card = LostCardState.getCard();
         String newNumber = LostCardState.getNewCardNumber();
@@ -33,8 +38,7 @@ public class LostTransferView extends ProgressScreen {
                 "Moving ledger balance…"));
         panel.setPadding(new Insets(16, 14, 18, 14));
 
-        body.setSpacing(12);
-        body.getChildren().addAll(
+        getChildren().addAll(
                 heading,
                 panel,
                 FetchUi.note("Do not request a second transfer. If interrupted, check the transfer status "
@@ -48,11 +52,11 @@ public class LostTransferView extends ProgressScreen {
     @Override
     protected void onFinished() {
         LostCardState.transfer();
-        Navigator.go("lostReplaced");
+        onSuccess.run();
     }
 
     @Override
     protected void onFailed() {
-        Navigator.go("lostTransferFailed");
+        onFailure.run();
     }
 }

@@ -91,7 +91,7 @@ public class OtpView extends VBox {
         Platform.runLater(() -> boxes[0].requestFocus());
     }
 
-    // ----- Pieces a child screen can place in its own layout (see LostCardOtpView) -----
+    // ----- Pieces a child screen can place in its own layout (see LostOtpStep) -----
 
     protected HBox getCodeBoxes() {
         return boxRow;

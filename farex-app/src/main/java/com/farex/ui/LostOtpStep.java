@@ -8,12 +8,15 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 
-// Lost Card / 03: the same OTP logic as registration (code 123456, 5-minute timer),
-// placed in the Lost Card layout. The right code starts the freeze.
-public class LostCardOtpView extends OtpView {
+// Lost Card / 03 "Verify it’s you": the same OTP logic as registration (code 123456, 5-minute timer),
+// placed in the Lost Card layout as a step of LostCardScreen. The right code runs onAccepted.
+public class LostOtpStep extends OtpView {
 
-    public LostCardOtpView() {
+    private final Runnable onAccepted;
+
+    public LostOtpStep(Runnable onAccepted) {
         super("", "");
+        this.onAccepted = onAccepted;
 
         DemoAccount account = MockData.getCurrentAccount();
         String email = (account == null) ? MockData.DEMO_CONTACT : account.getContact();
@@ -40,7 +43,13 @@ public class LostCardOtpView extends OtpView {
                 FetchUi.subtitle("Enter the 6-digit code sent to your registered email to authorize the card freeze."),
                 emailLabel);
 
-        VBox body = new VBox(12,
+        // Replace OtpView's centered layout with this step's layout (the screen gives the lime header)
+        setAlignment(Pos.TOP_LEFT);
+        setSpacing(12);
+        setPadding(Insets.EMPTY);
+        setBackground(null);
+        VBox.setVgrow(this, Priority.ALWAYS);
+        getChildren().setAll(
                 heading,
                 codePanel,
                 getErrorLabel(),
@@ -48,18 +57,10 @@ public class LostCardOtpView extends OtpView {
                 FetchUi.spacer(),
                 FetchUi.limeButton("Verify and submit report", this::verifyNow),
                 FetchUi.link("Resend code", this::resendCode));
-        body.setPadding(new Insets(28, 20, 24, 20));
-        VBox.setVgrow(body, Priority.ALWAYS);
-
-        // Replace OtpView's centered layout with the lime header + body
-        setAlignment(Pos.TOP_LEFT);
-        setSpacing(0);
-        setPadding(Insets.EMPTY);
-        getChildren().setAll(SubScreen.header("Replace or Report Lost Card", "lostConfirm"), body);
     }
 
     @Override
     protected void onCodeAccepted() {
-        Navigator.go("lostProgress");
+        onAccepted.run();
     }
 }
