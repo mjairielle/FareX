@@ -106,16 +106,10 @@ public class FarexApp extends Application {
         Navigator.register("tripEndConfirm", TripEndView::new);
         Navigator.register("tripArrived", TripArrivedView::new);
         Navigator.register("tripRouteMap", TripRouteMapView::new);
-        Navigator.register("redeem", () -> {           // from Home: start with 100 pts selected
+        Navigator.register("redeem", () -> {           // from Home: the whole flow, 100 pts selected
             RedeemState.clear();
-            return new RedeemChooseView();
+            return new RedeemScreen();
         });
-        Navigator.register("redeemChoose", RedeemChooseView::new);   // back to the choice, keeps it
-        Navigator.register("redeemReview", RedeemReviewView::new);
-        Navigator.register("redeemProgress", RedeemProgressView::new);
-        Navigator.register("redeemSuccess", RedeemSuccessView::new);
-        Navigator.register("redeemFailed", RedeemFailedView::new);
-        Navigator.register("redeemNotEnough", RedeemNotEnoughView::new);
         Navigator.register("lostCard", LostCardState::start);             // from Home
         Navigator.register("lostCurrent", LostCardState::currentScreen);   // after picking a card
         Navigator.register("lostChoose", LostChooseView::new);

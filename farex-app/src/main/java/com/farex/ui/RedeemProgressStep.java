@@ -4,11 +4,16 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
-// Redeem Points / 03: fake server check. Esc (demo) -> "Couldn't redeem points"
-public class RedeemProgressView extends ProgressScreen {
+// Redeem Points / 03 "Redeeming your points…": a fake server check.
+// Demo: Esc acts like the connection dropping.
+public class RedeemProgressStep extends ProgressStep {
 
-    public RedeemProgressView() {
-        super("Redeem Points", "redeemReview");
+    private final Runnable onSuccess;
+    private final Runnable onFailure;
+
+    public RedeemProgressStep(Runnable onSuccess, Runnable onFailure) {
+        this.onSuccess = onSuccess;
+        this.onFailure = onFailure;
 
         int points = RedeemState.getSelected();
 
@@ -29,8 +34,7 @@ public class RedeemProgressView extends ProgressScreen {
                 "Make credit ready to fetch"));
         panel.setPadding(new Insets(16, 14, 18, 14));
 
-        body.setSpacing(12);
-        body.getChildren().addAll(
+        getChildren().addAll(
                 heading,
                 panel,
                 FetchUi.note("If the app disconnects, check your redemption status before retrying."),
@@ -43,11 +47,11 @@ public class RedeemProgressView extends ProgressScreen {
     @Override
     protected void onFinished() {
         RedeemState.redeem();
-        Navigator.go("redeemSuccess");
+        onSuccess.run();
     }
 
     @Override
     protected void onFailed() {
-        Navigator.go("redeemFailed");
+        onFailure.run();
     }
 }
