@@ -75,7 +75,7 @@ public class ReadyModeView extends StackPane {
         scroll.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
 
-        Button end = OperatorUi.endShiftButton(() -> Navigator.go("operatorEndShift"));
+        Button end = OperatorUi.endShiftButton(EndShiftDialog::show);
         StackPane.setAlignment(end, Pos.BOTTOM_CENTER);
         StackPane.setMargin(end, new Insets(0, 18, 10, 18));
 

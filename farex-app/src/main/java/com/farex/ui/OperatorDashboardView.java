@@ -54,7 +54,7 @@ public class OperatorDashboardView extends StackPane {
         scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
 
         Button shiftButton = onShift
-                ? OperatorUi.endShiftButton(() -> Navigator.go("operatorEndShift"))
+                ? OperatorUi.endShiftButton(EndShiftDialog::show)
                 : OperatorUi.startShiftButton(() -> {
                     OperatorState.startShift();
                     showTab.accept(1);
@@ -219,7 +219,13 @@ public class OperatorDashboardView extends StackPane {
     // During a shift it asks to end the shift first (the summary has "Back to Passenger mode")
     private Node exitLink(boolean onShift) {
         Label link = FetchUi.link("Log out / Exit Operator Mode",
-                () -> Navigator.go(onShift ? "operatorEndShift" : "profile"));
+                () -> {
+                    if (onShift) {
+                        EndShiftDialog.show();
+                    } else {
+                        Navigator.go("profile");
+                    }
+                });
         link.setFont(Theme.bold(12));
         link.setTextFill(Color.web("#BDBDBD"));
         return link;

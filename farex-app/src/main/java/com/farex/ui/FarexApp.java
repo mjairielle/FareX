@@ -69,13 +69,8 @@ public class FarexApp extends Application {
         Navigator.register("operatorReady", () -> new OperatorShell(1));
         Navigator.register("operatorHistory", () -> new OperatorShell(2));
         Navigator.register("operatorShell", () -> new OperatorShell(OperatorState.getLastTab()));  // last tab shown
-        Navigator.register("operatorEndShift", OperatorEndShiftView::new);
         Navigator.register("operatorSummary", OperatorSummaryView::new);
-        Navigator.register("operatorSync", () -> new OperatorSyncView(OperatorSyncView.Mode.READY));
-        Navigator.register("operatorSyncing", OperatorSyncingView::new);
-        Navigator.register("operatorSyncDone", () -> new OperatorSyncView(OperatorSyncView.Mode.SUCCESS));
-        Navigator.register("operatorSyncOffline", () -> new OperatorSyncView(OperatorSyncView.Mode.OFFLINE));
-        Navigator.register("operatorSyncFailed", () -> new OperatorSyncView(OperatorSyncView.Mode.FAILED));
+        Navigator.register("operatorSync", OperatorSyncScreen::new);   // ready + uploading, results as pop-ups
         Navigator.register("accountInfo", AccountScreen::new);         // view + edit in one screen
         Navigator.register("privacy", PrivacyView::new);
         Navigator.register("changePassword", ChangePasswordView::new);
