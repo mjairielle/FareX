@@ -2,6 +2,8 @@ package com.farex.ui;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
@@ -49,6 +51,9 @@ public final class OperatorState {
     // Fares collected this shift, newest first
     private static final List<ShiftRecord> records = new ArrayList<>();
 
+    // Fares from the 16 Nov shift (sample data), shown under this shift in History
+    private static final List<ShiftRecord> earlierRecords = new ArrayList<>();
+
     // The jeep's connection. Offline: app taps are saved but not confirmed (cards still work)
     private static boolean online = true;
 
@@ -70,12 +75,10 @@ public final class OperatorState {
                 new Api.StopCoord(4, "Dona Carmen", 14.6930, 121.0800),
                 new Api.StopCoord(5, "Fairview Terminal", 14.7300, 121.0560)));
 
-        // 12 records from the last shift that were never synced
-        String[] stops = {"Philcoa", "Tandang Sora", "Ever Gotesco", "Batasan"};
-        for (int i = 0; i < 12; i++) {
-            String cents = String.valueOf(1300 + (i % 4) * 200);
-            offlineQueue.enqueue(new String[] {"16 Nov", i % 3 == 0 ? "App" : "Card",
-                    stops[i % 4], "Fairview Terminal", cents});
+        // 12 records from the 16 Nov shift that were never synced
+        for (ShiftRecord record : SampleShift.records(gps.getRouteStops())) {
+            earlierRecords.add(record);
+            offlineQueue.enqueue(toRow(record));
         }
     }
 
@@ -225,12 +228,21 @@ public final class OperatorState {
         if (record.isMaxFare()) {
             maxFareCount++;
         }
-        offlineQueue.enqueue(new String[] {record.getTime().toString(), record.isApp() ? "App" : "Card",
-                record.getWho(), record.getFrom(), record.getTo(), String.valueOf(record.getCents())});
+        offlineQueue.enqueue(toRow(record));
+    }
+
+    // One line for the offline queue: "18:24,Card,**** 6767,Philcoa,Ever Gotesco,1566"
+    private static String[] toRow(ShiftRecord record) {
+        return new String[] {record.getTime().toString(), record.isApp() ? "App" : "Card",
+                record.getWho(), record.getFrom(), record.getTo(), String.valueOf(record.getCents())};
     }
 
     public static List<ShiftRecord> getRecords() {
         return Collections.unmodifiableList(records);
+    }
+
+    public static List<ShiftRecord> getEarlierRecords() {
+        return Collections.unmodifiableList(earlierRecords);
     }
 
     public static boolean isOnline() {
@@ -313,5 +325,21 @@ public final class OperatorState {
 
     public static String getLastSynced() {
         return lastSynced;
+    }
+
+    // A sync went through: every record is on the server, offline app payments are confirmed
+    // (this shift's ones now count in the App total), and the offline queue is emptied
+    public static void syncAll() {
+        for (ShiftRecord record : records) {
+            if (!record.isSynced() && record.isPaymentPending()) {
+                appCents += record.getCents();
+            }
+            record.markSynced();
+        }
+        for (ShiftRecord record : earlierRecords) {
+            record.markSynced();
+        }
+        offlineQueue.clear();
+        lastSynced = "Today, " + LocalTime.now().format(DateTimeFormatter.ofPattern("h:mm a", Locale.US));
     }
 }

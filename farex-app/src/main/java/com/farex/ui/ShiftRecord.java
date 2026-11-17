@@ -21,7 +21,13 @@ public class ShiftRecord {
 
     public ShiftRecord(boolean app, String who, String from, String to, double km, long cents,
                        long baseCents, Double balanceAfter, boolean maxFare, boolean paymentPending) {
-        this.time = LocalTime.now();
+        this(LocalTime.now(), app, who, from, to, km, cents, baseCents, balanceAfter, maxFare, paymentPending);
+    }
+
+    // With a set time, for the sample records of an earlier shift
+    public ShiftRecord(LocalTime time, boolean app, String who, String from, String to, double km, long cents,
+                       long baseCents, Double balanceAfter, boolean maxFare, boolean paymentPending) {
+        this.time = time;
         this.app = app;
         this.who = who;
         this.from = from;

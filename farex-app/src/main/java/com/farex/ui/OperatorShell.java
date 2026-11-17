@@ -12,7 +12,6 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 
 // Operator Mode main screen: "FareX  OPERATOR" header, the tab content, 3 bottom tabs.
 // Tabs: 0 Dashboard, 1 Ready Mode, 2 History
@@ -48,7 +47,7 @@ public class OperatorShell extends BorderPane {
         } else if (index == 1) {
             content = new ReadyModeView(this::showTab);
         } else {
-            content = placeholder("History");
+            content = new OperatorHistoryView();
         }
         contentArea.getChildren().setAll(content);
     }
@@ -88,14 +87,5 @@ public class OperatorShell extends BorderPane {
             nav.getChildren().add(tab);
         }
         return nav;
-    }
-
-    // ----- Tabs built in later parts -----
-
-    private Node placeholder(String title) {
-        Label message = Theme.bodyText(title + " isn't built yet.", Theme.GRAY);
-        VBox box = new VBox(message);
-        box.setAlignment(Pos.CENTER);
-        return box;
     }
 }
