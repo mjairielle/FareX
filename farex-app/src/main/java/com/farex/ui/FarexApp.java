@@ -76,16 +76,11 @@ public class FarexApp extends Application {
         Navigator.register("operatorSyncDone", () -> new OperatorSyncView(OperatorSyncView.Mode.SUCCESS));
         Navigator.register("operatorSyncOffline", () -> new OperatorSyncView(OperatorSyncView.Mode.OFFLINE));
         Navigator.register("operatorSyncFailed", () -> new OperatorSyncView(OperatorSyncView.Mode.FAILED));
-        Navigator.register("accountInfo", AccountInfoView::new);
-        Navigator.register("accountEdit", AccountEditView::new);
+        Navigator.register("accountInfo", AccountScreen::new);         // view + edit in one screen
         Navigator.register("privacy", PrivacyView::new);
         Navigator.register("changePassword", ChangePasswordView::new);
-        Navigator.register("passwordChanged", PasswordChangedView::new);
-        Navigator.register("locationAccess", LocationAccessView::new);
-        Navigator.register("notificationPrefs", NotificationPrefsView::new);
         Navigator.register("terms", TermsView::new);
         Navigator.register("deleteAccount", DeleteAccountView::new);
-        Navigator.register("accountDeleted", AccountDeletedView::new);
         Navigator.register("tripMap", TripMapView::new);
         Navigator.register("tripNew", () -> {          // from Routes: start a fresh plan
             TripState.clear();

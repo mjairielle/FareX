@@ -125,7 +125,7 @@ public class FetchLoadScreen extends StepScreen {
         added.setTextFill(Theme.LIME);
         added.setFont(Theme.bold(20));
 
-        new ResultDialog(FetchUi.doubleCheck(), "Load fetched successfully",
+        new PopupDialog(FetchUi.doubleCheck(), "Load fetched successfully",
                 "Your xPress card is updated and ready for your next trip.")
                 .add(FetchUi.panel(
                         added,
@@ -147,7 +147,7 @@ public class FetchLoadScreen extends StepScreen {
         DemoCard card = FetchLoadState.getCard();
         PendingLoad load = FetchLoadState.getLastLoad();
 
-        new ResultDialog(WarningDialog.warningIcon(), "Couldn’t fetch your load",
+        new PopupDialog(WarningDialog.warningIcon(), "Couldn’t fetch your load",
                 "The card connection was interrupted before the balance update was confirmed.")
                 .add(FetchUi.panel(
                         FetchUi.row("Top-up", FetchUi.peso(load.getAmount())),

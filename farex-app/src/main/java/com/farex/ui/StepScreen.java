@@ -36,6 +36,11 @@ public abstract class StepScreen extends SubScreen {
         draw(step);
     }
 
+    // Draw the current step again, e.g. after a new profile photo was picked
+    protected void redraw() {
+        draw(current);
+    }
+
     // Back arrow: previous step, or leave the flow from the first step
     protected void back() {
         if (previous.isEmpty()) {

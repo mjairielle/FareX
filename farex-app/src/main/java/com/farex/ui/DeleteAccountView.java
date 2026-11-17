@@ -7,7 +7,7 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
-// Profile / 10: last check before deleting the account
+// Profile / 10: last check before deleting the account. Deleting shows "Account deleted!" (11) as a pop-up
 public class DeleteAccountView extends SubScreen {
 
     public DeleteAccountView() {
@@ -54,8 +54,18 @@ public class DeleteAccountView extends SubScreen {
                 FetchUi.limeButton("Delete my account", () -> {
                     MockData.deleteCurrentAccount();
                     LogoutDialog.clearFlows();
-                    Navigator.go("accountDeleted");
+                    showDeleted();
                 }),
                 FetchUi.link("Keep my account", () -> Navigator.go("privacy")));
+    }
+
+    // Profile / 11 (pop-up): account removed and signed out (its login no longer works until restart).
+    // The only way out is the button: there is no account to go back to.
+    private void showDeleted() {
+        new PopupDialog(FetchUi.doubleCheck(), "Account deleted!",
+                "Your FareX account has been permanently deleted. You’re now signed out.")
+                .add(FetchUi.small("Thank you for travelling with FareX.", Theme.WHITE))
+                .button("Log in / Sign up", () -> Navigator.go("welcome"))
+                .show();
     }
 }

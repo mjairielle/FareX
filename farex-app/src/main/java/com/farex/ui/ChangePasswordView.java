@@ -4,7 +4,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
-// Profile / 05: current password, new password, confirm
+// Profile / 05: current password, new password, confirm. Saving shows "Password updated!" (06) as a pop-up
 public class ChangePasswordView extends SubScreen {
 
     private final LabeledField current = LabeledField.password("Current password");
@@ -58,8 +58,17 @@ public class ChangePasswordView extends SubScreen {
             showError("The new passwords don’t match.");
         } else {
             account.setPassword(newPassword);
-            Navigator.go("passwordChanged");
+            showChanged();
         }
+    }
+
+    // Profile / 06 (pop-up): password saved
+    private void showChanged() {
+        new PopupDialog(FetchUi.doubleCheck(), "Password updated!",
+                "Your password has been changed successfully. Use your new password the next time you log in.")
+                .add(FetchUi.small("You’re still signed in to FareX.", Theme.WHITE))
+                .button("Back to Privacy & Security", () -> Navigator.go("privacy"))
+                .show();
     }
 
     private void showError(String message) {

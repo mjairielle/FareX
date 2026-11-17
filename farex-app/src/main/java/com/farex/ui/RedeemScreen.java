@@ -154,7 +154,7 @@ public class RedeemScreen extends StepScreen {
         DemoCard card = RedeemState.getCard();
         int points = RedeemState.getSelected();
 
-        new ResultDialog(FetchUi.doubleCheck(), "Points redeemed!",
+        new PopupDialog(FetchUi.doubleCheck(), "Points redeemed!",
                 "Your transit credit is ready to fetch. Your physical card has not been updated yet.")
                 .add(FetchUi.panel(
                         FetchUi.row("Points redeemed", FetchUi.pts(points)),
@@ -173,7 +173,7 @@ public class RedeemScreen extends StepScreen {
 
     // Redeem Points / 05: the redemption did not go through; no points were taken
     private void showFailure() {
-        new ResultDialog(WarningDialog.warningIcon(), "Couldn’t redeem points",
+        new PopupDialog(WarningDialog.warningIcon(), "Couldn’t redeem points",
                 "The service could not complete this redemption. Your points have not been deducted.")
                 .add(FetchUi.panel(
                         FetchUi.row("Requested", FetchUi.pts(RedeemState.getSelected())),
@@ -192,7 +192,7 @@ public class RedeemScreen extends StepScreen {
         int requested = RedeemState.getSelected();
         int available = RedeemState.getAvailable();
 
-        new ResultDialog(WarningDialog.warningIcon(), "Not enough points",
+        new PopupDialog(WarningDialog.warningIcon(), "Not enough points",
                 "You need more earned points for the amount you selected.")
                 .add(FetchUi.panel(
                         FetchUi.row("Requested", FetchUi.pts(requested)),

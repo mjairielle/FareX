@@ -27,10 +27,13 @@ import javafx.stage.Window;
 public class ChangePhotoSheet extends StackPane {
 
     private final Window window;
+    private final Runnable onDone;
     private final Label message = FetchUi.small("", Theme.ERROR);
 
-    public ChangePhotoSheet(Window window) {
+    // onDone runs after the sheet closes, e.g. the edit screen redraws with the new photo
+    public ChangePhotoSheet(Window window, Runnable onDone) {
         this.window = window;
+        this.onDone = onDone;
         setBackground(Theme.solid(Color.rgb(0, 0, 0, 0.55)));
 
         Region handle = new Region();
@@ -110,9 +113,9 @@ public class ChangePhotoSheet extends StackPane {
         back();
     }
 
-    // Rebuild the edit screen so the new photo shows (typed text is kept as a draft)
+    // Close the sheet; the edit screen redraws so the new photo shows (typed text is kept as a draft)
     private void back() {
         Navigator.closeOverlay();
-        Navigator.go("accountEdit");
+        onDone.run();
     }
 }
