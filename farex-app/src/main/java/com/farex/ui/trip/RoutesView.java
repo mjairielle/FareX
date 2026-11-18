@@ -15,7 +15,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
 import com.farex.ui.common.Icons;
-import com.farex.ui.common.MapView;
+import com.farex.ui.common.LeafletMap;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.Theme;
 
@@ -30,7 +30,7 @@ public class RoutesView extends StackPane {
         overlay.setPadding(new Insets(0, 18, 14, 18));
         overlay.setPickOnBounds(false);
 
-        getChildren().addAll(new MapView(), overlay);
+        getChildren().addAll(new LeafletMap().withFarexRoutes(), overlay);
     }
 
     private Node viewMapButton() {

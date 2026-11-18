@@ -17,7 +17,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 
 import com.farex.ui.common.CommonUi;
-import com.farex.ui.common.MapView;
+import com.farex.ui.common.LeafletMap;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.StepScreen;
 import com.farex.ui.common.Theme;
@@ -156,7 +156,7 @@ public class TripScreen extends StepScreen {
         overlay.setPickOnBounds(false);
 
         // The map fills the whole area under the header
-        StackPane area = new StackPane(new MapView(), overlay);
+        StackPane area = new StackPane(new LeafletMap(), overlay);
         VBox.setVgrow(area, Priority.ALWAYS);
         body.setPadding(Insets.EMPTY);
         body.getChildren().add(area);

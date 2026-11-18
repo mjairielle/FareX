@@ -154,8 +154,12 @@ public final class Api {
 
     // ---------- trip planner ----------
 
-    /** One suggested trip. legs look like "R1: Philcoa > Tandang Sora (1.9 km)". */
-    public record PlanCard(String label, String km, int transfers, long fareCents, int minutes, List<String> legs) {}
+    /** One ride of a trip: board `from`, ride `route`, get off at `to`. */
+    public record PlanRide(String route, String from, String to) {}
+
+    /** One suggested trip. legs look like "R1: Philcoa > Tandang Sora (1.9 km)"; rides are the same, for the map. */
+    public record PlanCard(String label, String km, int transfers, long fareCents, int minutes, List<String> legs,
+                           List<PlanRide> rides) {}
 
     public static List<String> places() { return lines(call("GET", "/places", null)); }
 
@@ -164,12 +168,21 @@ public final class Api {
         for (String l : lines(call("GET", "/plan?" + form("from", from, "to", to), null))) {
             String[] f = l.split("\\|", -1);
             List<String> legs = new ArrayList<>();
+            List<PlanRide> rides = new ArrayList<>();
             for (String leg : f[5].split(";")) {
                 String[] x = leg.split("~");
                 legs.add(x[0] + ": " + x[1] + " > " + x[2] + " (" + x[3] + " km)");
+                rides.add(new PlanRide(x[0], x[1], x[2]));
             }
-            out.add(new PlanCard(f[0], f[1], Integer.parseInt(f[2]), Long.parseLong(f[3]), Integer.parseInt(f[4]), legs));
+            out.add(new PlanCard(f[0], f[1], Integer.parseInt(f[2]), Long.parseLong(f[3]), Integer.parseInt(f[4]), legs, rides));
         }
+        return out;
+    }
+
+    /** Every route's stops by route id, for the map. */
+    public static Map<String, List<RouteStop>> routeStops() {
+        Map<String, List<RouteStop>> out = new LinkedHashMap<>();
+        for (RouteDetail r : routes()) out.put(r.id(), r.stops());
         return out;
     }
 

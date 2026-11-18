@@ -18,7 +18,7 @@ import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.TextAlignment;
 
 import com.farex.ui.common.CommonUi;
-import com.farex.ui.common.MapView;
+import com.farex.ui.common.LeafletMap;
 import com.farex.ui.common.Theme;
 
 // Small pieces only the Trip Planner screens use (the rest comes from CommonUi)
@@ -109,7 +109,7 @@ public final class TripUi {
         StackPane.setAlignment(tag, Pos.BOTTOM_CENTER);
         StackPane.setMargin(tag, new Insets(0, 12, 12, 12));
 
-        StackPane card = new StackPane(new MapView(320, height, 12), tag);
+        StackPane card = new StackPane(new LeafletMap(320, height, 12), tag);
         card.setMaxSize(320, height);
         return card;
     }
