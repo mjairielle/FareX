@@ -2,6 +2,7 @@ package com.farex.ui.common;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -15,6 +16,7 @@ import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 
 import com.farex.Api;
+import farex.shared.data.RouteShapes;
 import farex.shared.data.RouteStop;
 
 // A real map: OpenStreetMap streets drawn by Leaflet (resources/com/farex/ui/map/leaflet.html)
@@ -36,6 +38,7 @@ public class LeafletMap extends StackPane {
 
     // What to draw; kept so it can be drawn once the page is ready
     private Map<String, List<RouteStop>> routes = new LinkedHashMap<>();
+    private Map<String, Map<Integer, List<RouteShapes.Point>>> shapes = new LinkedHashMap<>();   // road paths
     private String focusRoute;
     private List<TripLeg> trip = new ArrayList<>();
 
@@ -80,13 +83,14 @@ public class LeafletMap extends StackPane {
 
     // ----- What to show -----
 
-    // Fetches the FareX routes from the server in the background and draws them.
-    // If the server cannot be reached the map just shows the streets.
+    // Fetches the FareX routes and their road paths from the server in the background and draws
+    // them. If the server cannot be reached the map just shows the streets.
     public LeafletMap withFarexRoutes() {
         Thread t = new Thread(() -> {
             try {
                 Map<String, List<RouteStop>> fetched = Api.routeStops();
-                Platform.runLater(() -> showRoutes(fetched));
+                Map<String, Map<Integer, List<RouteShapes.Point>>> roads = Api.routeShapes();
+                Platform.runLater(() -> showRoutes(fetched, roads));
             } catch (RuntimeException offline) {
                 // no server: streets only
             }
@@ -96,9 +100,17 @@ public class LeafletMap extends StackPane {
         return this;
     }
 
-    // Every route as a coloured line with its stops
+    // Every route as a coloured line with its stops, straight from stop to stop
     public void showRoutes(Map<String, List<RouteStop>> allRoutes) {
+        showRoutes(allRoutes, Map.of());
+    }
+
+    // Every route as a coloured line along the roads (Api.routeShapes()); a segment without a
+    // road path is drawn straight
+    public void showRoutes(Map<String, List<RouteStop>> allRoutes,
+                           Map<String, Map<Integer, List<RouteShapes.Point>>> roadPaths) {
         routes = new LinkedHashMap<>(allRoutes);
+        shapes = new LinkedHashMap<>(roadPaths);
         redraw();
     }
 
@@ -184,15 +196,75 @@ public class LeafletMap extends StackPane {
         for (Map.Entry<String, List<RouteStop>> r : routes.entrySet()) {
             if (!first) b.append(',');
             first = false;
-            b.append("{\"id\":").append(str(r.getKey())).append(",\"stops\":").append(stops(r.getValue())).append('}');
+            List<RouteStop> line = r.getValue();
+            b.append("{\"id\":").append(str(r.getKey())).append(",\"stops\":").append(stops(line))
+             .append(",\"path\":").append(points(roadPath(r.getKey(), line, 0, line.size() - 1))).append('}');
         }
         b.append("],\"focus\":").append(focusRoute == null ? "null" : str(focusRoute)).append(",\"trip\":[");
         for (int i = 0; i < trip.size(); i++) {
             if (i > 0) b.append(',');
             TripLeg leg = trip.get(i);
-            b.append("{\"route\":").append(str(leg.route())).append(",\"stops\":").append(stops(leg.stops())).append('}');
+            b.append("{\"route\":").append(str(leg.route())).append(",\"stops\":").append(stops(leg.stops()))
+             .append(",\"path\":").append(points(legPath(leg))).append('}');
         }
         return b.append("]}").toString();
+    }
+
+    // The road path of one ride, from its first stop to its last, either direction
+    private List<RouteShapes.Point> legPath(TripLeg leg) {
+        List<RouteStop> line = routes.get(leg.route());
+        List<RouteStop> s = leg.stops();
+        if (line == null || s.size() < 2) return asPoints(s);
+        int a = indexOf(line, s.get(0).name());
+        int b = indexOf(line, s.get(s.size() - 1).name());
+        if (a < 0 || b < 0) return asPoints(s);
+        return roadPath(leg.route(), line, a, b);
+    }
+
+    // Stop a to stop b of a route along its road segments (segment i = stop i to i+1). Riding
+    // backwards uses the same roads reversed - close enough for a map, though a one-way street
+    // would really send the jeep another way. A segment with no road path is a straight line.
+    private List<RouteShapes.Point> roadPath(String routeId, List<RouteStop> line, int a, int b) {
+        Map<Integer, List<RouteShapes.Point>> segs = shapes.getOrDefault(routeId, Map.of());
+        List<RouteShapes.Point> out = new ArrayList<>();
+        int step = a <= b ? 1 : -1;
+        for (int i = a; i != b; i += step) {
+            int seg = Math.min(i, i + step);
+            List<RouteShapes.Point> road = segs.getOrDefault(seg, List.of());
+            if (road.isEmpty()) {
+                road = List.of(point(line.get(i)), point(line.get(i + step)));
+            } else if (step < 0) {
+                road = new ArrayList<>(road);
+                Collections.reverse(road);
+            }
+            out.addAll(road);
+        }
+        return out;
+    }
+
+    private static int indexOf(List<RouteStop> line, String name) {
+        for (int i = 0; i < line.size(); i++) if (line.get(i).name().equals(name)) return i;
+        return -1;
+    }
+
+    private static RouteShapes.Point point(RouteStop s) {
+        return new RouteShapes.Point(s.lat(), s.lng());
+    }
+
+    private static List<RouteShapes.Point> asPoints(List<RouteStop> s) {
+        List<RouteShapes.Point> out = new ArrayList<>();
+        for (RouteStop x : s) out.add(point(x));
+        return out;
+    }
+
+    // [[lat,lng],...]
+    private static String points(List<RouteShapes.Point> list) {
+        StringBuilder b = new StringBuilder("[");
+        for (int i = 0; i < list.size(); i++) {
+            if (i > 0) b.append(',');
+            b.append(String.format(Locale.ROOT, "[%.6f,%.6f]", list.get(i).lat(), list.get(i).lng()));
+        }
+        return b.append(']').toString();
     }
 
     private static String stops(List<RouteStop> list) {

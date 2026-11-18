@@ -41,8 +41,11 @@
     var COLORS = ['#3B82F6', '#F97316', '#A855F7', '#14B8A6', '#EF4444', '#EAB308', '#EC4899', '#22C55E'];
 
     function latlngs(stops) { return stops.map(function (s) { return [s.lat, s.lng]; }); }
+    // The line follows the roads when LeafletMap sent a path, else goes stop to stop
+    function line(x) { return x.path && x.path.length > 1 ? x.path : latlngs(x.stops); }
 
-    // data = { routes: [{id, stops:[{name,lat,lng}]}], focus: "R1" or null, trip: [{route, stops:[...]}] }
+    // data = { routes: [{id, stops:[{name,lat,lng}], path:[[lat,lng],...]}], focus: "R1" or null,
+    //          trip: [{route, stops:[...], path:[...]}] }
     window.farexDraw = function (data) {
       layer.clearLayers();
       var hasTrip = data.trip && data.trip.length > 0;
@@ -52,7 +55,7 @@
         var focused = !hasTrip && data.focus === r.id;
         var dim = hasTrip || (data.focus && !focused);
         var color = COLORS[i % COLORS.length];
-        var pts = latlngs(r.stops);
+        var pts = line(r);
         L.polyline(pts, { color: focused ? LIME : color, weight: focused ? 6 : 4, opacity: dim ? 0.35 : 0.9 })
           .bindTooltip('Route ' + r.id, { sticky: true }).addTo(layer);
         r.stops.forEach(function (s) {
@@ -65,7 +68,7 @@
 
       if (hasTrip) {
         data.trip.forEach(function (leg, i) {
-          var pts = latlngs(leg.stops);
+          var pts = line(leg);
           L.polyline(pts, { color: LIME, weight: 7, opacity: 0.95 })
             .bindTooltip('Ride ' + leg.route, { sticky: true }).addTo(layer);
           var board = leg.stops[0];

@@ -49,7 +49,7 @@ public class RoutesScreen extends Screen {
         }
         map.setMaxWidth(Double.MAX_VALUE);
         map.setMinWidth(0);
-        map.showRoutes(all);
+        map.showRoutes(all, Api.routeShapes());   // lines follow the roads
 
         routePicker.valueProperty().addListener((obs, oldVal, newVal) -> renderRouteDetail());
         routePicker.setValue(routePicker.getItems().get(0));

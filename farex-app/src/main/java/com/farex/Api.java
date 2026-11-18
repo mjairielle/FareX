@@ -1,5 +1,6 @@
 package com.farex;
 
+import farex.shared.data.RouteShapes;
 import farex.shared.data.RouteStop;
 import farex.shared.reward.Rewards;
 import farex.shared.txn.Txn;
@@ -183,6 +184,28 @@ public final class Api {
     public static Map<String, List<RouteStop>> routeStops() {
         Map<String, List<RouteStop>> out = new LinkedHashMap<>();
         for (RouteDetail r : routes()) out.put(r.id(), r.stops());
+        return out;
+    }
+
+    /** Road path per route and segment (stop i -> i+1), for the map. Empty if the server has none or is older. */
+    public static Map<String, Map<Integer, List<RouteShapes.Point>>> routeShapes() {
+        Map<String, Map<Integer, List<RouteShapes.Point>>> out = new LinkedHashMap<>();
+        List<String> rows;
+        try {
+            rows = lines(call("GET", "/route-shapes", null));
+        } catch (ApiException e) {
+            return out;                                     // straight lines between stops instead
+        }
+        for (String l : rows) {
+            String[] f = l.split("\\|", -1);
+            if (f.length < 3) continue;
+            List<RouteShapes.Point> pts = new ArrayList<>();
+            for (String pt : f[2].split(";")) {
+                String[] xy = pt.split("~");
+                if (xy.length == 2) pts.add(new RouteShapes.Point(Double.parseDouble(xy[0]), Double.parseDouble(xy[1])));
+            }
+            out.computeIfAbsent(f[0], k -> new TreeMap<>()).put(Integer.parseInt(f[1]), pts);
+        }
         return out;
     }
 

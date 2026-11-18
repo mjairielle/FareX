@@ -29,6 +29,7 @@ public final class Main {
     static TripPlanner planner;
     static Rewards rewards;
     static RouteBook book;
+    static RouteShapes shapes;                               // road paths for the map; see FetchRouteShapes
     static final Map<String, User> tokens = new HashMap<>();
     static final Map<String, TapDesk> desks = new HashMap<>();
     static final String SUSPENDED_H = "userId,action,time";
@@ -123,6 +124,7 @@ public final class Main {
         dir = Path.of(Env.get("DATA_DIR", "data"));
         store = new Store(dir);
         book = new RouteBook(dir);
+        shapes = new RouteShapes(dir);
         planner = new TripPlanner(book);
         rewards = new Rewards(dir);
         // shortcut: Store seeds admin@mail.com / admin123 on first run. Change it in data/users.csv by hand before a public demo.
@@ -169,6 +171,19 @@ public final class Main {
                 for (RouteStop st : stops) stopStrs.add(st.name() + "~" + st.lat() + "~" + st.lng());
                 b.append(String.join(";", stopStrs)).append('\n');
             });
+            return b.toString();
+        });
+        // Road path per segment (stop i -> i+1): "routeId|segment|lat~lng;lat~lng;..." per line
+        route(s, "/route-shapes", "GET", "ANY", (u, p) -> {
+            StringBuilder b = new StringBuilder();
+            shapes.all().forEach((id, segs) -> segs.forEach((seg, pts) -> {
+                b.append(clean(id)).append('|').append(seg).append('|');
+                for (int i = 0; i < pts.size(); i++) {
+                    if (i > 0) b.append(';');
+                    b.append(String.format(Locale.ROOT, "%.6f~%.6f", pts.get(i).lat(), pts.get(i).lng()));
+                }
+                b.append('\n');
+            }));
             return b.toString();
         });
         route(s, "/vehicles", "GET", "ANY", (u, p) -> {
@@ -346,6 +361,7 @@ public final class Main {
             for (String line : req(p, "stops").split(";")) stops.add(line.split(",", -1));
             RouteBook.addRoute(dir, req(p, "id"), stops);
             book = new RouteBook(dir);                       // planner sees the new route at once
+            shapes = new RouteShapes(dir);                   // a new route has no road path until FetchRouteShapes runs
             planner = new TripPlanner(book);
             return json("ok", "1");
         });

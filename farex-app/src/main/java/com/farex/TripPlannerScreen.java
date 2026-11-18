@@ -29,7 +29,7 @@ public class TripPlannerScreen extends Screen {
         map.setMinWidth(0);
         try {
             routeStops = Api.routeStops();
-            map.showRoutes(routeStops);
+            map.showRoutes(routeStops, Api.routeShapes());   // lines follow the roads
         } catch (Exception e) {
             // no route list: the map still shows the streets
         }
