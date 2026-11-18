@@ -75,12 +75,12 @@ public class OperatorScreen extends Screen {
             gps.setRouteStops(loaded);
         } catch (Exception e) {
             gps.setRouteStops(List.of(
-                    new Api.StopCoord(0, "Philcoa", 14.6537, 121.0594),
-                    new Api.StopCoord(1, "Tandang Sora", 14.6700, 121.0540),
-                    new Api.StopCoord(2, "Ever Gotesco", 14.6810, 121.0480),
-                    new Api.StopCoord(3, "Batasan", 14.6850, 121.0870),
-                    new Api.StopCoord(4, "Dona Carmen", 14.6930, 121.0800),
-                    new Api.StopCoord(5, "Fairview Terminal", 14.7300, 121.0560)));
+                    new Api.StopCoord(0, "Philcoa", 14.65400, 121.05377),
+                    new Api.StopCoord(1, "Tandang Sora", 14.66223, 121.06619),
+                    new Api.StopCoord(2, "Ever Gotesco", 14.67959, 121.08409),
+                    new Api.StopCoord(3, "Batasan", 14.68766, 121.08730),
+                    new Api.StopCoord(4, "Dona Carmen", 14.70517, 121.07843),
+                    new Api.StopCoord(5, "Fairview Terminal", 14.73306, 121.05840)));
         }
 
         // Periodic timer for live shift duration clock and GPS simulation

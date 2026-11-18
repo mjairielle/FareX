@@ -51,11 +51,11 @@ public final class RouteBook {
     // Sample coordinates around Quezon City. Edit routes.csv to change. Shared stops must repeat the same name.
     private static void seed(Path file) {
         String[][] r = {
-            {"R1", "Philcoa", "14.6537", "121.0594"}, {"R1", "Tandang Sora", "14.6700", "121.0540"},
-            {"R1", "Ever Gotesco", "14.6810", "121.0480"}, {"R1", "Batasan", "14.6850", "121.0870"},
-            {"R1", "Doña Carmen", "14.6930", "121.0800"}, {"R1", "Fairview Terminal", "14.7300", "121.0560"},
-            {"R2", "Cubao", "14.6191", "121.0509"}, {"R2", "Kamuning", "14.6290", "121.0420"}, {"R2", "Philcoa", "14.6537", "121.0594"},
-            {"R3", "SM North", "14.6565", "121.0300"}, {"R3", "Tandang Sora", "14.6700", "121.0540"}, {"R3", "Fairview Terminal", "14.7300", "121.0560"}};
+            {"R1", "Philcoa", "14.65400", "121.05377"}, {"R1", "Tandang Sora", "14.66223", "121.06619"},
+            {"R1", "Ever Gotesco", "14.67959", "121.08409"}, {"R1", "Batasan", "14.68766", "121.08730"},
+            {"R1", "Doña Carmen", "14.70517", "121.07843"}, {"R1", "Fairview Terminal", "14.73306", "121.05840"},
+            {"R2", "Cubao", "14.62134", "121.05299"}, {"R2", "Kamuning", "14.62753", "121.03900"}, {"R2", "Philcoa", "14.65400", "121.05377"},
+            {"R3", "SM North", "14.65711", "121.03132"}, {"R3", "Tandang Sora", "14.66223", "121.06619"}, {"R3", "Fairview Terminal", "14.73306", "121.05840"}};
         Map<String, Integer> seq = new HashMap<>();
         for (String[] s : r) {
             int i = seq.merge(s[0], 1, Integer::sum) - 1;

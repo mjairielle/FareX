@@ -55,6 +55,25 @@ public class RoadKmTest {
     }
 
     @Test
+    void sharedRoadDoesNotTempShortestIntoAPointlessTransfer() throws Exception {
+        try {
+            // data/route_km.csv as committed: R1 and R3 share Commonwealth Ave from Tandang Sora to
+            // Fairview, so Philcoa -> Fairview on R1 and R1 -> R3 at Tandang Sora tie on distance.
+            RouteBook book = new RouteBook(tempDir);
+            Files.writeString(tempDir.resolve(RoadDistances.FILE), String.join("\n", RoadDistances.HEADER,
+                    "R1,0,1.619", "R1,1,2.774", "R1,2,0.960", "R1,3,2.592", "R1,4,4.872",
+                    "R2,0,2.135", "R2,1,4.042", "R3,0,5.167", "R3,1,11.198", ""));
+            Fares.setRoadKm(RoadDistances.load(tempDir, book.routes()));
+
+            for (TripPlanner.Plan p : new TripPlanner(book).plan("Philcoa", "Fairview Terminal", new RegularFare())) {
+                assertEquals(0, p.transfers(), p.label() + " should ride R1 straight through");
+            }
+        } finally {
+            Fares.setRoadKm(Map.of());
+        }
+    }
+
+    @Test
     void plannerAndTapOutChargeTheSameRoadDistance() throws Exception {
         try {
             // Seeded network: R1 starts Philcoa -> Tandang Sora, and Store's operator stops are R1's.
@@ -64,7 +83,7 @@ public class RoadKmTest {
             Fares.setRoadKm(RoadDistances.load(tempDir, book.routes()));
 
             TripPlanner.Plan plan = new TripPlanner(book).plan(r1.get(0).name(), r1.get(1).name(), new RegularFare()).get(0);
-            assertEquals(6.0, plan.km(), 1e-9, "planner rides 6 km by road, not the ~1.9 km straight line");
+            assertEquals(6.0, plan.km(), 1e-9, "planner uses the 6 km in route_km.csv, not the ~1.6 km straight line");
             assertEquals(Fares.fare(6.0, new RegularFare()), plan.fareCents());
 
             Store store = new Store(tempDir);

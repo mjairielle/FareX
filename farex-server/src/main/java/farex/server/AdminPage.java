@@ -92,7 +92,7 @@ const views = {
     v.appendChild(table(['Route', 'Stops'], rows(await api('GET', '/admin/api/routes'))));
     const c = el('div', undefined, { className: 'card' });
     const id = field('Route id, e.g. R4');
-    const ta = el('textarea', undefined, { rows: 5, placeholder: 'One stop per line: name, lat, lng' + NL + 'Cubao, 14.6191, 121.0509' });
+    const ta = el('textarea', undefined, { rows: 5, placeholder: 'One stop per line: name, lat, lng' + NL + 'Cubao, 14.62134, 121.05299' });
     c.append(el('h2', 'Add route'), id, ta, btn('Add route', async () => {
       const stops = ta.value.split(NL).filter(l => l.trim()).join(';');
       await api('POST', '/admin/api/route/add', { id: id.value, stops }); say('Route added', true); show('Routes'); }));

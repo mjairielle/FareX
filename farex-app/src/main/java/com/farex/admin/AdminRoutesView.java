@@ -57,7 +57,7 @@ public class AdminRoutesView {
         Label addTitle = screen.limeLabel("Add New Jeepney Route", 14);
         TextField routeIdField = screen.createField("Route ID, e.g. R4");
         TextArea stopsArea = new TextArea();
-        stopsArea.setPromptText("One stop per line: Name, Lat, Lng\ne.g.\nPhilcoa, 14.6537, 121.0594\nTandang Sora, 14.6700, 121.0540");
+        stopsArea.setPromptText("One stop per line: Name, Lat, Lng\ne.g.\nPhilcoa, 14.65400, 121.05377\nTandang Sora, 14.66223, 121.06619");
         stopsArea.setPrefRowCount(4);
         stopsArea.setStyle("-fx-control-inner-background: #222222; -fx-text-fill: white; -fx-prompt-text-fill: #888888;");
 

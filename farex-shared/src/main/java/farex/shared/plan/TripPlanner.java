@@ -86,9 +86,11 @@ public final class TripPlanner {
             }
             for (var e : routes.entrySet()) {                      // switch jeepney at a same name stop
                 if (e.getKey().equals(n.route())) continue;
+                // + 1e-3: when two routes share a road, riding on and switching tie on km; without a
+                // tie-breaker "Shortest" could suggest a pointless transfer (and a second fare)
                 for (int j = 0; j < e.getValue().size(); j++)
                     if (e.getValue().get(j).name().equals(name(n)))
-                        relax(new Node(e.getKey(), j), n, cur.cost() + c.board(), dist, prev, pq);
+                        relax(new Node(e.getKey(), j), n, cur.cost() + c.board() + 1e-3, dist, prev, pq);
             }
         }
         return null;
