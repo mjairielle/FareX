@@ -125,6 +125,7 @@ public final class Main {
         store = new Store(dir);
         book = new RouteBook(dir);
         shapes = new RouteShapes(dir);
+        Fares.setRoadKm(RoadDistances.load(dir, book.routes()));   // fares on road km where known
         planner = new TripPlanner(book);
         rewards = new Rewards(dir);
         // shortcut: Store seeds admin@mail.com / admin123 on first run. Change it in data/users.csv by hand before a public demo.
@@ -184,6 +185,13 @@ public final class Main {
                 }
                 b.append('\n');
             }));
+            return b.toString();
+        });
+        // Road km between consecutive stops, so the app's fare tables match what is charged:
+        // "fromLat,fromLng>toLat,toLng|km" per line (RoadDistances.key)
+        route(s, "/road-km", "GET", "ANY", (u, p) -> {
+            StringBuilder b = new StringBuilder();
+            Fares.roadKm().forEach((k, km) -> b.append(k).append('|').append(String.format(Locale.ROOT, "%.3f", km)).append('\n'));
             return b.toString();
         });
         route(s, "/vehicles", "GET", "ANY", (u, p) -> {
@@ -362,6 +370,7 @@ public final class Main {
             RouteBook.addRoute(dir, req(p, "id"), stops);
             book = new RouteBook(dir);                       // planner sees the new route at once
             shapes = new RouteShapes(dir);                   // a new route has no road path until FetchRouteShapes runs
+            Fares.setRoadKm(RoadDistances.load(dir, book.routes()));
             planner = new TripPlanner(book);
             return json("ok", "1");
         });

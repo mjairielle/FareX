@@ -44,11 +44,31 @@ public final class Fares {
         return rule.apply(Math.round(BASE + RATE_PER_KM * km));
     }
 
-    /** Distance along stop order from index a to index b. Not straight line. */
+    /**
+     * Road km between consecutive stops, keyed by RoadDistances.key(from, to). Set once at startup
+     * from route_km.csv (server) or /road-km (app). Empty means straight-line distances everywhere.
+     */
+    private static volatile java.util.Map<String, Double> ROAD_KM = java.util.Map.of();
+
+    public static void setRoadKm(java.util.Map<String, Double> roadKm) { ROAD_KM = java.util.Map.copyOf(roadKm); }
+    public static java.util.Map<String, Double> roadKm() { return ROAD_KM; }
+
+    /**
+     * Distance riding from stop a to stop b (a <= b) in stop order: the road distance for each
+     * stretch between stops when it is known (route_km.csv), else the straight line between them.
+     * A stretch known only in the other direction uses that; one-way streets make the two differ.
+     */
     public static double pathKm(List<RouteStop> stops, int a, int b) {
         double km = 0;
-        for (int i = a; i < b; i++) km += haversineKm(stops.get(i), stops.get(i + 1));
+        for (int i = a; i < b; i++) km += stretchKm(stops.get(i), stops.get(i + 1));
         return km;
+    }
+
+    private static double stretchKm(RouteStop from, RouteStop to) {
+        java.util.Map<String, Double> road = ROAD_KM;
+        Double km = road.get(farex.shared.data.RoadDistances.key(from, to));
+        if (km == null) km = road.get(farex.shared.data.RoadDistances.key(to, from));
+        return km != null ? km : haversineKm(from, to);
     }
 
     public static double haversineKm(RouteStop p, RouteStop q) {

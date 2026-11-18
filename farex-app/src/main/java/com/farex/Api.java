@@ -2,6 +2,7 @@ package com.farex;
 
 import farex.shared.data.RouteShapes;
 import farex.shared.data.RouteStop;
+import farex.shared.fare.Fares;
 import farex.shared.reward.Rewards;
 import farex.shared.txn.Txn;
 import farex.shared.user.*;
@@ -66,6 +67,7 @@ public final class Api {
     public static User login(String email, String pw) {
         String r = call("POST", "/login", form("email", email, "password", pw));
         token = field(r, "token", null);
+        loadRoadKm();
         String id = field(r, "id", ""), name = field(r, "name", ""), mail = field(r, "email", "");
         return switch (field(r, "role", "")) {
             case "PASSENGER" -> new Passenger(id, name, mail, field(r, "passengerType", "REGULAR"));
@@ -185,6 +187,23 @@ public final class Api {
         Map<String, List<RouteStop>> out = new LinkedHashMap<>();
         for (RouteDetail r : routes()) out.put(r.id(), r.stops());
         return out;
+    }
+
+    /**
+     * Gives Fares the server's road distances, so fares worked out in the app (route fare table,
+     * tap terminal) match what the server charges. Older server or no file: straight lines stay.
+     */
+    public static void loadRoadKm() {
+        Map<String, Double> km = new HashMap<>();
+        try {
+            for (String l : lines(call("GET", "/road-km", null))) {
+                String[] f = l.split("\\|", -1);
+                if (f.length == 2) km.put(f[0], Double.parseDouble(f[1]));
+            }
+        } catch (ApiException | NumberFormatException e) {
+            return;
+        }
+        Fares.setRoadKm(km);
     }
 
     /** Road path per route and segment (stop i -> i+1), for the map. Empty if the server has none or is older. */
