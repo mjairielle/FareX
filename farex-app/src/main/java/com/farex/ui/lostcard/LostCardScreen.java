@@ -67,7 +67,7 @@ public class LostCardScreen extends StepScreen {
         holder.setTextFill(Theme.WHITE);
         holder.setFont(Theme.bold(14));
 
-        // The chosen reason is on top with a lime outline; tapping the other one swaps them
+        // Both reasons stay in place; the chosen one gets the lime outline
         boolean lost = LostCardState.LOST.equals(LostCardState.getReason());
 
         body.getChildren().addAll(
@@ -78,8 +78,8 @@ public class LostCardScreen extends StepScreen {
                         holder,
                         CommonUi.row("xPress " + CommonUi.masked(card), "Active"),
                         CommonUi.row("Current balance", CommonUi.peso(card.getBalance()))),
-                reasonPanel(lost ? LostCardState.LOST : LostCardState.DAMAGED, true),
-                reasonPanel(lost ? LostCardState.DAMAGED : LostCardState.LOST, false),
+                reasonPanel(LostCardState.LOST, lost),
+                reasonPanel(LostCardState.DAMAGED, !lost),
                 CommonUi.spacer(),
                 CommonUi.limeButton("Continue", this::showConfirm),
                 CommonUi.link("Cancel", LostCardState::goHome));
