@@ -1,6 +1,8 @@
 package com.farex;
 
+import farex.shared.data.RouteShapes;
 import farex.shared.data.RouteStop;
+import farex.shared.fare.Fares;
 import farex.shared.reward.Rewards;
 import farex.shared.txn.Txn;
 import farex.shared.user.*;
@@ -65,6 +67,7 @@ public final class Api {
     public static User login(String email, String pw) {
         String r = call("POST", "/login", form("email", email, "password", pw));
         token = field(r, "token", null);
+        loadRoadKm();
         String id = field(r, "id", ""), name = field(r, "name", ""), mail = field(r, "email", "");
         return switch (field(r, "role", "")) {
             case "PASSENGER" -> new Passenger(id, name, mail, field(r, "passengerType", "REGULAR"));
@@ -154,8 +157,12 @@ public final class Api {
 
     // ---------- trip planner ----------
 
-    /** One suggested trip. legs look like "R1: Philcoa > Tandang Sora (1.9 km)". */
-    public record PlanCard(String label, String km, int transfers, long fareCents, int minutes, List<String> legs) {}
+    /** One ride of a trip: board `from`, ride `route`, get off at `to`. */
+    public record PlanRide(String route, String from, String to) {}
+
+    /** One suggested trip. legs look like "R1: Philcoa > Tandang Sora (1.9 km)"; rides are the same, for the map. */
+    public record PlanCard(String label, String km, int transfers, long fareCents, int minutes, List<String> legs,
+                           List<PlanRide> rides) {}
 
     public static List<String> places() { return lines(call("GET", "/places", null)); }
 
@@ -164,11 +171,59 @@ public final class Api {
         for (String l : lines(call("GET", "/plan?" + form("from", from, "to", to), null))) {
             String[] f = l.split("\\|", -1);
             List<String> legs = new ArrayList<>();
+            List<PlanRide> rides = new ArrayList<>();
             for (String leg : f[5].split(";")) {
                 String[] x = leg.split("~");
                 legs.add(x[0] + ": " + x[1] + " > " + x[2] + " (" + x[3] + " km)");
+                rides.add(new PlanRide(x[0], x[1], x[2]));
             }
-            out.add(new PlanCard(f[0], f[1], Integer.parseInt(f[2]), Long.parseLong(f[3]), Integer.parseInt(f[4]), legs));
+            out.add(new PlanCard(f[0], f[1], Integer.parseInt(f[2]), Long.parseLong(f[3]), Integer.parseInt(f[4]), legs, rides));
+        }
+        return out;
+    }
+
+    /** Every route's stops by route id, for the map. */
+    public static Map<String, List<RouteStop>> routeStops() {
+        Map<String, List<RouteStop>> out = new LinkedHashMap<>();
+        for (RouteDetail r : routes()) out.put(r.id(), r.stops());
+        return out;
+    }
+
+    /**
+     * Gives Fares the server's road distances, so fares worked out in the app (route fare table,
+     * tap terminal) match what the server charges. Older server or no file: straight lines stay.
+     */
+    public static void loadRoadKm() {
+        Map<String, Double> km = new HashMap<>();
+        try {
+            for (String l : lines(call("GET", "/road-km", null))) {
+                String[] f = l.split("\\|", -1);
+                if (f.length == 2) km.put(f[0], Double.parseDouble(f[1]));
+            }
+        } catch (ApiException | NumberFormatException e) {
+            return;
+        }
+        Fares.setRoadKm(km);
+    }
+
+    /** Road path per route and segment (stop i -> i+1), for the map. Empty if the server has none or is older. */
+    public static Map<String, Map<Integer, List<RouteShapes.Point>>> routeShapes() {
+        Map<String, Map<Integer, List<RouteShapes.Point>>> out = new LinkedHashMap<>();
+        List<String> rows;
+        try {
+            rows = lines(call("GET", "/route-shapes", null));
+        } catch (ApiException e) {
+            return out;                                     // straight lines between stops instead
+        }
+        for (String l : rows) {
+            String[] f = l.split("\\|", -1);
+            if (f.length < 3) continue;
+            List<RouteShapes.Point> pts = new ArrayList<>();
+            for (String pt : f[2].split(";")) {
+                String[] xy = pt.split("~");
+                if (xy.length == 2) pts.add(new RouteShapes.Point(Double.parseDouble(xy[0]), Double.parseDouble(xy[1])));
+            }
+            out.computeIfAbsent(f[0], k -> new TreeMap<>()).put(Integer.parseInt(f[1]), pts);
         }
         return out;
     }
@@ -237,7 +292,8 @@ public final class Api {
 
     public record RouteDetail(String id, List<RouteStop> stops) {}
     public record VehicleInfo(String plate, String driverName, String operatorId) {}
-    public record FareRuleInfo(long base, long rate) {}
+    /** base covers the first baseKm; rate applies per km after that. */
+    public record FareRuleInfo(long base, long rate, double baseKm) {}
 
     public static List<RouteDetail> routes() {
         List<RouteDetail> out = new ArrayList<>();
@@ -269,7 +325,8 @@ public final class Api {
 
     public static FareRuleInfo currentFares() {
         String r = call("GET", "/fares/current", null);
-        return new FareRuleInfo(Long.parseLong(field(r, "base", "1300")), Long.parseLong(field(r, "rate", "180")));
+        return new FareRuleInfo(Long.parseLong(field(r, "base", "1400")), Long.parseLong(field(r, "rate", "200")),
+                Double.parseDouble(field(r, "baseKm", "4.0")));
     }
 
     // ---------- admin panel ----------

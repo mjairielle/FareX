@@ -1,5 +1,6 @@
 package com.farex;
 
+import com.farex.ui.common.LeafletMap;
 import farex.shared.data.RouteStop;
 import farex.shared.fare.*;
 import farex.shared.user.Passenger;
@@ -15,6 +16,7 @@ import javafx.scene.layout.*;
 public class RoutesScreen extends Screen {
     private final ComboBox<String> routePicker = combo();
     private final VBox routeContent = new VBox(10);
+    private final LeafletMap map = new LeafletMap(0, 220, 8);   // OpenStreetMap; picture when offline
     private List<Api.RouteDetail> routeList = new ArrayList<>();
     private List<Api.VehicleInfo> vehicleList = new ArrayList<>();
     private Api.FareRuleInfo currentFare;
@@ -39,10 +41,15 @@ public class RoutesScreen extends Screen {
             return;
         }
 
+        Map<String, List<RouteStop>> all = new LinkedHashMap<>();
         for (Api.RouteDetail rd : routeList) {
             String label = rd.id() + ": " + rd.stops().get(0).name() + " ➔ " + rd.stops().get(rd.stops().size() - 1).name();
             routePicker.getItems().add(label);
+            all.put(rd.id(), rd.stops());
         }
+        map.setMaxWidth(Double.MAX_VALUE);
+        map.setMinWidth(0);
+        map.showRoutes(all, Api.routeShapes());   // lines follow the roads
 
         routePicker.valueProperty().addListener((obs, oldVal, newVal) -> renderRouteDetail());
         routePicker.setValue(routePicker.getItems().get(0));
@@ -52,7 +59,7 @@ public class RoutesScreen extends Screen {
         scroll.setStyle("-fx-background: #111111; -fx-background-color: #111111; -fx-border-color: transparent;");
         setVgrow(scroll, Priority.ALWAYS);
 
-        getChildren().addAll(text("Select Route:"), routePicker, scroll, error);
+        getChildren().addAll(text("Select Route:"), routePicker, map, scroll, error);
     }
 
     private void renderRouteDetail() {
@@ -62,6 +69,7 @@ public class RoutesScreen extends Screen {
 
         Api.RouteDetail rd = routeList.get(selIdx);
         List<RouteStop> stops = rd.stops();
+        map.focusRoute(rd.id());
 
         // 1. Route Overview Card
         VBox overviewCard = new VBox(6);
@@ -120,7 +128,8 @@ public class RoutesScreen extends Screen {
         // 4. Fare Table Card
         VBox fareCard = new VBox(6);
         fareCard.setStyle("-fx-background-color: #1c1c1c; -fx-padding: 14; -fx-background-radius: 8;");
-        Label fTitle = lime("Fare Matrix (Base ₱" + (currentFare.base() / 100.0) + " + ₱" + (currentFare.rate() / 100.0) + "/km)", 14);
+        Label fTitle = lime(String.format("Fare Matrix (₱%.2f first %.0f km + ₱%.2f/km after)",
+                currentFare.base() / 100.0, currentFare.baseKm(), currentFare.rate() / 100.0), 14);
         fareCard.getChildren().add(fTitle);
 
         Passenger passenger = Session.user instanceof Passenger p ? p : null;

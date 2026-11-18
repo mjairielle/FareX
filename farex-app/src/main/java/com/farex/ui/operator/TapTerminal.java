@@ -12,6 +12,7 @@ import java.util.Set;
 import com.farex.Api;
 import com.farex.operator.GpsSimulator;
 
+import farex.shared.data.RouteStop;
 import farex.shared.fare.Fares;
 import farex.shared.fare.RegularFare;
 
@@ -23,7 +24,8 @@ import com.farex.ui.data.MockData;
 // The jeep's tap reader (no UI). Same rules as farex-shared's TapDesk, but on the demo cards
 // so it works without the server:
 // - first tap = tap in at the current stop, second tap = tap out and pay
-// - fare = farex-shared Fares.fare(km, rule): ₱13 + ₱2 per km, students 20% off
+// - fare = farex-shared Fares.fare(km, rule): ₱14 for the first 4 km + ₱2 per km after (LTFRB 2026),
+//   rounded to ₱0.25; students/seniors/PWD 20% off the scale
 // - still on board when the jeep leaves the terminal (New trip) or the shift ends = max fare
 public final class TapTerminal {
 
@@ -108,7 +110,7 @@ public final class TapTerminal {
         }
 
         boolean offlineApp = rider.isApp() && !OperatorState.isOnline();
-        // Must at least cover the shortest ride: ₱13.00 regular, ₱10.40 student
+        // Must at least cover the shortest ride: ₱14.00 regular, ₱11.25 student
         if (!offlineApp && !rider.canPay(Fares.fare(0, rider.getFareRule()))) {
             return TapResult.insufficient();
         }
@@ -196,17 +198,11 @@ public final class TapTerminal {
         return record;
     }
 
-    // Distance along the stops, not a straight line (same idea as Fares.pathKm)
+    // Distance along the stops via Fares.pathKm: road km when the server's distances are loaded
+    // (Api.loadRoadKm at login), else straight lines - the same number the server would charge
     private static double pathKm(int a, int b) {
-        List<Api.StopCoord> stops = OperatorState.getGps().getRouteStops();
-        int from = Math.min(a, b);
-        int to = Math.max(a, b);
-        double km = 0;
-        for (int i = from; i < to; i++) {
-            Api.StopCoord p = stops.get(i);
-            Api.StopCoord q = stops.get(i + 1);
-            km += Fares.haversineKm(p.lat(), p.lng(), q.lat(), q.lng());
-        }
-        return km;
+        List<RouteStop> stops = new ArrayList<>();
+        for (Api.StopCoord s : OperatorState.getGps().getRouteStops()) stops.add(new RouteStop(s.name(), s.lat(), s.lng()));
+        return Fares.pathKm(stops, Math.min(a, b), Math.max(a, b));
     }
 }

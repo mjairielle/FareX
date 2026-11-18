@@ -32,21 +32,21 @@ public final class TripPlanner {
         for (List<RouteStop> l : routes.values()) for (RouteStop s : l) { hasFrom |= s.name().equals(from); hasTo |= s.name().equals(to); }
         if (!hasFrom || !hasTo) throw new IllegalArgumentException("Unknown place");
 
-        double keep = (100 - rule.discountPercent()) / 100.0;
         Cost[] costs = {
             new Cost("Shortest", 0, 1),
-            new Cost("Fewest transfers", 1000, 1),
-            new Cost("Cheapest", Fares.BASE * keep, Fares.RATE_PER_KM * keep)};
+            new Cost("Fewest transfers", 1000, 1)};
 
         Map<String, Plan> bySignature = new LinkedHashMap<>();
-        for (Cost c : costs) {
-            List<Leg> legs = search(from, to, c);
-            if (legs == null) continue;
-            String sig = legs.toString();
-            Plan old = bySignature.get(sig);
-            bySignature.put(sig, old == null ? build(c.label(), legs, rule) : relabel(old, old.label() + " + " + c.label()));
-        }
+        for (Cost c : costs) add(bySignature, c.label(), search(from, to, c), rule);
+        add(bySignature, "Cheapest", cheapest(from, to, rule), rule);
         return new ArrayList<>(bySignature.values());
+    }
+
+    private void add(Map<String, Plan> bySignature, String label, List<Leg> legs, FareRule rule) {
+        if (legs == null) return;
+        String sig = legs.toString();
+        Plan old = bySignature.get(sig);
+        bySignature.put(sig, old == null ? build(label, legs, rule) : relabel(old, old.label() + " + " + label));
     }
 
     private Plan build(String label, List<Leg> legs, FareRule rule) {
@@ -63,7 +63,58 @@ public final class TripPlanner {
 
     private String name(Node n) { return routes.get(n.route()).get(n.idx()).name(); }
 
-    /** Dijkstra. Returns legs of the cheapest way, null when places are not connected. */
+    /**
+     * Cheapest way, priced exactly with Fares.fare. A fare is base + rate past the first BASE_KM,
+     * charged once per boarding, so it is not a per-km sum: riding one more stop can cost nothing
+     * (still inside the base band) or the full rate. search() adds costs per stop and cannot model
+     * that, so here one Dijkstra step is a whole ride: board at this place, get off at any later or
+     * earlier stop of that route. Each ride's fare depends only on where you board and alight, so
+     * the sum is exact. Node (route, idx) means "just got off route at idx"; you may then board any
+     * other route at a stop with the same name. Null when places are not connected.
+     */
+    private List<Leg> cheapest(String from, String to, FareRule rule) {
+        Node start = new Node("", -1);
+        Map<Node, Double> dist = new HashMap<>();
+        Map<Node, Node> prev = new HashMap<>();
+        Map<Node, Leg> rideTo = new HashMap<>();
+        PriorityQueue<Entry> pq = new PriorityQueue<>(Comparator.comparingDouble(Entry::cost));
+        dist.put(start, 0.0);
+        pq.add(new Entry(start, 0.0));
+
+        while (!pq.isEmpty()) {
+            Entry cur = pq.poll();
+            if (cur.cost() > dist.getOrDefault(cur.node(), Double.MAX_VALUE)) continue;
+            Node n = cur.node();
+            String here = n == start ? from : name(n);
+            if (n != start && here.equals(to)) {
+                LinkedList<Leg> legs = new LinkedList<>();
+                for (Node m = n; m != start; m = prev.get(m)) legs.addFirst(rideTo.get(m));
+                return legs;
+            }
+            for (var e : routes.entrySet()) {
+                if (e.getKey().equals(n.route())) continue;        // re-boarding the jeep you just left is the same ride paid twice
+                List<RouteStop> line = e.getValue();
+                for (int i = 0; i < line.size(); i++) {
+                    if (!line.get(i).name().equals(here)) continue;
+                    for (int j = 0; j < line.size(); j++) {
+                        if (j == i) continue;
+                        double km = segKm(e.getKey(), i, j);
+                        Node next = new Node(e.getKey(), j);
+                        double cost = cur.cost() + Fares.fare(km, rule) + km * 1e-6;   // km breaks fare ties
+                        if (cost < dist.getOrDefault(next, Double.MAX_VALUE)) {
+                            dist.put(next, cost);
+                            prev.put(next, n);
+                            rideTo.put(next, new Leg(e.getKey(), here, line.get(j).name(), km));
+                            pq.add(new Entry(next, cost));
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    /** Dijkstra over stop-by-stop costs (distance, transfers). Returns legs, null when places are not connected. */
     private List<Leg> search(String from, String to, Cost c) {
         Map<Node, Double> dist = new HashMap<>();
         Map<Node, Node> prev = new HashMap<>();
@@ -86,9 +137,11 @@ public final class TripPlanner {
             }
             for (var e : routes.entrySet()) {                      // switch jeepney at a same name stop
                 if (e.getKey().equals(n.route())) continue;
+                // + 1e-3: when two routes share a road, riding on and switching tie on km; without a
+                // tie-breaker "Shortest" could suggest a pointless transfer (and a second fare)
                 for (int j = 0; j < e.getValue().size(); j++)
                     if (e.getValue().get(j).name().equals(name(n)))
-                        relax(new Node(e.getKey(), j), n, cur.cost() + c.board(), dist, prev, pq);
+                        relax(new Node(e.getKey(), j), n, cur.cost() + c.board() + 1e-3, dist, prev, pq);
             }
         }
         return null;

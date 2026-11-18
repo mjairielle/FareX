@@ -36,12 +36,14 @@ public final class TripDialogs {
                 CommonUi.subtitle("Move your destination closer to an available stop, or check your starting point."));
         different.setSpacing(6);
 
+        // Other stops to try: real FareX stops when live, the preview ones offline
+        java.util.List<Node> nodes = new java.util.ArrayList<>(java.util.List.of(different,
+                TripUi.eyebrow(TripState.isLive() ? "OTHER STOPS TO TRY" : "SUGGESTED NEARBY STOPS")));
+        for (TripPlace place : TripState.suggestions()) nodes.add(suggestion(place, searchAgain));
+
         new PopupDialog(warning(), "No route found",
                 "There is no matching route to this destination in the available service area.")
-                .add(different,
-                        TripUi.eyebrow("SUGGESTED NEARBY STOPS"),
-                        suggestion(TripState.KALAW, searchAgain),
-                        suggestion(TripState.CITY_HALL, searchAgain))
+                .add(nodes.toArray(new Node[0]))
                 .button("Edit locations", editLocations)
                 .link("Back to Routes", () -> TripScreen.leaveTo("routes"))
                 .show();

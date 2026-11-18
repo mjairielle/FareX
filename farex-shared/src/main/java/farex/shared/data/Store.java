@@ -270,9 +270,9 @@ public class Store {
         load("0067676767", "p1", 50000, "Seed");
         // Sample coordinates along Commonwealth Ave, QC. Edit stops.csv to change the route.
         String[][] s = {
-            {"Philcoa", "14.6537", "121.0594"}, {"Tandang Sora", "14.6700", "121.0540"},
-            {"Ever Gotesco", "14.6810", "121.0480"}, {"Batasan", "14.6850", "121.0870"},
-            {"Doña Carmen", "14.6930", "121.0800"}, {"Fairview Terminal", "14.7300", "121.0560"}};
+            {"Philcoa", "14.65400", "121.05377"}, {"Tandang Sora", "14.66223", "121.06619"},
+            {"Ever Gotesco", "14.67959", "121.08409"}, {"Batasan", "14.68766", "121.08730"},
+            {"Doña Carmen", "14.70517", "121.07843"}, {"Fairview Terminal", "14.73306", "121.05840"}};
         for (int i = 0; i < s.length; i++) Csv.append(stops, H_STOPS, String.valueOf(i), s[i][0], s[i][1], s[i][2]);
     }
 
