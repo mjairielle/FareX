@@ -86,11 +86,19 @@ public class LeafletMap extends StackPane {
     // Fetches the FareX routes and their road paths from the server in the background and draws
     // them. If the server cannot be reached the map just shows the streets.
     public LeafletMap withFarexRoutes() {
+        return withFarexTrip(List.of());
+    }
+
+    // Same, then highlights a planned trip (Api.PlanCard.rides()) and zooms to it
+    public LeafletMap withFarexTrip(List<Api.PlanRide> rides) {
         Thread t = new Thread(() -> {
             try {
                 Map<String, List<RouteStop>> fetched = Api.routeStops();
                 Map<String, Map<Integer, List<RouteShapes.Point>>> roads = Api.routeShapes();
-                Platform.runLater(() -> showRoutes(fetched, roads));
+                Platform.runLater(() -> {
+                    showRoutes(fetched, roads);
+                    if (!rides.isEmpty()) showTrip(legsFor(fetched, rides));
+                });
             } catch (RuntimeException offline) {
                 // no server: streets only
             }
@@ -98,6 +106,18 @@ public class LeafletMap extends StackPane {
         t.setDaemon(true);
         t.start();
         return this;
+    }
+
+    // Each ride's stops from boarding to alighting, for showTrip
+    public static List<TripLeg> legsFor(Map<String, List<RouteStop>> allRoutes, List<Api.PlanRide> rides) {
+        List<TripLeg> legs = new ArrayList<>();
+        for (Api.PlanRide r : rides) {
+            List<RouteStop> line = allRoutes.get(r.route());
+            if (line == null) continue;
+            List<RouteStop> stops = between(line, r.from(), r.to());
+            if (stops.size() >= 2) legs.add(new TripLeg(r.route(), stops));
+        }
+        return legs;
     }
 
     // Every route as a coloured line with its stops, straight from stop to stop

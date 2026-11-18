@@ -57,7 +57,10 @@ public final class Main {
         return m;
     }
 
-    /** role null means public, "ANY" means any logged in user. */
+    /**
+     * role null means public, "ANY" means any logged in user. A public route still sees who is
+     * logged in when a token is sent (u is null otherwise), e.g. /plan quotes that passenger's fare.
+     */
     static void route(HttpServer s, String path, String method, String role, Act act) {
         s.createContext(path, ex -> {
             int code = 200;
@@ -68,11 +71,8 @@ public final class Main {
                     String raw = new String(ex.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
                     String q = ex.getRequestURI().getRawQuery();
                     Map<String, String> p = form((q == null ? "" : q + "&") + raw);
-                    User u = null;
-                    if (role != null) {
-                        String h = ex.getRequestHeaders().getFirst("Authorization");
-                        u = h != null && h.startsWith("Bearer ") ? tokens.get(h.substring(7)) : null;
-                    }
+                    String h = ex.getRequestHeaders().getFirst("Authorization");
+                    User u = h != null && h.startsWith("Bearer ") ? tokens.get(h.substring(7)) : null;
                     if (role != null && u == null) { code = 401; out = json("error", "Please log in again"); }
                     else if (role != null && !role.equals("ANY") && !role.equals(u.role())) { code = 403; out = json("error", "Not allowed for your account"); }
                     else if (u != null && suspended(u.getId())) { code = 403; out = json("error", "Account suspended"); }
@@ -164,7 +164,7 @@ public final class Main {
             String newUid = store.replaceLostCard(oldUid, newTagUid, u.getId());
             return json("newUid", newUid, "cents", String.valueOf(store.balance(newUid)));
         });
-        route(s, "/routes", "GET", "ANY", (u, p) -> {
+        route(s, "/routes", "GET", null, (u, p) -> {
             StringBuilder b = new StringBuilder();
             book.routes().forEach((id, stops) -> {
                 b.append(clean(id)).append('|');
@@ -175,7 +175,7 @@ public final class Main {
             return b.toString();
         });
         // Road path per segment (stop i -> i+1): "routeId|segment|lat~lng;lat~lng;..." per line
-        route(s, "/route-shapes", "GET", "ANY", (u, p) -> {
+        route(s, "/route-shapes", "GET", null, (u, p) -> {
             StringBuilder b = new StringBuilder();
             shapes.all().forEach((id, segs) -> segs.forEach((seg, pts) -> {
                 b.append(clean(id)).append('|').append(seg).append('|');
@@ -189,7 +189,7 @@ public final class Main {
         });
         // Road km between consecutive stops, so the app's fare tables match what is charged:
         // "fromLat,fromLng>toLat,toLng|km" per line (RoadDistances.key)
-        route(s, "/road-km", "GET", "ANY", (u, p) -> {
+        route(s, "/road-km", "GET", null, (u, p) -> {
             StringBuilder b = new StringBuilder();
             Fares.roadKm().forEach((k, km) -> b.append(k).append('|').append(String.format(Locale.ROOT, "%.3f", km)).append('\n'));
             return b.toString();
@@ -199,7 +199,7 @@ public final class Main {
             for (String[] v : store.allVehicles()) b.append(String.join("|", v)).append('\n');
             return b.toString();
         });
-        route(s, "/fares/current", "GET", "ANY", (u, p) -> json("base", String.valueOf(Fares.BASE), "rate", String.valueOf(Fares.RATE_PER_KM), "baseKm", String.valueOf(Fares.BASE_KM)));
+        route(s, "/fares/current", "GET", null, (u, p) -> json("base", String.valueOf(Fares.BASE), "rate", String.valueOf(Fares.RATE_PER_KM), "baseKm", String.valueOf(Fares.BASE_KM)));
         route(s, "/cards/all", "GET", "OPERATOR", (u, p) -> {
             StringBuilder b = new StringBuilder();
             for (String uid : store.allCards())
@@ -236,9 +236,11 @@ public final class Main {
             return json("points", String.valueOf(rewards.balance(u.getId())), "cents", String.valueOf(store.balance(uid)));
         });
 
-        route(s, "/places", "GET", "ANY", (u, p) -> String.join("\n", book.places()));
+        // Routes, stops, fares and trip plans are public transit information: no login needed.
+        // A logged-in passenger is still quoted their own (discounted) fare; anyone else the regular one.
+        route(s, "/places", "GET", null, (u, p) -> String.join("\n", book.places()));
         // line per plan: label|km|transfers|fareCents|minutes|route~from~to~km;route~from~to~km
-        route(s, "/plan", "GET", "ANY", (u, p) -> {
+        route(s, "/plan", "GET", null, (u, p) -> {
             FareRule rule = u instanceof Passenger x ? x.getFareRule() : new RegularFare();
             StringBuilder b = new StringBuilder();
             for (TripPlanner.Plan pl : planner.plan(req(p, "from"), req(p, "to"), rule)) {

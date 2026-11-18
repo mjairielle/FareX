@@ -98,9 +98,12 @@ public final class TripUi {
         return box;
     }
 
-    // Map card with the black "Manila · map context, not live GPS" tag at the bottom
+    // Map card with a black tag at the bottom. A real plan is drawn on it (lime line, start and
+    // end labels); the offline sample routes have no map data, so that map is area context only.
     public static StackPane mapCard(double height) {
-        Label tag = new Label("Manila · map context, not live GPS");
+        java.util.List<com.farex.Api.PlanRide> rides = TripState.getRoute().getRides();
+        Label tag = new Label(rides.isEmpty() ? "Manila · map context, not live GPS"
+                                              : "Your route in lime · not live GPS");
         tag.setTextFill(Theme.WHITE);
         tag.setFont(Theme.bold(9));
         tag.setPadding(new Insets(5, 10, 5, 10));
@@ -109,7 +112,9 @@ public final class TripUi {
         StackPane.setAlignment(tag, Pos.BOTTOM_CENTER);
         StackPane.setMargin(tag, new Insets(0, 12, 12, 12));
 
-        StackPane card = new StackPane(new LeafletMap(320, height, 12), tag);
+        LeafletMap map = new LeafletMap(320, height, 12);
+        if (!rides.isEmpty()) map.withFarexTrip(rides);
+        StackPane card = new StackPane(map, tag);
         card.setMaxSize(320, height);
         return card;
     }

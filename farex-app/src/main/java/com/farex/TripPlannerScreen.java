@@ -72,12 +72,6 @@ public class TripPlannerScreen extends Screen {
     private void pick(Api.PlanCard plan, VBox card, List<VBox> cards) {
         cards.forEach(c -> c.setStyle(CARD));
         card.setStyle(CARD_PICKED);
-        List<LeafletMap.TripLeg> legs = new ArrayList<>();
-        for (Api.PlanRide r : plan.rides()) {
-            List<RouteStop> line = routeStops.get(r.route());
-            if (line != null) legs.add(new LeafletMap.TripLeg(r.route(), LeafletMap.between(line, r.from(), r.to())));
-        }
-        legs.removeIf(l -> l.stops().size() < 2);
-        map.showTrip(legs);
+        map.showTrip(LeafletMap.legsFor(routeStops, plan.rides()));
     }
 }
