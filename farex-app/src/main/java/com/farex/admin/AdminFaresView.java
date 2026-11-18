@@ -49,7 +49,9 @@ public class AdminFaresView {
             long rate = Long.parseLong(f[2]);
             String eff = f.length > 3 ? f[3] : "-";
             Label title = screen.limeLabel(f[0] + " Fare Schedule" + (eff.equals("-") ? " (Active)" : " (Effective: " + eff + ")"), 13);
-            Label desc = screen.textLabel("Base Fare: " + screen.formatPeso(base) + "  |  Rate per KM: " + screen.formatPeso(rate));
+            String baseKm = f.length > 4 && !f[4].isBlank() ? f[4] : "4.0";   // rows before baseKm existed used 4 km
+            Label desc = screen.textLabel("Base Fare: " + screen.formatPeso(base) + " (first " + baseKm + " km)"
+                    + "  |  Rate per KM after: " + screen.formatPeso(rate));
             row.getChildren().addAll(title, desc);
             container.getChildren().add(row);
         }

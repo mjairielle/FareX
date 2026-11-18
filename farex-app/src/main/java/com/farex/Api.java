@@ -292,7 +292,8 @@ public final class Api {
 
     public record RouteDetail(String id, List<RouteStop> stops) {}
     public record VehicleInfo(String plate, String driverName, String operatorId) {}
-    public record FareRuleInfo(long base, long rate) {}
+    /** base covers the first baseKm; rate applies per km after that. */
+    public record FareRuleInfo(long base, long rate, double baseKm) {}
 
     public static List<RouteDetail> routes() {
         List<RouteDetail> out = new ArrayList<>();
@@ -324,7 +325,8 @@ public final class Api {
 
     public static FareRuleInfo currentFares() {
         String r = call("GET", "/fares/current", null);
-        return new FareRuleInfo(Long.parseLong(field(r, "base", "1300")), Long.parseLong(field(r, "rate", "180")));
+        return new FareRuleInfo(Long.parseLong(field(r, "base", "1400")), Long.parseLong(field(r, "rate", "200")),
+                Double.parseDouble(field(r, "baseKm", "4.0")));
     }
 
     // ---------- admin panel ----------

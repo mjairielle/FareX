@@ -199,7 +199,7 @@ public final class Main {
             for (String[] v : store.allVehicles()) b.append(String.join("|", v)).append('\n');
             return b.toString();
         });
-        route(s, "/fares/current", "GET", "ANY", (u, p) -> json("base", String.valueOf(Fares.BASE), "rate", String.valueOf(Fares.RATE_PER_KM)));
+        route(s, "/fares/current", "GET", "ANY", (u, p) -> json("base", String.valueOf(Fares.BASE), "rate", String.valueOf(Fares.RATE_PER_KM), "baseKm", String.valueOf(Fares.BASE_KM)));
         route(s, "/cards/all", "GET", "OPERATOR", (u, p) -> {
             StringBuilder b = new StringBuilder();
             for (String uid : store.allCards())
@@ -375,14 +375,16 @@ public final class Main {
             return json("ok", "1");
         });
         route(s, "/admin/api/fares", "GET", "ADMIN", (u, p) -> {
-            StringBuilder b = new StringBuilder("Current|" + Fares.BASE + "|" + Fares.RATE_PER_KM + "|-\n");
+            StringBuilder b = new StringBuilder("Current|" + Fares.BASE + "|" + Fares.RATE_PER_KM + "|-|" + Fares.BASE_KM + "\n");
             for (String[] r : Csv.read(dir.resolve("fares.csv"))) b.append(String.join("|", r)).append('\n');
             return b.toString();
         });
         route(s, "/admin/api/fares/publish", "POST", "ADMIN", (u, p) -> {
             LocalDate eff;
             try { eff = LocalDate.parse(req(p, "effective")); } catch (java.time.format.DateTimeParseException e) { throw new IllegalArgumentException("Bad date"); }
-            Fares.publish(dir, eff, Long.parseLong(req(p, "base")), Long.parseLong(req(p, "rate")));
+            String baseKm = p.get("baseKm");                // optional; older clients keep the current band
+            if (baseKm == null || baseKm.isBlank()) Fares.publish(dir, eff, Long.parseLong(req(p, "base")), Long.parseLong(req(p, "rate")));
+            else Fares.publish(dir, eff, Long.parseLong(req(p, "base")), Long.parseLong(req(p, "rate")), Double.parseDouble(baseKm));
             return json("ok", "1");
         });
         route(s, "/admin/api/promos", "GET", "ADMIN", (u, p) -> {
