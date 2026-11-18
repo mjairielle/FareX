@@ -100,12 +100,13 @@ const views = {
   },
   async Fares(v) {
     const d = rows(await api('GET', '/admin/api/fares'));
-    v.appendChild(table(['Effective', 'Base (centavos)', 'Rate per km (centavos)', 'Published'], d));
+    v.appendChild(table(['Effective', 'Base (centavos)', 'Rate per km (centavos)', 'Published', 'Base km'], d));
     const c = el('div', undefined, { className: 'card' });
-    const base = field('Base fare in centavos, 1300 = P13.00'), rate = field('Rate per km in centavos, 200 = P2.00');
+    const base = field('Base fare in centavos, 1400 = P14.00'), rate = field('Rate per km after the base distance, 200 = P2.00');
+    const baseKm = field('Base distance in km, 4 jeepney / 5 bus (blank keeps current)');
     const eff = field('Effective date', new Date().toISOString().slice(0, 10)); eff.type = 'date';
-    c.append(el('h2', 'Publish new fare table'), base, rate, eff, btn('Publish', async () => {
-      await api('POST', '/admin/api/fares/publish', { base: base.value, rate: rate.value, effective: eff.value }); say('Published', true); show('Fares'); }));
+    c.append(el('h2', 'Publish new fare table'), base, rate, baseKm, eff, btn('Publish', async () => {
+      await api('POST', '/admin/api/fares/publish', { base: base.value, rate: rate.value, baseKm: baseKm.value, effective: eff.value }); say('Published', true); show('Fares'); }));
     v.appendChild(c);
   },
   async Promotions(v) {

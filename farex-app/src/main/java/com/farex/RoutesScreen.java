@@ -120,7 +120,8 @@ public class RoutesScreen extends Screen {
         // 4. Fare Table Card
         VBox fareCard = new VBox(6);
         fareCard.setStyle("-fx-background-color: #1c1c1c; -fx-padding: 14; -fx-background-radius: 8;");
-        Label fTitle = lime("Fare Matrix (Base ₱" + (currentFare.base() / 100.0) + " + ₱" + (currentFare.rate() / 100.0) + "/km)", 14);
+        Label fTitle = lime(String.format("Fare Matrix (₱%.2f first %.0f km + ₱%.2f/km after)",
+                currentFare.base() / 100.0, currentFare.baseKm(), currentFare.rate() / 100.0), 14);
         fareCard.getChildren().add(fTitle);
 
         Passenger passenger = Session.user instanceof Passenger p ? p : null;
