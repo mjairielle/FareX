@@ -12,6 +12,7 @@ import com.farex.ui.common.CardTile;
 import com.farex.ui.common.CommonUi;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.PopupDialog;
+import com.farex.ui.common.ProgressStep;
 import com.farex.ui.common.StepScreen;
 import com.farex.ui.common.Theme;
 import com.farex.ui.common.WarningDialog;
@@ -122,7 +123,7 @@ public class FetchLoadScreen extends StepScreen {
     // ----- Fetch Load / 03: the fake card read (Esc = failure) -----
 
     private void fetchingStep() {
-        body.getChildren().add(new FetchProgressStep(this::showSuccess, this::showFailure));
+        body.getChildren().add(new FetchStep(this::showSuccess, this::showFailure));
     }
 
     // ----- Results (pop-ups) -----
@@ -186,5 +187,41 @@ public class FetchLoadScreen extends StepScreen {
         VBox heading = new VBox(8, CommonUi.title(title), CommonUi.subtitle(subtitle));
         VBox.setMargin(heading, new Insets(0, 0, 6, 0));
         return heading;
+    }
+
+    // ---- formerly FetchProgressStep.java ----
+    private static final class FetchStep extends ProgressStep {
+        private final PendingLoad load;
+        private final Runnable onSuccess;
+        private final Runnable onFailure;
+        FetchStep(Runnable onSuccess, Runnable onFailure) {
+            this.onSuccess = onSuccess;
+            this.onFailure = onFailure;
+            DemoCard card = FetchLoadState.getCard();
+            load = card.getPendingLoad();
+            FetchLoadState.setLastLoad(load);
+            VBox heading = new VBox(8,
+                    CommonUi.title("Fetching your load\u2026"),
+                    CommonUi.subtitle("Keep your card in place. Do not close the app until the update is confirmed."));
+            VBox.setMargin(heading, new Insets(0, 0, 6, 0));
+            Label amount = new Label(CommonUi.peso(load.getAmount()));
+            amount.setTextFill(Theme.LIME);
+            amount.setFont(Theme.bold(30));
+            VBox panel = CommonUi.panel(amount, CommonUi.row("Card", CommonUi.masked(card)));
+            panel.getChildren().addAll(steps(
+                    "Payment verified",
+                    "Writing load to your card\u2026",
+                    "Confirm updated balance"));
+            panel.setPadding(new Insets(16, 14, 18, 14));
+            getChildren().addAll(
+                    heading, panel,
+                    CommonUi.note("If the connection drops, check the fetch status before trying again. "
+                            + "The same top-up can only be collected once."),
+                    CommonUi.spacer(),
+                    busyBar("Fetching\u2026"));
+            start(1);
+        }
+        @Override protected void onFinished() { FetchLoadState.collect(load); onSuccess.run(); }
+        @Override protected void onFailed()   { onFailure.run(); }
     }
 }

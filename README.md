@@ -75,9 +75,16 @@ The server loads configuration from environment variables (or `.env` in the root
 
 ## Connecting the Client App
 
-Once the Docker container is up and running on `localhost:8080`, start the client application:
-```cmd
-cd farex-app
-mvn javafx:run -Djavafx.mainClass=com.farex.Main
-```
+Once the server is running on `localhost:8080`, start the client application:
+- **From repository root:**
+  ```cmd
+  .\run-app.bat
+  ```
+- **From VS Code / IDE:**
+  Open `farex-app/src/main/java/com/farex/ui/UiLauncher.java` and click **▶ Run**.
+- **From `farex-app/` directory:**
+  ```cmd
+  cd farex-app
+  mvn javafx:run
+  ```
 The app will connect to `http://localhost:8080` by default.

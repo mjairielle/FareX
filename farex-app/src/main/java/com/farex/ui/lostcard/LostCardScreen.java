@@ -2,6 +2,7 @@ package com.farex.ui.lostcard;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
@@ -10,13 +11,18 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 
 import com.farex.ui.common.CardNumberField;
 import com.farex.ui.common.CardPickerDialog;
 import com.farex.ui.common.CommonUi;
 import com.farex.ui.common.Navigator;
+import com.farex.ui.common.OtpView;
 import com.farex.ui.common.PopupDialog;
+import com.farex.ui.common.ProgressStep;
 import com.farex.ui.common.StepScreen;
 import com.farex.ui.common.Theme;
 import com.farex.ui.common.WarningDialog;
@@ -129,13 +135,13 @@ public class LostCardScreen extends StepScreen {
     // ----- 03: the 6-digit code (123456) -----
 
     private void otpStep() {
-        body.getChildren().add(new LostOtpStep(() -> showStep(this::freezingStep)));
+        body.getChildren().add(new OtpStep(() -> showStep(this::freezingStep)));
     }
 
     // ----- 04: fake server freeze (Esc = failure) -----
 
     private void freezingStep() {
-        body.getChildren().add(new LostFreezeStep(this::showReported, this::showFreezeFailed));
+        body.getChildren().add(new FreezeStep(this::showReported, this::showFreezeFailed));
     }
 
     // 05 (pop-up): the card is frozen; its ₱676.50 waits for a replacement card
@@ -309,7 +315,7 @@ public class LostCardScreen extends StepScreen {
     // ----- 10: fake balance transfer (Esc = failure) -----
 
     private void transferringStep() {
-        body.getChildren().add(new LostTransferStep(this::showReplaced, this::showTransferFailed));
+        body.getChildren().add(new TransferStep(this::showReplaced, this::showTransferFailed));
     }
 
     // 11 (pop-up): the new card is active with the old balance; the old card is permanently frozen
@@ -367,5 +373,110 @@ public class LostCardScreen extends StepScreen {
         VBox heading = new VBox(8, CommonUi.title(title), CommonUi.subtitle(subtitle));
         VBox.setMargin(heading, new Insets(0, 0, 6, 0));
         return heading;
+    }
+
+    // ---- formerly LostFreezeStep.java ----
+    private static final class FreezeStep extends ProgressStep {
+        private final Runnable onSuccess;
+        private final Runnable onFailure;
+        FreezeStep(Runnable onSuccess, Runnable onFailure) {
+            this.onSuccess = onSuccess;
+            this.onFailure = onFailure;
+            DemoCard card = LostCardState.getCard();
+            VBox heading = new VBox(8,
+                    CommonUi.title("Protecting your card\u2026"),
+                    CommonUi.subtitle("Please wait for server confirmation before leaving this screen."));
+            VBox.setMargin(heading, new Insets(0, 0, 6, 0));
+            VBox panel = CommonUi.panel(CommonUi.row("Old card UID", CommonUi.masked(card)));
+            panel.getChildren().addAll(steps(
+                    "Cardholder verified",
+                    "Freezing old card UID\u2026",
+                    "Secure remaining ledger balance"));
+            panel.setPadding(new Insets(16, 14, 18, 14));
+            getChildren().addAll(
+                    heading, panel,
+                    CommonUi.note("Your card is not confirmed frozen yet. If the connection fails, "
+                            + "check the report status or contact support immediately."),
+                    CommonUi.spacer(),
+                    busyBar("Submitting report\u2026"));
+            start(1);
+        }
+        @Override protected void onFinished() { LostCardState.freeze(); onSuccess.run(); }
+        @Override protected void onFailed()   { onFailure.run(); }
+    }
+
+    // ---- formerly LostOtpStep.java ----
+    private static final class OtpStep extends OtpView {
+        private final Runnable onAccepted;
+        OtpStep(Runnable onAccepted) {
+            super("", "");
+            this.onAccepted = onAccepted;
+            DemoAccount account = MockData.getCurrentAccount();
+            String email = (account == null) ? MockData.DEMO_CONTACT : account.getContact();
+            HBox boxes = getCodeBoxes();
+            boxes.setSpacing(6);
+            boxes.setAlignment(Pos.CENTER_LEFT);
+            Label timer = getTimerLabel();
+            timer.setFont(Font.font("System", 11));
+            HBox expires = new HBox(4, CommonUi.small("Code expires in", Theme.WHITE), timer);
+            expires.setAlignment(Pos.CENTER_LEFT);
+            VBox codePanel = CommonUi.panel(CommonUi.small("Verification code", Theme.WHITE), boxes, expires);
+            codePanel.setPadding(new Insets(14, 10, 14, 10));
+            Label emailLabel = new Label(email);
+            emailLabel.setTextFill(Theme.WHITE);
+            emailLabel.setFont(Theme.bold(13));
+            VBox heading = new VBox(8,
+                    CommonUi.title("Verify it\u2019s you"),
+                    CommonUi.subtitle("Enter the 6-digit code sent to your registered email to authorize the card freeze."),
+                    emailLabel);
+            setAlignment(Pos.TOP_LEFT);
+            setSpacing(12);
+            setPadding(Insets.EMPTY);
+            setBackground(null);
+            VBox.setVgrow(this, Priority.ALWAYS);
+            getChildren().setAll(
+                    heading, codePanel, getErrorLabel(),
+                    CommonUi.note("Never share this code. FareX support will not ask for your verification code."),
+                    CommonUi.spacer(),
+                    CommonUi.limeButton("Verify and submit report", this::verifyNow),
+                    CommonUi.link("Resend code", this::resendCode));
+        }
+        @Override protected void onCodeAccepted() { onAccepted.run(); }
+    }
+
+    // ---- formerly LostTransferStep.java ----
+    private static final class TransferStep extends ProgressStep {
+        private final Runnable onSuccess;
+        private final Runnable onFailure;
+        TransferStep(Runnable onSuccess, Runnable onFailure) {
+            this.onSuccess = onSuccess;
+            this.onFailure = onFailure;
+            DemoCard card = LostCardState.getCard();
+            String newNumber = LostCardState.getNewCardNumber();
+            VBox heading = new VBox(8,
+                    CommonUi.title("Transferring your balance\u2026"),
+                    CommonUi.subtitle("Please wait. Your replacement card will activate after the server "
+                            + "confirms the transfer."));
+            VBox.setMargin(heading, new Insets(0, 0, 6, 0));
+            Label amount = new Label(CommonUi.peso(card.getBalance()));
+            amount.setTextFill(Theme.LIME);
+            amount.setFont(Theme.bold(26));
+            String uids = card.getLastFour() + " \u2192 " + newNumber.substring(newNumber.length() - 4);
+            VBox panel = CommonUi.panel(amount, CommonUi.row("Old UID \u2192 New UID", uids));
+            panel.getChildren().addAll(steps(
+                    "Old UID frozen",
+                    "New card issued and verified",
+                    "Moving ledger balance\u2026"));
+            panel.setPadding(new Insets(16, 14, 18, 14));
+            getChildren().addAll(
+                    heading, panel,
+                    CommonUi.note("Do not request a second transfer. If interrupted, check the transfer status "
+                            + "to avoid duplicate requests."),
+                    CommonUi.spacer(),
+                    busyBar("Transferring\u2026"));
+            start(2);
+        }
+        @Override protected void onFinished() { LostCardState.transfer(); onSuccess.run(); }
+        @Override protected void onFailed()   { onFailure.run(); }
     }
 }

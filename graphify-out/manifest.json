@@ -1,0 +1,1244 @@
+{
+  "docker-compose.yml": {
+    "mtime": 1794977947.3311615,
+    "seen": 1795044032.6911263,
+    "ast_hash": "be1329afa7962226a7e92969abb65557",
+    "semantic_hash": ""
+  },
+  "farex-app/pom.xml": {
+    "mtime": 1795040694.1382875,
+    "seen": 1795044032.6911337,
+    "ast_hash": "9175f1481187f5f5f131992462b63d17",
+    "semantic_hash": ""
+  },
+  "farex-app/src/android/java/com/farex/android/ClassicNfc.java": {
+    "mtime": 1794973000.0219386,
+    "seen": 1795044032.6911364,
+    "ast_hash": "ce70e5a2512778450bb2050fd1d5daf4",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/Api.java": {
+    "mtime": 1794975440.4539137,
+    "seen": 1795044032.6911378,
+    "ast_hash": "1a5a79935b8a348cc731eacd0f3f3e9b",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/operator/GpsSimulator.java": {
+    "mtime": 1794973000.0438297,
+    "seen": 1795044032.691139,
+    "ast_hash": "8ddecb673347b8b67d40c001e5bc1a66",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/operator/OfflineQueue.java": {
+    "mtime": 1794973000.0449326,
+    "seen": 1795044032.6911402,
+    "ast_hash": "a460e81ab4bc1c451941f2804050d9d4",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/operator/ShiftSession.java": {
+    "mtime": 1794973000.0449326,
+    "seen": 1795044032.6911414,
+    "ast_hash": "d05f218b6616604466780266c591b204",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/FarexApp.java": {
+    "mtime": 1795041711.7244081,
+    "seen": 1795044032.6911423,
+    "ast_hash": "30dbdc83709fa7f717f47c386003b729",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/UiLauncher.java": {
+    "mtime": 1794979021.7603402,
+    "seen": 1795044032.6911433,
+    "ast_hash": "181e09209650c9506ce01486cda3d3f2",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/auth/AccountTypeView.java": {
+    "mtime": 1794973000.0473244,
+    "seen": 1795044032.691144,
+    "ast_hash": "c7d2e32a06c29bd32a095e3ed73896a0",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/auth/AuthenticationScreen.java": {
+    "mtime": 1794973000.0473244,
+    "seen": 1795044032.691145,
+    "ast_hash": "cb8bf73a35e2d48c6be12bd40205415a",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/auth/CongratsView.java": {
+    "mtime": 1794973000.0491474,
+    "seen": 1795044032.6911461,
+    "ast_hash": "b69bc1012946e93d6cf10d0816252787",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/auth/LoginView.java": {
+    "mtime": 1794973000.0491474,
+    "seen": 1795044032.6911473,
+    "ast_hash": "5d7a4b13a7e44bcfbebd9735cc412860",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/auth/RegisterView.java": {
+    "mtime": 1794973000.0491474,
+    "seen": 1795044032.6911478,
+    "ast_hash": "54a5dd9eba20dfb05c1a899e32caf194",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/auth/SignUpState.java": {
+    "mtime": 1794973000.0501602,
+    "seen": 1795044032.6911488,
+    "ast_hash": "411002b5be452326077f213633906316",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/auth/SplashView.java": {
+    "mtime": 1794973000.0501602,
+    "seen": 1795044032.6911495,
+    "ast_hash": "8a640712ddab07aa55e62a0e6973479d",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/auth/WelcomeView.java": {
+    "mtime": 1794973000.0501602,
+    "seen": 1795044032.6911504,
+    "ast_hash": "7d9a9ea31e7c69f8bce56cc5954d801f",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/AmountField.java": {
+    "mtime": 1794973000.0511572,
+    "seen": 1795044032.6911514,
+    "ast_hash": "b814a44d7a738a330060b340116ecb92",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/Assets.java": {
+    "mtime": 1794973000.0511572,
+    "seen": 1795044032.691152,
+    "ast_hash": "80b55e3f4bf9de26070c9fb2fabb7cb0",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/Avatar.java": {
+    "mtime": 1794973000.05216,
+    "seen": 1795044032.691153,
+    "ast_hash": "6f86dd62ee23b09c91a9d2bb688e65e9",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/CardChoiceTile.java": {
+    "mtime": 1794973000.05216,
+    "seen": 1795044032.6911542,
+    "ast_hash": "283212018fc69cfce4eaf4800b4db4ce",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/CardNumberField.java": {
+    "mtime": 1794973000.0534399,
+    "seen": 1795044032.6911552,
+    "ast_hash": "a50be526f4be7616bb0fe99ee36cf215",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/CardPickerDialog.java": {
+    "mtime": 1794973000.0534399,
+    "seen": 1795044032.6911561,
+    "ast_hash": "0b161ab0e6ed5c8e455afb99c862f7ef",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/CardTile.java": {
+    "mtime": 1794973000.0549154,
+    "seen": 1795044032.691157,
+    "ast_hash": "3417803379bcc1e19cd4a0675c82e0ce",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/CheckRing.java": {
+    "mtime": 1794973000.0549154,
+    "seen": 1795044032.691158,
+    "ast_hash": "7ad911971961a3b19a155626021fca58",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/CommonUi.java": {
+    "mtime": 1794973000.0549154,
+    "seen": 1795044032.6911588,
+    "ast_hash": "23c13d22f29dd9ffda65ecf57af9cf7e",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/IconField.java": {
+    "mtime": 1794973000.0549154,
+    "seen": 1795044032.6911595,
+    "ast_hash": "3f5059607ef1c7ffbf77701915432b40",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/Icons.java": {
+    "mtime": 1794973000.0561337,
+    "seen": 1795044032.6911602,
+    "ast_hash": "69e2b9e0d973cc31c9cea66171c5d146",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/LabeledField.java": {
+    "mtime": 1794973000.0561337,
+    "seen": 1795044032.6911612,
+    "ast_hash": "eb8d1369051f0bd64e1ba2079735db00",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/LeafletMap.java": {
+    "mtime": 1794975440.4584067,
+    "seen": 1795044032.691162,
+    "ast_hash": "2c00a04a290ada5ced4b9114b15b9f6e",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/MapView.java": {
+    "mtime": 1794973000.0561337,
+    "seen": 1795044032.6911628,
+    "ast_hash": "7335795d4e6f34ef4f5f62394c98cb1e",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/Navigator.java": {
+    "mtime": 1794973000.057145,
+    "seen": 1795044032.6911635,
+    "ast_hash": "38de6a4b19c696a976343829b8073ca7",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/OtpView.java": {
+    "mtime": 1794973000.057145,
+    "seen": 1795044032.6911645,
+    "ast_hash": "e9d402e63f5df50049021055a46be52a",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/PopupDialog.java": {
+    "mtime": 1794973000.0581455,
+    "seen": 1795044032.6911654,
+    "ast_hash": "6dbd4f252653399244adda1e6ee639f0",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/ProgressStep.java": {
+    "mtime": 1794973000.059379,
+    "seen": 1795044032.6911662,
+    "ast_hash": "10271062a2b3806ff79f9a15de4b47de",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/StepScreen.java": {
+    "mtime": 1794973000.0607157,
+    "seen": 1795044032.6911669,
+    "ast_hash": "cbde99c7050524340a36d99fd2eaf5f5",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/SubScreen.java": {
+    "mtime": 1794973000.0617316,
+    "seen": 1795044032.6911678,
+    "ast_hash": "4b23aaf891e0de8a3b4f2334c8fc0c88",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/Theme.java": {
+    "mtime": 1794973000.0617316,
+    "seen": 1795044032.6911688,
+    "ast_hash": "4301c3b6ff833d398a6348d59777e9db",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/ToggleSwitch.java": {
+    "mtime": 1794973000.0617316,
+    "seen": 1795044032.6911695,
+    "ast_hash": "d921306ea27cc6de5775abf2dff67c6b",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/common/WarningDialog.java": {
+    "mtime": 1794973000.0617316,
+    "seen": 1795044032.6911702,
+    "ast_hash": "5edc7fd5726baf1fd1fe09a0e158a9ad",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/data/DemoAccount.java": {
+    "mtime": 1794973000.0632236,
+    "seen": 1795044032.6911712,
+    "ast_hash": "9057b8bb06b9c044cef307cddf81acc1",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/data/DemoCard.java": {
+    "mtime": 1794973000.0632236,
+    "seen": 1795044032.6911721,
+    "ast_hash": "4cee3c6da6a95597d7d2ee2b3dc317b1",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/data/DemoNotification.java": {
+    "mtime": 1794973000.0642338,
+    "seen": 1795044032.6911728,
+    "ast_hash": "6d4c816aed4ed75ff600b639e1e77fd6",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/data/DemoTransaction.java": {
+    "mtime": 1794973000.0652347,
+    "seen": 1795044032.691174,
+    "ast_hash": "4a786e2fe62e64d726264503e5125687",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/data/MockData.java": {
+    "mtime": 1794973000.0652347,
+    "seen": 1795044032.691175,
+    "ast_hash": "f9746ca737754b16e11adca099eef77c",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/data/PendingLoad.java": {
+    "mtime": 1794973000.06642,
+    "seen": 1795044032.6911757,
+    "ast_hash": "2fdd67b3985b01f464c7b86e44e1823c",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/fetch/FetchLoadScreen.java": {
+    "mtime": 1795041711.846154,
+    "seen": 1795044032.6911767,
+    "ast_hash": "bd8e853c4513df6783a1406096ce33fc",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/fetch/FetchLoadState.java": {
+    "mtime": 1794973000.0679097,
+    "seen": 1795044032.6911774,
+    "ast_hash": "f05aaa8133c29ba8ffcaae1163b92d92",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/home/AddCardView.java": {
+    "mtime": 1794973000.0704336,
+    "seen": 1795044032.6911783,
+    "ast_hash": "e101f132cfa24e512bffbd4ef9c52ab6",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/home/AllCardsView.java": {
+    "mtime": 1794973000.0704336,
+    "seen": 1795044032.6911793,
+    "ast_hash": "c5bf90899047877bbe35e8d7b195e3cd",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/home/HomeView.java": {
+    "mtime": 1794973000.0718882,
+    "seen": 1795044032.6911798,
+    "ast_hash": "7e1724cc8ff9aaf95b9c128c216183fd",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/home/LogoutDialog.java": {
+    "mtime": 1794973000.0718882,
+    "seen": 1795044032.6911807,
+    "ast_hash": "62622c3340740c074ab0187ec09c18fc",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/home/MainShell.java": {
+    "mtime": 1794973000.0718882,
+    "seen": 1795044032.691182,
+    "ast_hash": "a7383006dd0d516554261fe035484a36",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/home/NotificationsView.java": {
+    "mtime": 1794973000.0733554,
+    "seen": 1795044032.6911826,
+    "ast_hash": "1f5e1582ec29fae5e5be847cda146213",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/home/TransactionsView.java": {
+    "mtime": 1794973000.0733554,
+    "seen": 1795044032.6911833,
+    "ast_hash": "0363367c0d70d91d56858d79c0cbe352",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/load/BuyLoadScreen.java": {
+    "mtime": 1794973000.074367,
+    "seen": 1795044032.6911843,
+    "ast_hash": "bf9b3031c7d380e73c0215e65d1618ed",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/load/BuyLoadState.java": {
+    "mtime": 1794973000.074367,
+    "seen": 1795044032.6911924,
+    "ast_hash": "5140cb1fa71f0e960b1d3027b023fade",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/load/LoadAccountStep.java": {
+    "mtime": 1794973000.0753963,
+    "seen": 1795044032.6911933,
+    "ast_hash": "3ea118876c3bc0c3ec2d8c5e8a7ab30b",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/load/LoadAmountStep.java": {
+    "mtime": 1794973000.0753963,
+    "seen": 1795044032.691194,
+    "ast_hash": "57a7e2bdbad3483a136d87713628abdb",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/load/LoadCardStep.java": {
+    "mtime": 1794973000.0753963,
+    "seen": 1795044032.6911948,
+    "ast_hash": "fa0405fde7280ec48db75206fc8808da",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/load/LoadMethodStep.java": {
+    "mtime": 1794973000.0753963,
+    "seen": 1795044032.6911957,
+    "ast_hash": "3f7a44ae94037720b3018ab9effb6a99",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/load/LoadOtpStep.java": {
+    "mtime": 1794973000.0768757,
+    "seen": 1795044032.6911967,
+    "ast_hash": "df0c2717a3f821cf049f2ac9ef7b6129",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/load/LoadReceiptStep.java": {
+    "mtime": 1794973000.0768757,
+    "seen": 1795044032.6911974,
+    "ast_hash": "899c133801d36daf6648fdcde8ef9c6c",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/load/LoadReviewStep.java": {
+    "mtime": 1794973000.0768757,
+    "seen": 1795044032.691198,
+    "ast_hash": "c42ef1d87640dcc41fa80a9287980ac3",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/lostcard/LostCardScreen.java": {
+    "mtime": 1795041712.0015829,
+    "seen": 1795044032.691199,
+    "ast_hash": "b7d01447d9a5397f8f8eb1d20437dfd7",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/lostcard/LostCardState.java": {
+    "mtime": 1794973000.078021,
+    "seen": 1795044032.6911998,
+    "ast_hash": "1110b9951866046edc622e443aaab648",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/EndShiftDialog.java": {
+    "mtime": 1794973000.0803437,
+    "seen": 1795044032.691201,
+    "ast_hash": "259b79147bd0f9236cdd3574b6160292",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/JeepneyQr.java": {
+    "mtime": 1794973000.0813518,
+    "seen": 1795044032.6912017,
+    "ast_hash": "fd32736527c4c8c791d61396ffc790d6",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/OperatorDashboardView.java": {
+    "mtime": 1794973000.0813518,
+    "seen": 1795044032.6912026,
+    "ast_hash": "2509ccfea2504b48648dbcf7ca9e4e58",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/OperatorHistoryView.java": {
+    "mtime": 1794973000.0813518,
+    "seen": 1795044032.6912036,
+    "ast_hash": "05ce29488ff6d0a3dbc4d05b0d42f297",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/OperatorIntroView.java": {
+    "mtime": 1794973000.0823736,
+    "seen": 1795044032.6912043,
+    "ast_hash": "d92fb20aafd018920f4c7485e51fd9d1",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/OperatorShell.java": {
+    "mtime": 1794973000.0823736,
+    "seen": 1795044032.6912053,
+    "ast_hash": "0412eba1de22147799a4289fd05bdb4e",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/OperatorState.java": {
+    "mtime": 1794975440.4604306,
+    "seen": 1795044032.6912065,
+    "ast_hash": "16b9495d370b211e890cf860b830dded",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/OperatorSummaryView.java": {
+    "mtime": 1794973000.0838475,
+    "seen": 1795044032.6912074,
+    "ast_hash": "62de456a2815df16c4ea6966b1de41dd",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/OperatorSyncScreen.java": {
+    "mtime": 1794973000.0838475,
+    "seen": 1795044032.691208,
+    "ast_hash": "1bd8d99ced8219f26b812d66455b1435",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/OperatorUi.java": {
+    "mtime": 1794973000.0850272,
+    "seen": 1795044032.691209,
+    "ast_hash": "733a41d9c623d0c8381c0ac000182093",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/ReadyModeView.java": {
+    "mtime": 1794973000.0850272,
+    "seen": 1795044032.6912098,
+    "ast_hash": "85bf98b96b357be6bd261be4232ee10d",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/SampleShift.java": {
+    "mtime": 1794973000.0850272,
+    "seen": 1795044032.6912105,
+    "ast_hash": "2825299d8edaa30d2a4abc6a32e97fee",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/ShiftRecord.java": {
+    "mtime": 1794973000.0850272,
+    "seen": 1795044032.6912117,
+    "ast_hash": "a04554735d5f8605d89c2e526aec5d08",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/TapPickerDialog.java": {
+    "mtime": 1794973000.0862665,
+    "seen": 1795044032.691213,
+    "ast_hash": "1285c51c3c0385367aa3738939b6bcb7",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/TapPreviewDialog.java": {
+    "mtime": 1794973000.0862665,
+    "seen": 1795044032.6912136,
+    "ast_hash": "12529b917913cd585f3d0831fe3381b2",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/TapResult.java": {
+    "mtime": 1794973000.0862665,
+    "seen": 1795044032.6912146,
+    "ast_hash": "dce6ff203b3860812621190125961304",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/TapResultDialog.java": {
+    "mtime": 1794973000.0872762,
+    "seen": 1795044032.6912155,
+    "ast_hash": "c5e7236e669ca92a209e737dd46b498f",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/TapRider.java": {
+    "mtime": 1794973000.0885212,
+    "seen": 1795044032.6912165,
+    "ast_hash": "153f1f607c2f5d2763ce4f71ef9eda8b",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/operator/TapTerminal.java": {
+    "mtime": 1794975440.4614267,
+    "seen": 1795044032.6912174,
+    "ast_hash": "308220e3a56bbff0ebad01df1e6d1482",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/profile/AccountScreen.java": {
+    "mtime": 1794973000.0892775,
+    "seen": 1795044032.6912181,
+    "ast_hash": "bed629389a44e65ff255739edd967351",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/profile/ChangePasswordView.java": {
+    "mtime": 1794973000.0902865,
+    "seen": 1795044032.69122,
+    "ast_hash": "d9f5f3dbb0d5b263c5a5218b2600de19",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/profile/ChangePhotoSheet.java": {
+    "mtime": 1794973000.091298,
+    "seen": 1795044032.6912208,
+    "ast_hash": "095feb8ec175440c4f14a6300db9cf52",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/profile/DeleteAccountView.java": {
+    "mtime": 1794973000.091298,
+    "seen": 1795044032.6912217,
+    "ast_hash": "decdc2b3114559c539b09d5d634a1d66",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/profile/PrivacyView.java": {
+    "mtime": 1794973000.091298,
+    "seen": 1795044032.6912224,
+    "ast_hash": "96061ad54f82adb1d707ce72f5c68482",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/profile/ProfileState.java": {
+    "mtime": 1794973000.0926557,
+    "seen": 1795044032.6912239,
+    "ast_hash": "d8799327d55b8b1b4e308626332dc448",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/profile/ProfileView.java": {
+    "mtime": 1794973000.0926557,
+    "seen": 1795044032.6912246,
+    "ast_hash": "02eeea88fbf360e2dd5be05151a41e3e",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/profile/TermsView.java": {
+    "mtime": 1794973000.0926557,
+    "seen": 1795044032.6912255,
+    "ast_hash": "176baa1fb7958e8483201b3719c927ce",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/redeem/RedeemScreen.java": {
+    "mtime": 1795041712.1039977,
+    "seen": 1795044032.6912265,
+    "ast_hash": "45c934e842fc1922f9cdd5270d52b386",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/redeem/RedeemState.java": {
+    "mtime": 1794973000.0951436,
+    "seen": 1795044032.6912274,
+    "ast_hash": "874071bbec927b716ac0a966c278c106",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/trip/LocationPermissionDialog.java": {
+    "mtime": 1794973000.0965145,
+    "seen": 1795044032.6912282,
+    "ast_hash": "f3130af874cb284d7527e08f6a9d27bf",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/trip/RoutesView.java": {
+    "mtime": 1794975440.4614267,
+    "seen": 1795044032.6912289,
+    "ast_hash": "70f883d2d6c2b8704e2aef2f30ffa5bf",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/trip/TripDialogs.java": {
+    "mtime": 1794975440.4624152,
+    "seen": 1795044032.6912296,
+    "ast_hash": "681de6c8af812219d9564a033a1c45ae",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/trip/TripPlace.java": {
+    "mtime": 1794973000.0978346,
+    "seen": 1795044032.6912305,
+    "ast_hash": "0927b11b5286258f469ab7c1c55e1c78",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/trip/TripRoute.java": {
+    "mtime": 1794975440.465415,
+    "seen": 1795044032.6912313,
+    "ast_hash": "ee6cf27706f4cf931e010bae960ede4e",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/trip/TripScreen.java": {
+    "mtime": 1794975440.4664166,
+    "seen": 1795044032.691232,
+    "ast_hash": "574b7281cb7a5f63983411995be021ff",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/trip/TripSearchStep.java": {
+    "mtime": 1794975440.4664166,
+    "seen": 1795044032.691233,
+    "ast_hash": "c1f326b8f62f5b19c89b30cf6ccb7089",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/trip/TripState.java": {
+    "mtime": 1794975440.467922,
+    "seen": 1795044032.6912336,
+    "ast_hash": "0009e35eb84775066d0ac3018ed51644",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/java/com/farex/ui/trip/TripUi.java": {
+    "mtime": 1794975440.4689274,
+    "seen": 1795044032.6912344,
+    "ast_hash": "e80e51ea0d4a984470eed83991f6033b",
+    "semantic_hash": ""
+  },
+  "farex-server/pom.xml": {
+    "mtime": 1794977906.2849417,
+    "seen": 1795044032.6912353,
+    "ast_hash": "c3ba25c60f01973e0cab6bc0416cbe88",
+    "semantic_hash": ""
+  },
+  "farex-server/src/main/java/farex/server/AdminPage.java": {
+    "mtime": 1794975440.4719436,
+    "seen": 1795044032.691236,
+    "ast_hash": "3dcebf788f799eb2f9b803ed61cffad9",
+    "semantic_hash": ""
+  },
+  "farex-server/src/main/java/farex/server/Env.java": {
+    "mtime": 1794973000.129202,
+    "seen": 1795044032.691237,
+    "ast_hash": "c0debff51c935e68cdd34f1ffe56bdeb",
+    "semantic_hash": ""
+  },
+  "farex-server/src/main/java/farex/server/FetchRouteShapes.java": {
+    "mtime": 1794975440.4729435,
+    "seen": 1795044032.6912377,
+    "ast_hash": "15a94194da34eeff18824ae880bc4103",
+    "semantic_hash": ""
+  },
+  "farex-server/src/main/java/farex/server/Main.java": {
+    "mtime": 1794975440.4739435,
+    "seen": 1795044032.6912386,
+    "ast_hash": "88b92250fe7053f6125aff32b4a6fd2c",
+    "semantic_hash": ""
+  },
+  "farex-server/src/main/java/farex/server/Pay.java": {
+    "mtime": 1794973000.130382,
+    "seen": 1795044032.6912396,
+    "ast_hash": "481e4aa7fda8f30bedf9bad3b20502bd",
+    "semantic_hash": ""
+  },
+  "farex-server/test.sh": {
+    "mtime": 1794973000.1318586,
+    "seen": 1795044032.6912405,
+    "ast_hash": "12f0cbd617d878eda18e9a0f53c15ce0",
+    "semantic_hash": ""
+  },
+  "farex-shared/pom.xml": {
+    "mtime": 1794973000.1329274,
+    "seen": 1795044032.6912413,
+    "ast_hash": "846bbc713f92383c1345542e0fe1f181",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/card/CardIO.java": {
+    "mtime": 1794973000.1353402,
+    "seen": 1795044032.691242,
+    "ast_hash": "02523f519c6e3459c7b175e6ec54ad3e",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/card/CardPayload.java": {
+    "mtime": 1794973000.1353402,
+    "seen": 1795044032.6912432,
+    "ast_hash": "4a525d4e72b0327213300bde8dca2e7b",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/card/SimCardIO.java": {
+    "mtime": 1794973000.136341,
+    "seen": 1795044032.6912444,
+    "ast_hash": "47cde2a4d398117d97edd817514ecced",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/data/Csv.java": {
+    "mtime": 1794973000.136951,
+    "seen": 1795044032.6912453,
+    "ast_hash": "04892c45172a99123ac3be7656111665",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/data/OperatorDemo.java": {
+    "mtime": 1794973000.136951,
+    "seen": 1795044032.691246,
+    "ast_hash": "9fc6a479cc30713867bdf78cebea6720",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/data/RoadDistances.java": {
+    "mtime": 1794975440.4749455,
+    "seen": 1795044032.6912467,
+    "ast_hash": "98d87bbcf6659e91cf0a1a745ab9c24c",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/data/RouteBook.java": {
+    "mtime": 1794975440.4749455,
+    "seen": 1795044032.6912477,
+    "ast_hash": "f95210d8e5c59c07bfe283401ed83450",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/data/RouteShapes.java": {
+    "mtime": 1794975440.475997,
+    "seen": 1795044032.6912487,
+    "ast_hash": "87a11a4dd35f8ca40f1a950d537855bd",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/data/RouteStop.java": {
+    "mtime": 1794973000.1382124,
+    "seen": 1795044032.6912496,
+    "ast_hash": "acacf6dabc7b9e26fb4a7d467d5a5249",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/data/Store.java": {
+    "mtime": 1794975440.4780133,
+    "seen": 1795044032.6912708,
+    "ast_hash": "47699f7dc335cf8ac64b91c428ab07fb",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/data/StoreDemo.java": {
+    "mtime": 1794973000.1392984,
+    "seen": 1795044032.6912787,
+    "ast_hash": "49a258b9c0f8c041120c22b6e3070ea8",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/data/TapDesk.java": {
+    "mtime": 1794973000.1403098,
+    "seen": 1795044032.6912801,
+    "ast_hash": "a8b79224777f7edbe522ff5e08469877",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/fare/DiscountedFare.java": {
+    "mtime": 1794973000.1403098,
+    "seen": 1795044032.6912813,
+    "ast_hash": "2115254424447301827f6ea2cf1eebb3",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/fare/FareRule.java": {
+    "mtime": 1794973000.1414633,
+    "seen": 1795044032.6912823,
+    "ast_hash": "f5cc9f7f01f7e3d3dd4c915b4993776c",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/fare/FareRuleDemo.java": {
+    "mtime": 1794973000.1414633,
+    "seen": 1795044032.6912832,
+    "ast_hash": "ab396992d499ca88a6c71e45e1bd41f7",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/fare/Fares.java": {
+    "mtime": 1794975440.479,
+    "seen": 1795044032.6912842,
+    "ast_hash": "37c4123a6f43ba9fa76d7913ef721c42",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/fare/RegularFare.java": {
+    "mtime": 1794973000.143253,
+    "seen": 1795044032.6912856,
+    "ast_hash": "8849551e5298437a2a9b72ea74a54639",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/plan/TripPlanner.java": {
+    "mtime": 1794975440.4800012,
+    "seen": 1795044032.6912868,
+    "ast_hash": "983faf10894e3a86a052119e669f2675",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/plan/TripPlannerDemo.java": {
+    "mtime": 1794973000.143253,
+    "seen": 1795044032.6912878,
+    "ast_hash": "8dfd302e0fa9686206f5950f94eb3089",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/reward/Rewards.java": {
+    "mtime": 1794973000.1447513,
+    "seen": 1795044032.691289,
+    "ast_hash": "ae40c1c710236027662dcbf5b4f752b3",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/reward/RewardsDemo.java": {
+    "mtime": 1794973000.1458888,
+    "seen": 1795044032.69129,
+    "ast_hash": "055e43830e6d97cbfcad65054ea5ec22",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/txn/CardLoad.java": {
+    "mtime": 1794973000.1458888,
+    "seen": 1795044032.6912909,
+    "ast_hash": "115f190cabc74b63858aa3d5d608c5ef",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/txn/FarePayment.java": {
+    "mtime": 1794973000.1458888,
+    "seen": 1795044032.6912918,
+    "ast_hash": "dc852bc8437b2786fc428e2f08227ee0",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/txn/Txn.java": {
+    "mtime": 1794973000.1472077,
+    "seen": 1795044032.691293,
+    "ast_hash": "101d05b069392487806a93007a98d18e",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/txn/TxnDemo.java": {
+    "mtime": 1794973000.1472077,
+    "seen": 1795044032.691294,
+    "ast_hash": "e7ccd7b1c1c136b179d487da56322f6b",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/user/Admin.java": {
+    "mtime": 1794973000.1472077,
+    "seen": 1795044032.691295,
+    "ast_hash": "230eae478c1e39a15a99a9499cfbb67a",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/user/Operator.java": {
+    "mtime": 1794973000.1482167,
+    "seen": 1795044032.6912959,
+    "ast_hash": "23f2affc5984339e2bf09f18ce2efb29",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/user/Passenger.java": {
+    "mtime": 1794973000.1482167,
+    "seen": 1795044032.6912968,
+    "ast_hash": "9eab4f4b77ff64d7349756c04e92ef3d",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/user/User.java": {
+    "mtime": 1794973000.1494894,
+    "seen": 1795044032.6912978,
+    "ast_hash": "4bfe474ebd9bd89c67f83a148893bf30",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/main/java/farex/shared/user/UserDemo.java": {
+    "mtime": 1794973000.1494894,
+    "seen": 1795044032.6912985,
+    "ast_hash": "8f5597a1be21bd6ae6bcd794518fd46f",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/test/java/farex/shared/TestSuite.java": {
+    "mtime": 1794975440.4810014,
+    "seen": 1795044032.6912997,
+    "ast_hash": "19855a8244328049b017316362921003",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/test/java/farex/shared/card/CardPayloadTest.java": {
+    "mtime": 1794973000.1522484,
+    "seen": 1795044032.6913006,
+    "ast_hash": "4b51b401edb1f656e6e43d269153b76a",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/test/java/farex/shared/data/OperatorTest.java": {
+    "mtime": 1794973000.1522484,
+    "seen": 1795044032.6913013,
+    "ast_hash": "dcb8c63e9d79bd59c749970d5cd1aeb8",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/test/java/farex/shared/data/StoreTest.java": {
+    "mtime": 1794973000.153733,
+    "seen": 1795044032.6913023,
+    "ast_hash": "45b82f74b5f32a5f59e8c38a8c20e883",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/test/java/farex/shared/fare/FareRuleTest.java": {
+    "mtime": 1794975440.4819987,
+    "seen": 1795044032.6913035,
+    "ast_hash": "4f88c4bb276712f01b0d5680945de1fb",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/test/java/farex/shared/fare/RoadKmTest.java": {
+    "mtime": 1794975440.4829993,
+    "seen": 1795044032.6913042,
+    "ast_hash": "29e8621e729ad003e8fe2382cd2aba50",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/test/java/farex/shared/plan/TripPlannerTest.java": {
+    "mtime": 1794975440.484015,
+    "seen": 1795044032.6913052,
+    "ast_hash": "d8b2ef84e1fc101da28f4e26e8df3014",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/test/java/farex/shared/reward/RewardsTest.java": {
+    "mtime": 1794973000.1557422,
+    "seen": 1795044032.6913059,
+    "ast_hash": "ae01f8299205a5dc1cd3aa165d71af51",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/test/java/farex/shared/txn/TxnTest.java": {
+    "mtime": 1794973000.1569986,
+    "seen": 1795044032.691307,
+    "ast_hash": "c4d2b5315729c68eef24041c2c7595ca",
+    "semantic_hash": ""
+  },
+  "farex-shared/src/test/java/farex/shared/user/UserTest.java": {
+    "mtime": 1794973000.1580234,
+    "seen": 1795044032.6913078,
+    "ast_hash": "cae3a5f31658874d9acb931aa86a99c8",
+    "semantic_hash": ""
+  },
+  "pom.xml": {
+    "mtime": 1794973000.1643226,
+    "seen": 1795044032.6913087,
+    "ast_hash": "783b3f011d6a4aa8b4200bf684b0a09f",
+    "semantic_hash": ""
+  },
+  "README-RUN.txt": {
+    "mtime": 1794972999.9998355,
+    "seen": 1795044032.69131,
+    "ast_hash": "002608fcd8bde0c619725696376ffe11",
+    "semantic_hash": ""
+  },
+  "README.md": {
+    "mtime": 1795040694.083187,
+    "seen": 1795044032.6913106,
+    "ast_hash": "0c2594a9b9b984da00a56057c535bdc9",
+    "semantic_hash": ""
+  },
+  "SETUP.md": {
+    "mtime": 1794973000.0010054,
+    "seen": 1795044032.6913116,
+    "ast_hash": "6c02bae4276b785b969aa09a76e65800",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/map/leaflet.html": {
+    "mtime": 1794975440.4699268,
+    "seen": 1795044032.6913123,
+    "ast_hash": "fe9f5f49ec609494e8313b82b9b9b786",
+    "semantic_hash": ""
+  },
+  "farex-server/README.md": {
+    "mtime": 1794973000.124319,
+    "seen": 1795044032.6913135,
+    "ast_hash": "c7a9e0b370123c4a0cf3431635685006",
+    "semantic_hash": ""
+  },
+  "flowcharts/00-master-overview.md": {
+    "mtime": 1794973000.1580234,
+    "seen": 1795044032.6913145,
+    "ast_hash": "7b2f8a310e7c739dedabaf60f45404f7",
+    "semantic_hash": ""
+  },
+  "flowcharts/01-account-management.md": {
+    "mtime": 1794973000.1580234,
+    "seen": 1795044032.6913154,
+    "ast_hash": "c4aee42d4eff56f0e5750137e27472bc",
+    "semantic_hash": ""
+  },
+  "flowcharts/02-card-system.md": {
+    "mtime": 1794973000.1603563,
+    "seen": 1795044032.6913164,
+    "ast_hash": "60fcf7945441a8370f343fb7443f6238",
+    "semantic_hash": ""
+  },
+  "flowcharts/03-transport-system.md": {
+    "mtime": 1794973000.1603563,
+    "seen": 1795044032.6913176,
+    "ast_hash": "ff9e3eb588736f79d7daf667c85e2b7d",
+    "semantic_hash": ""
+  },
+  "flowcharts/04-trip-planner.md": {
+    "mtime": 1794973000.1603563,
+    "seen": 1795044032.6913185,
+    "ast_hash": "0c2222740cde8f464e6ea59838d8f11e",
+    "semantic_hash": ""
+  },
+  "flowcharts/05-rewards-system.md": {
+    "mtime": 1794973000.1613588,
+    "seen": 1795044032.6913195,
+    "ast_hash": "fa304589474a543116802387be8c7e4b",
+    "semantic_hash": ""
+  },
+  "flowcharts/06-transactions.md": {
+    "mtime": 1794973000.161868,
+    "seen": 1795044032.6913207,
+    "ast_hash": "c5e5124fd32478cecf773064d631527c",
+    "semantic_hash": ""
+  },
+  "flowcharts/07-passenger-app.md": {
+    "mtime": 1794973000.161868,
+    "seen": 1795044032.6913216,
+    "ast_hash": "1ec7163d1423c52c402399290060b3c4",
+    "semantic_hash": ""
+  },
+  "flowcharts/08-operator-app.md": {
+    "mtime": 1794973000.161868,
+    "seen": 1795044032.6913223,
+    "ast_hash": "774e3b3ddb2e1d2de0b9530a5a467bda",
+    "semantic_hash": ""
+  },
+  "flowcharts/09-admin-panel.md": {
+    "mtime": 1794973000.1628785,
+    "seen": 1795044032.6913233,
+    "ast_hash": "b5100fa06feff7088aae8b001f8448b7",
+    "semantic_hash": ""
+  },
+  "flowcharts/10-server-backend.md": {
+    "mtime": 1794973000.1628785,
+    "seen": 1795044032.6913245,
+    "ast_hash": "5183319f85842bd32c83f0d669c1ea64",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/farex_logo.png": {
+    "mtime": 1794973000.1060197,
+    "seen": 1795044032.6913252,
+    "ast_hash": "05a8130c8b7e9e1492a34ac8673c0379",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_bell.png": {
+    "mtime": 1794973000.1060197,
+    "seen": 1795044032.6913261,
+    "ast_hash": "b8694878145b221556b48c7721446f47",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_bell_off.png": {
+    "mtime": 1794973000.107029,
+    "seen": 1795044032.69133,
+    "ast_hash": "2465b82d285f812def59004af2140880",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_bpi.png": {
+    "mtime": 1794973000.107029,
+    "seen": 1795044032.691331,
+    "ast_hash": "a427a43e177177ee035457cce974c253",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_copy.png": {
+    "mtime": 1794973000.107029,
+    "seen": 1795044032.6913319,
+    "ast_hash": "70645d50354f3fe72ae4698165752498",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_eye.png": {
+    "mtime": 1794973000.1085029,
+    "seen": 1795044032.6913326,
+    "ast_hash": "5886f7d2ce0d494af3978ace119a32b3",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_eye_off.png": {
+    "mtime": 1794973000.1085029,
+    "seen": 1795044032.6913333,
+    "ast_hash": "6c0b6a1bdadc9f21311a9d84be36ae7b",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_fetch_load.png": {
+    "mtime": 1794973000.1095679,
+    "seen": 1795044032.6913345,
+    "ast_hash": "3466df759f91c723be4491e968fa42b5",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_gcash.png": {
+    "mtime": 1794973000.1095679,
+    "seen": 1795044032.6913352,
+    "ast_hash": "6afd63c528561ce1d922affa55a55ebe",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_lock.png": {
+    "mtime": 1794973000.1095679,
+    "seen": 1795044032.6913362,
+    "ast_hash": "caec4ace7bc9853c6f4916964609d462",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_lost_card.png": {
+    "mtime": 1794973000.1110456,
+    "seen": 1795044032.6913369,
+    "ast_hash": "41aa615f1fb02fe58cb6c48c08e4ec52",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_mail.png": {
+    "mtime": 1794973000.1110456,
+    "seen": 1795044032.691338,
+    "ast_hash": "582020f7a08817fb888eaf7d252d482d",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_mail_unread.png": {
+    "mtime": 1794973000.1110456,
+    "seen": 1795044032.6913388,
+    "ast_hash": "c197b25f3c4d01579626559c82a019e0",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_maribank.png": {
+    "mtime": 1794973000.112055,
+    "seen": 1795044032.6913397,
+    "ast_hash": "9dc483a2b411e0d45a6d80237ee8d514",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_op_app_qr.png": {
+    "mtime": 1794973000.112055,
+    "seen": 1795044032.6913407,
+    "ast_hash": "efd469d0080cf0a9f21840f38b54a42d",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_op_bus.png": {
+    "mtime": 1794973000.112055,
+    "seen": 1795044032.6913452,
+    "ast_hash": "94001985131521f982b45441d3cd7fc5",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_op_cash.png": {
+    "mtime": 1794973000.1132035,
+    "seen": 1795044032.6913462,
+    "ast_hash": "660b1818c48149dc68f9156b72462cf5",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_op_history.png": {
+    "mtime": 1794973000.1132035,
+    "seen": 1795044032.6913471,
+    "ast_hash": "23fe3d20755987051ec5dddc119ceab1",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_op_history_on.png": {
+    "mtime": 1794973000.1144145,
+    "seen": 1795044032.6913483,
+    "ast_hash": "728072513156df0d8a5fa855398bcf98",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_op_home.png": {
+    "mtime": 1794973000.1144145,
+    "seen": 1795044032.691349,
+    "ast_hash": "b5e7563d13742c1d15ed4516f8fd448a",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_op_home_on.png": {
+    "mtime": 1794973000.1144145,
+    "seen": 1795044032.69135,
+    "ast_hash": "6e121a8fe81a87f37d61a56174f06c28",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_op_nfc.png": {
+    "mtime": 1794973000.1159046,
+    "seen": 1795044032.691351,
+    "ast_hash": "150915bbef7d1b5d5c608ab1b9cc7e32",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_op_people.png": {
+    "mtime": 1794973000.1159046,
+    "seen": 1795044032.691352,
+    "ast_hash": "82765ebcf26d4c5bdc391a562e138948",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_op_qr.png": {
+    "mtime": 1794973000.1159046,
+    "seen": 1795044032.6913528,
+    "ast_hash": "c83f4a2bbdbd1ee474fb1f90be9b0a84",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_op_qr_on.png": {
+    "mtime": 1794973000.1159046,
+    "seen": 1795044032.6913538,
+    "ast_hash": "ed27a5f8f5b5f6f4857cd58ba3c1073a",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_op_trips.png": {
+    "mtime": 1794973000.117368,
+    "seen": 1795044032.691355,
+    "ast_hash": "e992e098438a74866450abcef2db4b1d",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_operator.png": {
+    "mtime": 1794973000.117368,
+    "seen": 1795044032.6913557,
+    "ast_hash": "364bcf5e5623ee8604f8dc2dd23ed364",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_others.png": {
+    "mtime": 1794973000.117368,
+    "seen": 1795044032.6913567,
+    "ast_hash": "5d7396f96ef8fe61cadec11b34ffb7c7",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_passenger.png": {
+    "mtime": 1794973000.118415,
+    "seen": 1795044032.6913576,
+    "ast_hash": "5db5870af6b8561b0c039fbcd62aa034",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_transactions.png": {
+    "mtime": 1794973000.118415,
+    "seen": 1795044032.6913588,
+    "ast_hash": "9cfc61de3af8f937a6d3d0bfffbeb3b1",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_trip_planner.png": {
+    "mtime": 1794973000.118415,
+    "seen": 1795044032.6913595,
+    "ast_hash": "d72cf22bf8163a630f20bc1cb9af613f",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_trophy.png": {
+    "mtime": 1794973000.118415,
+    "seen": 1795044032.6913605,
+    "ast_hash": "3e34536bdd8047de2df3f0b22b25a1e7",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_tx_fare.png": {
+    "mtime": 1794973000.1208436,
+    "seen": 1795044032.6913612,
+    "ast_hash": "ab4549bdf5cdfcd223c62ef0bec7b895",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_tx_load.png": {
+    "mtime": 1794973000.1208436,
+    "seen": 1795044032.6913624,
+    "ast_hash": "dfcdd7c9e97361f95821b048e5706122",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_tx_transfer.png": {
+    "mtime": 1794973000.1208436,
+    "seen": 1795044032.6913633,
+    "ast_hash": "4e520ad9e57b73b39454f4bd8c75ac1f",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_user.png": {
+    "mtime": 1794973000.1208436,
+    "seen": 1795044032.691364,
+    "ast_hash": "0418e379ad11fa3b049abf8b8c35b464",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/icon_view_cards.png": {
+    "mtime": 1794973000.1222973,
+    "seen": 1795044032.691365,
+    "ast_hash": "dcad81176b219a52b962698fbe7522a4",
+    "semantic_hash": ""
+  },
+  "farex-app/src/main/resources/com/farex/ui/images/map_manila.png": {
+    "mtime": 1794973000.1233096,
+    "seen": 1795044032.6913662,
+    "ast_hash": "a63349f646350511d0aa127bbba6ede4",
+    "semantic_hash": ""
+  }
+}

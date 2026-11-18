@@ -1,8 +1,10 @@
 package com.farex.ui;
 
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 import com.farex.ui.auth.AccountTypeView;
@@ -11,7 +13,10 @@ import com.farex.ui.auth.LoginView;
 import com.farex.ui.auth.RegisterView;
 import com.farex.ui.auth.SplashView;
 import com.farex.ui.auth.WelcomeView;
+import com.farex.ui.common.CommonUi;
+import com.farex.ui.common.LeafletMap;
 import com.farex.ui.common.Navigator;
+import com.farex.ui.common.SubScreen;
 import com.farex.ui.common.OtpView;
 import com.farex.ui.common.Theme;
 import com.farex.ui.fetch.FetchLoadState;
@@ -33,7 +38,6 @@ import com.farex.ui.profile.PrivacyView;
 import com.farex.ui.profile.TermsView;
 import com.farex.ui.redeem.RedeemScreen;
 import com.farex.ui.redeem.RedeemState;
-import com.farex.ui.trip.TripMapView;
 import com.farex.ui.trip.TripScreen;
 import com.farex.ui.trip.TripState;
 
@@ -102,7 +106,7 @@ public class FarexApp extends Application {
         Navigator.register("changePassword", ChangePasswordView::new);
         Navigator.register("terms", TermsView::new);
         Navigator.register("deleteAccount", DeleteAccountView::new);
-        Navigator.register("tripMap", TripMapView::new);              // Explore map (from Routes)
+        Navigator.register("tripMap", TripMapExploreView::new);      // Explore map (from Routes)
         Navigator.register("tripNew", () -> {          // from Routes: the whole planner, fresh
             TripState.clear();
             return new TripScreen();
@@ -126,5 +130,22 @@ public class FarexApp extends Application {
 
     public static void main(String[] args) {
         launch(args);
+    }
+
+    // Was TripMapView.java — only used here, so kept as a private nested class.
+    private static final class TripMapExploreView extends SubScreen {
+        TripMapExploreView() {
+            super("Trip Planner", "routes");
+            VBox heading = new VBox(8,
+                    CommonUi.title("Find your next stop"),
+                    CommonUi.subtitle("Use the trip planner to compare jeepney connections, fares, and stops."));
+            VBox.setMargin(heading, new Insets(0, 0, 6, 0));
+            body.setSpacing(12);
+            body.getChildren().addAll(
+                    heading,
+                    new LeafletMap(320, 250, 12).withFarexRoutes(),
+                    CommonUi.spacer(),
+                    CommonUi.limeButton("Plan a trip", () -> Navigator.go("tripNew")));
+        }
     }
 }

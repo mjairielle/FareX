@@ -17,6 +17,7 @@ import javafx.scene.paint.Color;
 import com.farex.ui.common.CommonUi;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.PopupDialog;
+import com.farex.ui.common.ProgressStep;
 import com.farex.ui.common.StepScreen;
 import com.farex.ui.common.Theme;
 import com.farex.ui.common.WarningDialog;
@@ -152,7 +153,7 @@ public class RedeemScreen extends StepScreen {
     // ----- Redeem Points / 03: fake server check (Esc = failure) -----
 
     private void redeemingStep() {
-        body.getChildren().add(new RedeemProgressStep(this::showSuccess, this::showFailure));
+        body.getChildren().add(new ProgressStepView(this::showSuccess, this::showFailure));
     }
 
     // ----- Results (pop-ups) -----
@@ -219,5 +220,37 @@ public class RedeemScreen extends StepScreen {
         VBox heading = new VBox(8, CommonUi.title(title), CommonUi.subtitle(subtitle));
         VBox.setMargin(heading, new Insets(0, 0, 6, 0));
         return heading;
+    }
+
+    // ---- formerly RedeemProgressStep.java ----
+    private static final class ProgressStepView extends ProgressStep {
+        private final Runnable onSuccess;
+        private final Runnable onFailure;
+        ProgressStepView(Runnable onSuccess, Runnable onFailure) {
+            this.onSuccess = onSuccess;
+            this.onFailure = onFailure;
+            int points = RedeemState.getSelected();
+            VBox heading = new VBox(8,
+                    CommonUi.title("Redeeming your points\u2026"),
+                    CommonUi.subtitle("Please wait while we confirm your redemption. Do not submit another request."));
+            VBox.setMargin(heading, new Insets(0, 0, 6, 0));
+            Label exchange = new Label(CommonUi.pts(points) + " \u2192 " + CommonUi.peso(points));
+            exchange.setTextFill(Theme.LIME);
+            exchange.setFont(Theme.bold(24));
+            VBox panel = CommonUi.panel(exchange);
+            panel.getChildren().addAll(steps(
+                    "Points balance checked",
+                    "Confirming redemption\u2026",
+                    "Make credit ready to fetch"));
+            panel.setPadding(new Insets(16, 14, 18, 14));
+            getChildren().addAll(
+                    heading, panel,
+                    CommonUi.note("If the app disconnects, check your redemption status before retrying."),
+                    CommonUi.spacer(),
+                    busyBar("Redeeming\u2026"));
+            start(1);
+        }
+        @Override protected void onFinished() { RedeemState.redeem(); onSuccess.run(); }
+        @Override protected void onFailed()   { onFailure.run(); }
     }
 }
