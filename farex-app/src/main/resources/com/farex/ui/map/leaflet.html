@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- Shown by com.farex.ui.common.LeafletMap inside a JavaFX WebView.
+     Map data: OpenStreetMap tiles. Library: Leaflet 1.9.4, pinned with integrity hashes.
+     Needs internet; without it Leaflet never loads and LeafletMap keeps the static picture. -->
+<!-- JavaFX's WebKit draws 3D CSS transforms badly: tiles land in the wrong place or not at all.
+     This flag (read by Leaflet at load) makes it position tiles with plain 2D transforms. -->
+<script>window.L_DISABLE_3D = true;</script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<style>
+  html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; background: #111111; }
+  .leaflet-container { font: 12px/1.4 "Segoe UI", Arial, sans-serif; }
+  .leaflet-control-attribution { font-size: 9px; }
+  .farex-label { background: #111111; color: #ffffff; border: 1px solid #CAFE06;
+                 border-radius: 4px; font-weight: 600; box-shadow: none; }
+  .farex-label::before { display: none; }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<script>
+  if (typeof L !== 'undefined') {
+    // Metro Manila until there is something to fit
+    // Animations off: in the WebView they leave tiles half drawn
+    var map = L.map('map', { zoomControl: true, zoomAnimation: false, fadeAnimation: false, markerZoomAnimation: false })
+               .setView([14.60, 121.00], 12);
+    map.attributionControl.setPrefix('Leaflet');   // plain text: a link would navigate the WebView away
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    var layer = L.layerGroup().addTo(map);
+    var LIME = '#CAFE06';
+    var COLORS = ['#3B82F6', '#F97316', '#A855F7', '#14B8A6', '#EF4444', '#EAB308', '#EC4899', '#22C55E'];
+
+    function latlngs(stops) { return stops.map(function (s) { return [s.lat, s.lng]; }); }
+    // The line follows the roads when LeafletMap sent a path, else goes stop to stop
+    function line(x) { return x.path && x.path.length > 1 ? x.path : latlngs(x.stops); }
+
+    // data = { routes: [{id, stops:[{name,lat,lng}], path:[[lat,lng],...]}], focus: "R1" or null,
+    //          trip: [{route, stops:[...], path:[...]}] }
+    window.farexDraw = function (data) {
+      layer.clearLayers();
+      var hasTrip = data.trip && data.trip.length > 0;
+      var fit = [];
+
+      (data.routes || []).forEach(function (r, i) {
+        var focused = !hasTrip && data.focus === r.id;
+        var dim = hasTrip || (data.focus && !focused);
+        var color = COLORS[i % COLORS.length];
+        var pts = line(r);
+        L.polyline(pts, { color: focused ? LIME : color, weight: focused ? 6 : 4, opacity: dim ? 0.35 : 0.9 })
+          .bindTooltip('Route ' + r.id, { sticky: true }).addTo(layer);
+        r.stops.forEach(function (s) {
+          L.circleMarker([s.lat, s.lng], { radius: focused ? 6 : 4, color: '#111111', weight: 1,
+                                           fillColor: focused ? LIME : color, fillOpacity: dim ? 0.4 : 1 })
+            .bindTooltip(s.name).addTo(layer);
+        });
+        if (focused || (!hasTrip && !data.focus)) fit = fit.concat(pts);
+      });
+
+      if (hasTrip) {
+        data.trip.forEach(function (leg, i) {
+          var pts = line(leg);
+          L.polyline(pts, { color: LIME, weight: 7, opacity: 0.95 })
+            .bindTooltip('Ride ' + leg.route, { sticky: true }).addTo(layer);
+          var board = leg.stops[0];
+          // Start and End keep a label; transfers only on hover, or the labels pile up when zoomed out
+          L.circleMarker([board.lat, board.lng], { radius: 7, color: '#111111', weight: 2, fillColor: LIME, fillOpacity: 1 })
+            .bindTooltip((i === 0 ? 'Start: ' : 'Transfer to ' + leg.route + ': ') + board.name,
+                         { permanent: i === 0, direction: 'top', className: 'farex-label' }).addTo(layer);
+          fit = fit.concat(pts);
+        });
+        var lastLeg = data.trip[data.trip.length - 1];
+        var end = lastLeg.stops[lastLeg.stops.length - 1];
+        L.circleMarker([end.lat, end.lng], { radius: 8, color: LIME, weight: 3, fillColor: '#111111', fillOpacity: 1 })
+          .bindTooltip('End: ' + end.name, { permanent: true, direction: 'top', className: 'farex-label' }).addTo(layer);
+      }
+
+      lastFit = fit;
+      refit();
+    };
+
+    var lastFit = [];
+    function refit() {
+      map.invalidateSize();   // measure the real size first, or the fit is for a stale, smaller box
+      if (lastFit.length > 1) map.fitBounds(lastFit, { padding: [36, 36], maxZoom: 16 });
+      else if (lastFit.length === 1) map.setView(lastFit[0], 15);
+    }
+
+    // The WebView is often sized after the page loads; re-measure and re-fit whenever it changes.
+    window.farexResize = function () { refit(); };
+    window.addEventListener('resize', refit);
+    window.farexReady = true;
+  }
+</script>
+</body>
+</html>
