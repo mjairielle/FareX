@@ -404,13 +404,18 @@ public class LeafletMap extends StackPane {
         widthProperty().addListener((o, a, b) -> resizeMap());
         heightProperty().addListener((o, a, b) -> resizeMap());
 
-        engine.load(page.toExternalForm());
+        // The page's text, not its address: Android's browser cannot open the app's own "resource:" addresses
+        try (java.io.InputStream in = page.openStream()) {
+            engine.loadContent(new String(in.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8));
+        } catch (java.io.IOException e) {
+            return;                                  // keep the picture
+        }
         getChildren().add(0, web);   // under the picture, which covers it until Leaflet is up
     }
 
     private void goLive() {
         Object up = run("typeof L !== 'undefined' && window.farexReady === true");
-        if (!Boolean.TRUE.equals(up)) return;   // offline: Leaflet did not load, keep the picture
+        if (!"true".equals(String.valueOf(up))) return;   // offline: Leaflet did not load. Android answers "true" as text
         ready = true;
         fallback.setVisible(false);
         if (onPick != null) run("farexEnablePick(); true");
