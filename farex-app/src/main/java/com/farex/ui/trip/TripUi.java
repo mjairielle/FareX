@@ -73,11 +73,17 @@ public final class TripUi {
         Label name = CommonUi.smallBold("Route " + (TripState.getRouteIndex() + 1)
                 + " · " + route.getTitle(), Theme.LIME);
         name.setFont(Theme.bold(12));
-        VBox card = CommonUi.panel(name, bold(route.getStats(), 15),
-                CommonUi.small(route.getJeepney(), Theme.WHITE));
+        VBox card = CommonUi.panel(name, bold(route.getStats(), 15), wrapped(route.getJeepney()));
         card.setSpacing(6);
         card.setPadding(new Insets(14, 14, 18, 14));
         return card;
+    }
+
+    // Small white text that wraps: real route names are long ("Commonwealth–SM Fairview via Regalado ...")
+    public static Label wrapped(String text) {
+        Label label = CommonUi.small(text, Theme.WHITE);
+        label.setWrapText(true);
+        return label;
     }
 
     // Centered icon, bold line, text, and an optional lime line, e.g. "You may be off route"
@@ -113,7 +119,14 @@ public final class TripUi {
         StackPane.setMargin(tag, new Insets(0, 12, 12, 12));
 
         LeafletMap map = new LeafletMap(320, height, 12);
-        if (!rides.isEmpty()) map.withFarexTrip(rides);
+        if (!rides.isEmpty()) {
+            // pinned ends are not stops: tell the map where they are so their walks can be drawn
+            java.util.Map<String, farex.shared.data.RouteStop> pins = new java.util.HashMap<>();
+            for (TripPlace p : new TripPlace[]{TripState.getStart(), TripState.getDestination()}) {
+                if (p != null && p.isPin()) pins.put(p.getName(), new farex.shared.data.RouteStop(p.getName(), p.getLat(), p.getLng()));
+            }
+            map.withFarexTrip(rides, pins);
+        }
         StackPane card = new StackPane(map, tag);
         card.setMaxSize(320, height);
         return card;

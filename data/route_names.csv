@@ -1,0 +1,111 @@
+routeId,name,oneway
+R2128263,Cubao–Calumpang,false
+269-A,Katipunan/LRT–North EDSA (to SM City North EDSA),true
+269-B,Katipunan/LRT–North EDSA (to Katipunan),true
+295-A,Pantranco–Project 2 & 3 via Timog Kamuning (to Project 2 & 3),true
+3200-A,Pantranco–UP (to Pantranco),true
+3200-B,Pantranco–UP (to UP Campus),true
+111-A,Commonwealth–SM Fairview via Regalado (to Commonwealth),true
+111-B,Commonwealth–SM Fairview via Regalado (to SM City Fairview),true
+101-A,Novaliches–South Supermarket Malinta (to South Supermarket Malinta),true
+101-B,Novaliches–South Supermarket Malinta (to Novaliches),true
+T101-A,Bagong Silang–Novaliches (to Bagong Silang),true
+T101-B,Bagong Silang–Novaliches (to Novaliches),true
+205-A,Eastwood City–Capitol Commons (to Eastwood),true
+205-B,Eastwood City–Capitol Commons (to Capitol Commons),true
+T2114-A,Almar–Ever Gotesco (to Bagong Silang),true
+102-A,Bagong Silang–QMC via Commonweath (to Quezon Memorial Circle),true
+3160-A,LRT V. Mapa Station–SM City East Ortigas via Pinaglabanan (to LRT V. Mapa Station),true
+3160-B,LRT V. Mapa Station–SM City East Ortigas via Pinaglabanan (to SM City East Ortigas),true
+302-A,Quezon Avenue–LRT 5th Avenue (to LRT 5th Avenue),true
+302-B,Quezon Avenue–LRT 5th Avenue (to Quezon Avenue),true
+339-A,Balic-Balic–España/M. dela Fuente (to Espana/M. dela Fuente),true
+338-A,Balic-Balic–Bustillos via G. Tuazon (to Bustillos),true
+340-A,Balic-Balic-Quiapo via Lepanto (to Quiapo),true
+203-A,Cubao–Parang (to Parang),true
+342-A,Balintawak–Frisco (to San Francisco del Monte),true
+3111,Doña Carmen–T.M. Kalaw,false
+110-A,Quirino Highway–UP Town Center (to UP Town Center),true
+375-A,Cubao (Diamond)–Roces Super Palengke (to Cubao (Diamond)),true
+375-B,Cubao (Diamond)–Roces Super Palengke (to Roces Super Palengke),true
+T223-A,Cubao/Arayat–V. Luna via Ybardolaza (to V. Luna Avenue),true
+311,Doña Carmen–T.M. Kalaw,false
+T223-B,Cubao/Arayat–V. Luna via Ybardolaza (to New Arayat Market),true
+339-B,Balic-Balic–España/M. dela Fuente (to Balic-Balic),true
+338-B,Balic-Balic–Bustillos via G. Tuazon (to Balic-Balic),true
+340-B,Balic-Balic-Quiapo via Lepanto (to Balic-Balic),true
+206-A,Litex–Rodriguez (to Rodriguez),true
+206-B,Litex–Rodriguez (to Litex),true
+102-B,Bagong Silang–QMC via Commonwealth (to Bagong Silang),true
+T2114-B,Almar–Ever Gotesco (to Ever Gotesco Commonwealth),true
+2066-A,Lagro–Cubao via Kalayaan (to Lagro),true
+2066-B,Lagro–Cubao via Kalayaan (to Cubao),true
+310-A,Arroceros–Project 7 via España (to Arroceros),true
+310-B,Arroceros–Project 7 via España (to Project 7),true
+396-A,Divisoria–Murphy via Legarda Aurora Boulevard (to Divisoria),true
+396-B,Divisoria–Murphy via Legarda Aurora Boulevard (to Murphy),true
+T3216-A,Monumento–Muñoz via Roosevelt (to Monumento),true
+T3216-B,Monumento-Muñoz via Roosevelt (to Muñoz),true
+372-A,Cubao–Divisoria via Santa Mesa Aurora (to Cubao),true
+372-B,Cubao–Divisoria via Santa Mesa Aurora (to Divisoria),true
+160-A,Lagro–Rizal Avenue via A. Bonifacio (to Lagro),true
+160-B,Lagro–Rizal Avenue via A. Bonifacio (to Rizal Avenue),true
+295-B,Pantranco–Project 2 & 3 via Timog Kamuning (to Pantranco),true
+T2112-A,Mali San Mateo–Philcoa (to Philcoa),true
+T2112-B,Mali San Mateo–Philcoa (to Mali San Mateo),true
+T2127-A,Philcoa–Rodriguez via Commonwealth (to Philcoa),true
+T2128,Philcoa–Rodriguez via Commonwealth,false
+T2127-B,Quezon City Hall–San Rafael Rodriguez via Payatas (to San Rafael Rodriguez),true
+T2127-C,Quezon City Hall–San Rafael Rodriguez via Payatas (to Quezon City Hall),true
+295-C,Litex–Southville Relocation (to Litex),true
+T280,Southville Relocation–Commonwealth Market,false
+203-B,Cubao–Parang (to Cubao),true
+T259-A,Balara–Philcoa via Tandang Sora (to Balara),true
+T259-B,Balara–Philcoa via Tandang Sora (to Philcoa),true
+222-A,Rodriguez Relocation–Commonwealth Market (to Rodriguez Relocation),true
+222-B,Rodriguez Relocation–Commonwealth Market (to Commonwealth Market),true
+220-A,Pabahay ni Erap–Commonwealth Market (to Pabahay ni Erap),true
+220-B,Pabahay ni Erap–Commonwealth Market (to Commonwealth Market),true
+110-B,Quirino Highway–UP Town Center (to UP Town Center),true
+2125-A,SSS Village–Stop n' Shop via Aurora Boulevard (to SSS Village),true
+2125-B,SSS Village–Stop n' Shop via Aurora Boulevard (to Stop n' Shop),true
+2116-A,Parang–Stop n' Shop via Aurora Boulevard (to Parang),true
+2116-B,Parang–Stop n' Shop via Aurora Boulevard (to Stop n' Shop),true
+2120-A,Rodriguez Suburban–SM North EDSA (to Rodriguez Suburban),true
+2120-B,Rodriguez Suburban–SM North EDSA (to North EDSA),true
+342-B,Balintawak–Frisco (to Balintawak),true
+112-A,Muzon–Balingasa (to Muzon),true
+112-B,Muzon–Balingasa (to Balingasa),true
+2115-A,Parang–Recto via Aurora Boulevard (to Parang),true
+2115-B,Parang–Recto via Aurora Boulevard (to Recto),true
+247,Cogeo–Cubao,false
+R17787404,Cogeo–Cubao,false
+108-A,Blumentritt–Santa Quiteria (to Santa Quiteria),true
+108-B,Blumentritt–Santa Quiteria (to Blumentritt),true
+T171,Monumento–Santo Niño via Expressway,false
+209-A,Route 209: Cubao–Rosario (to Rosario),true
+209-B,Route 209: Cubao–Rosario (northbound) (to Cubao),true
+325-A,Baclaran–Dapitan via Taft (to Dapitan),true
+325-B,Baclaran–Dapitan via Taft (to PITX),true
+T114-A,Quirino Highway–Santa Lucia (to Santa Lucia),true
+T114-B,Quirino Highway–Santa Lucia (to Santa Lucia),true
+3191-A,Paco–SM City Santa Mesa via Nagtahan (to Santa Mesa Rotonda),true
+3191-B,Paco–SM City Santa Mesa via Nagtahan (to Paco),true
+2011-A,Anonas/Aurora–Amparo Village via Don Mariano Marcos Avenue (to Anonas/Aurora),true
+2011-B,Anonas/Aurora–Amparo Village via Don Mariano Marcos Avenue (to Amparo Village),true
+385-A,Del Monte–Quezon Avenue via Banawe (to Quezon Avenue),true
+385-B,Del Monte–Quezon Avenue via Banawe (to Del Monte),true
+239-A,Crame-Q Mart via P. Tuazon Murphy (to Crame),true
+239-B,Crame-Q Mart via P. Tuazon Murphy (to Q Mart),true
+238-A,Crame-Cubao via Murphy (to Cubao),true
+238-B,Crame-Cubao via Murphy (to Cubao),true
+149-A,EDSA/SM North–UP (to UP Campus),true
+149-B,EDSA/SM North–UP (to UP Campus),true
+384-A,Del Monte–Kanlaon via Mayon (to Del Monte),true
+384-B,Del Monte–Kanlaon via Mayon (to Kanlaon),true
+323-A,Baclaran–Dapitan via L. Guinto (to PITX),true
+323-B,Baclaran–Dapitan via L. Guinto (to Dapitan),true
+324-A,Baclaran–Dapitan via Mabini (to PITX),true
+324-B,Baclaran–Dapitan via Mabini (to Dapitan),true
+3221-A,Recto–Retiro (to Recto),true
+3221-B,Recto–Retiro (to Retiro),true

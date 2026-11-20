@@ -29,8 +29,21 @@ public class LeafletMap extends StackPane {
 
     private static final String PAGE = "/com/farex/ui/map/leaflet.html";
 
-    // One ride of a planned trip: the route and its stops from boarding to alighting, in order
-    public record TripLeg(String route, List<RouteStop> stops) {}
+    // One part of a planned trip: a ride (its stops from boarding to alighting, in order) or a walk
+    // (just its two ends; drawn dashed)
+    public record TripLeg(String route, List<RouteStop> stops, boolean walk) {
+        public TripLeg(String route, List<RouteStop> stops) { this(route, stops, false); }
+    }
+
+    // The FareX network (stops and road paths), fetched once per run: it is ~2 MB with all QC routes
+    private record Network(Map<String, List<RouteStop>> routes, Map<String, Map<Integer, List<RouteShapes.Point>>> shapes) {}
+    private static volatile Network network;
+
+    private static Network network() {
+        Network n = network;
+        if (n == null) network = n = new Network(Api.routeStops(), Api.routeShapes());
+        return n;
+    }
 
     private final MapView fallback;
     private WebView web;
@@ -41,6 +54,13 @@ public class LeafletMap extends StackPane {
     private Map<String, Map<Integer, List<RouteShapes.Point>>> shapes = new LinkedHashMap<>();   // road paths
     private String focusRoute;
     private List<TripLeg> trip = new ArrayList<>();
+    private RouteStop pin;                                          // a picked point, or null
+
+    // Map taps reach Java as the page's status text "farex-pick:lat,lng" (see farexTap in the page).
+    // Not a Java object handed to JavaScript: getting `window` back from executeScript crashes the
+    // JVM on JavaFX 21.0.5 + JDK 25/26, like scripts that evaluate to undefined.
+    private static final String PICK = "farex-pick:";
+    private java.util.function.BiConsumer<Double, Double> onPick;
 
     // Full background: grows to fill its parent
     public LeafletMap() {
@@ -91,13 +111,17 @@ public class LeafletMap extends StackPane {
 
     // Same, then highlights a planned trip (Api.PlanCard.rides()) and zooms to it
     public LeafletMap withFarexTrip(List<Api.PlanRide> rides) {
+        return withFarexTrip(rides, Map.of());
+    }
+
+    // points: where named ends that are not stops are, e.g. "Pinned location" -> its coordinates
+    public LeafletMap withFarexTrip(List<Api.PlanRide> rides, Map<String, RouteStop> points) {
         Thread t = new Thread(() -> {
             try {
-                Map<String, List<RouteStop>> fetched = Api.routeStops();
-                Map<String, Map<Integer, List<RouteShapes.Point>>> roads = Api.routeShapes();
+                Network n = network();
                 Platform.runLater(() -> {
-                    showRoutes(fetched, roads);
-                    if (!rides.isEmpty()) showTrip(legsFor(fetched, rides));
+                    showRoutes(n.routes(), n.shapes());
+                    if (!rides.isEmpty()) showTrip(legsFor(n.routes(), rides, points));
                 });
             } catch (RuntimeException offline) {
                 // no server: streets only
@@ -108,16 +132,46 @@ public class LeafletMap extends StackPane {
         return this;
     }
 
-    // Each ride's stops from boarding to alighting, for showTrip
+    // Each ride's stops from boarding to alighting, and each walk's two ends, for showTrip
     public static List<TripLeg> legsFor(Map<String, List<RouteStop>> allRoutes, List<Api.PlanRide> rides) {
+        return legsFor(allRoutes, rides, Map.of());
+    }
+
+    public static List<TripLeg> legsFor(Map<String, List<RouteStop>> allRoutes, List<Api.PlanRide> rides,
+                                        Map<String, RouteStop> points) {
         List<TripLeg> legs = new ArrayList<>();
         for (Api.PlanRide r : rides) {
+            if (r.walk()) {
+                RouteStop a = find(allRoutes, points, r.from()), b = find(allRoutes, points, r.to());
+                if (a != null && b != null) legs.add(new TripLeg(Api.WALK, List.of(a, b), true));
+                continue;
+            }
             List<RouteStop> line = allRoutes.get(r.route());
             if (line == null) continue;
             List<RouteStop> stops = between(line, r.from(), r.to());
             if (stops.size() >= 2) legs.add(new TripLeg(r.route(), stops));
         }
         return legs;
+    }
+
+    // A stop by name on any route, or one of the extra named points
+    private static RouteStop find(Map<String, List<RouteStop>> allRoutes, Map<String, RouteStop> points, String name) {
+        RouteStop p = points.get(name);
+        if (p != null) return p;
+        for (List<RouteStop> line : allRoutes.values()) for (RouteStop s : line) if (s.name().equals(name)) return s;
+        return null;
+    }
+
+    // Lets the user tap the map to choose a point; also drops a pin there
+    public void onPick(java.util.function.BiConsumer<Double, Double> handler) {
+        onPick = handler;
+        if (ready) run("farexEnablePick(); true");
+    }
+
+    // A pin with a label (a picked start or destination); null removes it
+    public void showPin(RouteStop at) {
+        pin = at;
+        redraw();
     }
 
     // Every route as a coloured line with its stops, straight from stop to stop
@@ -178,6 +232,16 @@ public class LeafletMap extends StackPane {
         engine.getLoadWorker().stateProperty().addListener((obs, old, state) -> {
             if (state == Worker.State.SUCCEEDED) goLive();
         });
+        engine.setOnStatusChanged(ev -> {                           // a map tap: "farex-pick:14.73,121.05"
+            String s = ev.getData();
+            if (onPick == null || s == null || !s.startsWith(PICK)) return;
+            String[] ll = s.substring(PICK.length()).split(",");
+            try {
+                onPick.accept(Double.parseDouble(ll[0]), Double.parseDouble(ll[1]));
+            } catch (RuntimeException badStatus) {
+                // not one of ours
+            }
+        });
         widthProperty().addListener((o, a, b) -> resizeMap());
         heightProperty().addListener((o, a, b) -> resizeMap());
 
@@ -190,6 +254,7 @@ public class LeafletMap extends StackPane {
         if (!Boolean.TRUE.equals(up)) return;   // offline: Leaflet did not load, keep the picture
         ready = true;
         fallback.setVisible(false);
+        if (onPick != null) run("farexEnablePick(); true");
         run("farexResize(); true");
         redraw();
     }
@@ -224,10 +289,12 @@ public class LeafletMap extends StackPane {
         for (int i = 0; i < trip.size(); i++) {
             if (i > 0) b.append(',');
             TripLeg leg = trip.get(i);
-            b.append("{\"route\":").append(str(leg.route())).append(",\"stops\":").append(stops(leg.stops()))
+            b.append("{\"route\":").append(str(leg.route())).append(",\"walk\":").append(leg.walk())
+             .append(",\"stops\":").append(stops(leg.stops()))
              .append(",\"path\":").append(points(legPath(leg))).append('}');
         }
-        return b.append("]}").toString();
+        b.append("],\"pin\":").append(pin == null ? "null" : stops(List.of(pin)));
+        return b.append("}").toString();
     }
 
     // The road path of one ride, from its first stop to its last, either direction

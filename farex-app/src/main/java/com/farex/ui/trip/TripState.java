@@ -1,15 +1,22 @@
 package com.farex.ui.trip;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 
 import javafx.application.Platform;
 
 import com.farex.Api;
+import farex.shared.data.RouteStop;
 
 // Remembers the Trip Planner choices between screens.
-// Live: stops and route plans come from the FareX server (Api.places / Api.plan).
+// Live: stops and route plans come from the FareX server (Api.routes / Api.plan); start and
+// destination can also be pins dropped on the map.
 // Offline: if the server cannot be reached, the Figma preview (Quiapo Church -> Rizal Park and
 // the three sample routes) is used instead, so the planner still works in a demo.
 public final class TripState {
@@ -31,7 +38,28 @@ public final class TripState {
 
     // Real stops once loaded; null until then
     private static List<TripPlace> places;
+    private static Map<String, String> routeNames = Map.of();   // route id -> "Cubao–Calumpang"
     private static boolean live = false;
+
+    // "Katipunan/LRT–North EDSA (to SM City North EDSA)"; the id if unknown
+    public static String routeName(String routeId) {
+        return routeNames.getOrDefault(routeId, routeId);
+    }
+
+    // Stops whose name contains every word typed (any order, any case); at most `max`
+    public static List<TripPlace> search(String query, int max) {
+        List<TripPlace> out = new ArrayList<>();
+        if (places == null) return out;
+        String[] words = query.toLowerCase().trim().split("\\s+");
+        for (TripPlace p : places) {
+            String name = p.getName().toLowerCase();
+            boolean all = true;
+            for (String w : words) if (!w.isEmpty() && !name.contains(w)) { all = false; break; }
+            if (all) out.add(p);
+            if (out.size() == max) break;
+        }
+        return out;
+    }
 
     // Results of the last search (the samples in the offline preview)
     private static List<TripRoute> routes = TripRoute.SAMPLES;
@@ -57,8 +85,9 @@ public final class TripState {
         return live;
     }
 
-    // Gives the stops to pick from, on the FX thread. Fetched once in the background; if the
-    // server cannot be reached this time, the preview stops are given and the next call retries.
+    // Gives the stops to pick from, on the FX thread. Fetched once in the background (every stop of
+    // every route, with where it is and how many routes serve it); if the server cannot be reached
+    // this time, the preview stops are given and the next call retries.
     public static void loadPlaces(Consumer<List<TripPlace>> done) {
         if (places != null) {
             done.accept(places);
@@ -66,10 +95,23 @@ public final class TripState {
         }
         Thread t = new Thread(() -> {
             List<TripPlace> loaded = new ArrayList<>();
+            Map<String, String> names = new HashMap<>();
             try {
-                for (String name : Api.places()) {
-                    if (!name.isBlank()) loaded.add(new TripPlace(name, "Quezon City", "FareX jeepney stop"));
+                Map<String, double[]> at = new TreeMap<>();
+                Map<String, Integer> routesAt = new HashMap<>();
+                for (Api.RouteDetail r : Api.routes()) {
+                    names.put(r.id(), r.name());
+                    Set<String> seen = new HashSet<>();
+                    for (RouteStop s : r.stops()) {
+                        at.putIfAbsent(s.name(), new double[]{s.lat(), s.lng()});
+                        if (seen.add(s.name())) routesAt.merge(s.name(), 1, Integer::sum);
+                    }
                 }
+                at.forEach((name, ll) -> {
+                    int n = routesAt.getOrDefault(name, 1);
+                    loaded.add(new TripPlace(name, "Quezon City", "On " + n + (n == 1 ? " jeepney route" : " jeepney routes"),
+                            ll[0], ll[1], false));
+                });
             } catch (RuntimeException offline) {
                 loaded.clear();
             }
@@ -79,6 +121,7 @@ public final class TripState {
                     done.accept(List.of(QUIAPO, RIZAL_PARK));
                 } else {
                     places = List.copyOf(loaded);
+                    routeNames = Map.copyOf(names);
                     live = true;
                     done.accept(places);
                 }

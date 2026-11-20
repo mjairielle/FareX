@@ -55,7 +55,7 @@ public class RoadKmTest {
     }
 
     @Test
-    void sharedRoadDoesNotTempShortestIntoAPointlessTransfer() throws Exception {
+    void sharedRoadDoesNotTemptAPointlessTransfer() throws Exception {
         try {
             // data/route_km.csv as committed: R1 and R3 share Commonwealth Ave from Tandang Sora to
             // Fairview, so Philcoa -> Fairview on R1 and R1 -> R3 at Tandang Sora tie on distance.
