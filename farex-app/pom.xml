@@ -20,7 +20,7 @@
         <maven.compiler.target>21</maven.compiler.target>
         <javafx.version>16</javafx.version>
         <glisten.version>6.0.5</glisten.version>
-        <attach.version>4.0.8</attach.version>
+        <attach.version>4.0.22</attach.version>
         <mainClassName>com.farex.ui.UiLauncher</mainClassName>
     </properties>
 
@@ -118,9 +118,38 @@
                         <list>lifecycle</list>
                         <list>statusbar</list>
                         <list>storage</list>
+                        <list>position</list>   <!-- phone GPS for trip tracking -->
                     </attachList>
+                    <appIdentifier>com.farex.app</appIdentifier>
+                    <releaseConfiguration>
+                        <appLabel>FareX</appLabel>
+                        <versionCode>1</versionCode>
+                        <versionName>1.0</versionName>
+                    </releaseConfiguration>
                     <reflectionList>
                         <list>com.gluonhq.impl.charm.glisten.control.skin.GlistenButtonSkin</list>
+                        <!-- JavaFX finds the Application class by name at start; without this the native app shows a black screen -->
+                        <list>com.farex.ui.FarexApp</list>
+                        <!-- JavaFX looks these up by name the first time one is drawn (missing one = crash on that screen) -->
+                        <list>javafx.scene.shape.Arc</list>
+                        <list>javafx.scene.shape.Circle</list>
+                        <list>javafx.scene.shape.CubicCurve</list>
+                        <list>javafx.scene.shape.Line</list>
+                        <list>javafx.scene.shape.Path</list>
+                        <list>javafx.scene.shape.Polygon</list>
+                        <list>javafx.scene.shape.Polyline</list>
+                        <list>javafx.scene.shape.Rectangle</list>
+                        <list>javafx.scene.shape.Shape</list>
+                        <list>javafx.scene.canvas.Canvas</list>
+                        <list>javafx.scene.image.ImageView</list>
+                        <list>javafx.scene.text.Text</list>
+                        <list>javafx.scene.text.TextFlow</list>
+                        <list>javafx.scene.Group</list>
+                        <list>javafx.scene.control.ProgressIndicator</list>
+                        <list>javafx.scene.control.ScrollPane</list>
+                        <list>javafx.scene.control.PasswordField</list>
+                        <list>javafx.scene.layout.GridPane</list>
+                        <list>javafx.scene.layout.BorderPane</list>
                     </reflectionList>
                     <mainClass>${mainClassName}</mainClass>
                 </configuration>

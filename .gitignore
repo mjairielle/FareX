@@ -21,3 +21,6 @@ build-server/
 *.iml
 .vscode/
 tempCodeRunnerFile.*
+
+# Android build backup of the pom (build-android.sh restores it)
+farex-app/pom.xml.desktop

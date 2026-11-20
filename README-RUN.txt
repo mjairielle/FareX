@@ -37,3 +37,10 @@ Notes
 - Old mock accounts (aron01@gmail.com / farex123) only work when the app runs with DEV=1 and no server is reachable:
   set DEV=1 in the terminal before run-app.bat.
 - New operators cannot log in until an admin presses Reinstate.
+
+Android APK
+- Ready APK: install farex-app.apk on the phone (allow "install unknown apps"). It needs Android 5+ on a 64-bit phone.
+- Phone and laptop on the same Wi-Fi: on the login screen, when it says it cannot reach the server, tap "Server: ..."
+  and type http://<laptop Wi-Fi IP>:8080 (find the IP with ipconfig). Allow Java through the Windows firewall.
+- Rebuild the APK: Linux only, see build-android.sh.
+
