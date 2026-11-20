@@ -27,3 +27,5 @@ farex-app/pom.xml.desktop
 
 # CARTO map key (see farex-app/.../ui/common/VoyagerTiles.java): goes into the APK, never into git
 farex-app/src/main/resources/com/farex/ui/common/carto.key
+
+carto.key
