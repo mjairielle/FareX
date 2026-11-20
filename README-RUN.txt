@@ -42,7 +42,7 @@ Notes
 - Trip planner = the Routes tab. Drag the map freely. Type in From / To (stops), tap the map ("Start here" / "Go here",
   plus the jeeps passing there) or press the location button. With both ends set, up to 3 routes appear at the bottom;
   tap one to see its steps on the map, then Start trip (phone GPS, or a simulated ride on the laptop).
-  110 real Quezon City jeepney routes from OpenStreetMap. The map needs internet (Leaflet and map tiles).
+  110 real Quezon City jeepney routes from OpenStreetMap. The map needs internet for its street tiles.
 - Refresh the routes from OpenStreetMap (needs internet, replaces the route files; keep a copy first):
   java -cp build-server farex.server.ImportOsmRoutes data osm-cache
 - Old mock accounts (aron01@gmail.com / farex123) only work when the app runs with DEV=1 and no server is reachable:

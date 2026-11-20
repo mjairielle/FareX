@@ -7,7 +7,7 @@ import java.util.function.Consumer;
 import javafx.application.Platform;
 
 import com.farex.Api;
-import com.farex.ui.common.LeafletMap;
+import com.farex.ui.common.RouteMap;
 import farex.shared.data.RouteShapes.Point;
 import farex.shared.data.RouteStop;
 import farex.shared.plan.TripProgress;
@@ -55,7 +55,7 @@ public final class TripTracker {
         stopCurrent();
         Thread t = new Thread(() -> {
             try {
-                List<TripProgress.Ride> legs = LeafletMap.progressLegs(rides, points);
+                List<TripProgress.Ride> legs = RouteMap.progressLegs(rides, points);
                 if (legs.isEmpty()) {
                     Platform.runLater(() -> failed.accept("This route’s map data is missing, so it cannot be tracked."));
                     return;
@@ -64,7 +64,7 @@ public final class TripTracker {
                 Map<String, String> heads = new java.util.HashMap<>();
                 for (Api.PlanRide r : rides) {
                     if (r.walk()) continue;
-                    String to = LeafletMap.headedTo(r);
+                    String to = RouteMap.headedTo(r);
                     if (to != null) heads.putIfAbsent(r.route(), to);
                 }
                 Platform.runLater(() -> {

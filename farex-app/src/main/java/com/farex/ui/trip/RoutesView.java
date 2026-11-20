@@ -31,7 +31,7 @@ import javafx.util.Duration;
 
 import com.farex.Api;
 import com.farex.ui.common.CommonUi;
-import com.farex.ui.common.LeafletMap;
+import com.farex.ui.common.RouteMap;
 import com.farex.ui.common.Theme;
 import farex.shared.data.RouteStop;
 import farex.shared.plan.TripProgress;
@@ -44,11 +44,10 @@ import farex.shared.plan.TripProgress;
 public class RoutesView extends StackPane {
 
     private static final int TIMEOUT_SECONDS = 20;
-    private static final boolean PHONE = !com.gluonhq.attach.util.Platform.isDesktop();
     // Laptop has no GPS: "My location" is this demo spot (UP Diliman), clearly labelled
     private static final double DEMO_LAT = 14.6537, DEMO_LNG = 121.0687;
 
-    private final LeafletMap map = new LeafletMap();
+    private final RouteMap map = new RouteMap();
     private final TextField fromField = field("From: a stop, or tap the map");
     private final TextField toField = field("To: where are you going?");
     private final VBox bar;
@@ -60,7 +59,8 @@ public class RoutesView extends StackPane {
     private int asked = 0;                       // a newer request wins over a slower older answer
 
     public RoutesView() {
-        Button locate = TripUi.darkButton("⌖", this::useMyLocation);
+        Button locate = TripUi.darkButton("", this::useMyLocation);
+        locate.setGraphic(TripUi.locateIcon());                    // drawn: the font has no ⌖
         locate.setMinWidth(40);
         HBox fromRow = new HBox(6, fromField, locate);
         HBox.setHgrow(fromField, Priority.ALWAYS);
@@ -77,28 +77,16 @@ public class RoutesView extends StackPane {
         wire(fromField, true);
         wire(toField, false);
         map.withFarexRoutes();
-        map.onPick(this::tapped);                    // phones may not pass map taps back; typing and ⌖ always work
-
-        if (PHONE) {
-            // Android draws its map browser on top of everything, so the cards cannot float over it:
-            // bar above, map in the middle, sheet below. The stop list would be covered, so the map hides meanwhile.
-            VBox stack = new VBox(8, bar, suggestionsCard, map, sheet);
-            VBox.setVgrow(map, Priority.ALWAYS);
-            stack.setPadding(new Insets(10, 12, 12, 12));
-            suggestionsCard.visibleProperty().addListener((o, a, shown) -> map.setVisible(!shown));
-            fromField.setPromptText("From: type a stop, or ⌖");
-            getChildren().add(stack);
-        } else {
-            sheet.heightProperty().addListener((o, a, h) -> map.setBottomInset(sheet.isVisible() ? h.doubleValue() + 16 : 0));
-            bar.heightProperty().addListener((o, a, h) -> map.setTopInset(bar.isVisible() ? h.doubleValue() + 12 : 0));
-            Region push = new Region();
-            VBox.setVgrow(push, Priority.ALWAYS);
-            push.setMouseTransparent(true);          // an empty Region still catches clicks: the map must get them
-            VBox overlay = new VBox(8, bar, suggestionsCard, push, sheet);
-            overlay.setPadding(new Insets(10, 12, 12, 12));
-            overlay.setPickOnBounds(false);          // drags and taps between the cards reach the map
-            getChildren().addAll(map, overlay);
-        }
+        map.onPick(this::tapped);
+        sheet.heightProperty().addListener((o, a, h) -> map.setBottomInset(sheet.isVisible() ? h.doubleValue() + 16 : 0));
+        bar.heightProperty().addListener((o, a, h) -> map.setTopInset(bar.isVisible() ? h.doubleValue() + 12 : 0));
+        Region push = new Region();
+        VBox.setVgrow(push, Priority.ALWAYS);
+        push.setMouseTransparent(true);          // an empty Region still catches clicks: the map must get them
+        VBox overlay = new VBox(8, bar, suggestionsCard, push, sheet);
+        overlay.setPadding(new Insets(10, 12, 12, 12));
+        overlay.setPickOnBounds(false);          // drags and taps between the cards reach the map
+        getChildren().addAll(map, overlay);
 
         TripState.loadPlaces(places -> { });         // warm the stop list for typing
         restore();
@@ -402,7 +390,7 @@ public class RoutesView extends StackPane {
     // Progress bar, "NEXT" step and minutes left follow each position fix; the search bar hides meanwhile
     private void tracking(TripTracker tracker) {
         hide(bar);
-        if (!PHONE) map.setTopInset(0);
+        map.setTopInset(0);
         hide(suggestionsCard);
         map.withFarexTrip(TripState.getRoute().getRides(), TripUi.pinnedPoints());
 
@@ -473,7 +461,7 @@ public class RoutesView extends StackPane {
         map.showMe(null, false);
         map.showRiding(null);
         show(bar);
-        if (!PHONE) map.setTopInset(bar.getHeight() + 12);
+        map.setTopInset(bar.getHeight() + 12);
         clearPlan();
     }
 

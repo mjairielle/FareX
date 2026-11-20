@@ -35,11 +35,11 @@
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
         </dependency>
-        <!-- WebView for the OpenStreetMap / Leaflet map (com.farex.ui.common.LeafletMap) -->
+        <!-- The street map on the Routes tab (com.farex.ui.common.RouteMap): pure JavaFX, no WebView -->
         <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-web</artifactId>
-            <version>${javafx.version}</version>
+            <groupId>com.gluonhq</groupId>
+            <artifactId>maps</artifactId>
+            <version>2.0.0-ea+6</version>
         </dependency>
         <dependency>
             <groupId>com.gluonhq</groupId>
@@ -147,6 +147,7 @@
                         <list>com.gluonhq.impl.charm.glisten.control.skin.GlistenButtonSkin</list>
                         <!-- JavaFX finds the Application class by name at start; without this the native app shows a black screen -->
                         <list>com.farex.ui.FarexApp</list>
+                        <list>com.farex.ui.common.VoyagerTiles</list>   <!-- map tiles, found by ServiceLoader -->
                         <!-- JavaFX looks these up by name the first time one is drawn (missing one = crash on that screen) -->
                         <list>javafx.scene.shape.Arc</list>
                         <list>javafx.scene.shape.Circle</list>

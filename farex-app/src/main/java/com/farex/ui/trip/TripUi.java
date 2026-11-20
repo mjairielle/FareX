@@ -18,7 +18,7 @@ import javafx.scene.shape.StrokeLineJoin;
 import javafx.scene.text.TextAlignment;
 
 import com.farex.ui.common.CommonUi;
-import com.farex.ui.common.LeafletMap;
+import com.farex.ui.common.RouteMap;
 import com.farex.ui.common.Theme;
 
 // Small pieces only the Trip Planner screens use (the rest comes from CommonUi)
@@ -63,6 +63,21 @@ public final class TripUi {
         Theme.paintButton(button, "#141414", "#222222", "#0A0A0A", 8, "white");
         button.setOnAction(e -> onClick.run());
         return button;
+    }
+
+    // "My location": a ring with a dot and four ticks, like a map app's locate button
+    public static Node locateIcon() {
+        Circle ring = new Circle(7, Color.TRANSPARENT);
+        ring.setStroke(Color.WHITE);
+        ring.setStrokeWidth(2);
+        Group icon = new Group(ring, new Circle(3, Color.WHITE));
+        for (double[] t : new double[][] {{0, -7, 0, -10}, {0, 7, 0, 10}, {-7, 0, -10, 0}, {7, 0, 10, 0}}) {
+            Line tick = new Line(t[0], t[1], t[2], t[3]);
+            tick.setStroke(Color.WHITE);
+            tick.setStrokeWidth(2);
+            icon.getChildren().add(tick);
+        }
+        return icon;
     }
 
     // ----- Tracking screens -----

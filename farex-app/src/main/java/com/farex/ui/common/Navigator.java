@@ -41,10 +41,6 @@ public final class Navigator {
     public static void showOverlay(Node dialog) {
         closeOverlay();
         container.getChildren().get(0).setEffect(new GaussianBlur(14));
-        // Phones draw a map (web view) on top of everything, which would hide the pop-up: hide maps meanwhile
-        if (!com.gluonhq.attach.util.Platform.isDesktop()) {
-            container.getChildren().get(0).lookupAll(".web-view").forEach(n -> n.setVisible(false));
-        }
         overlay = dialog;
         container.getChildren().add(dialog);
     }
@@ -55,9 +51,6 @@ public final class Navigator {
             overlay = null;
         }
         container.getChildren().get(0).setEffect(null);
-        if (!com.gluonhq.attach.util.Platform.isDesktop()) {
-            container.getChildren().get(0).lookupAll(".web-view").forEach(n -> n.setVisible(true));
-        }
     }
 
     private static Parent comingSoon(String name) {
