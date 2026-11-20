@@ -106,6 +106,12 @@ public final class Main {
         try { return Double.parseDouble(req(p, k)); } catch (NumberFormatException e) { throw new IllegalArgumentException(k + " must be a number"); }
     }
 
+    // A place name typed by the user, made safe for the | ~ ; , separated plan lines
+    static String label(Map<String, String> p, String k, String fallback) {
+        String s = p.getOrDefault(k, fallback).replaceAll("[|~;,\\r\\n]", " ").trim();
+        return s.isEmpty() ? fallback : s;
+    }
+
     static long cents(Map<String, String> p) {
         try { return Long.parseLong(req(p, "cents")); } catch (NumberFormatException e) { throw new IllegalArgumentException("bad amount"); }
     }
@@ -130,7 +136,7 @@ public final class Main {
         book = new RouteBook(dir);
         shapes = new RouteShapes(dir);
         Fares.setRoadKm(RoadDistances.load(dir, book.routes()));   // fares on road km where known
-        planner = new TripPlanner(book);
+        planner = new TripPlanner(book, shapes);
         rewards = new Rewards(dir);
         // shortcut: Store seeds admin@mail.com / admin123 on first run. Change it in data/users.csv by hand before a public demo.
 
@@ -244,18 +250,31 @@ public final class Main {
         // Routes, stops, fares and trip plans are public transit information: no login needed.
         // A logged-in passenger is still quoted their own (discounted) fare; anyone else the regular one.
         route(s, "/places", "GET", null, (u, p) -> String.join("\n", book.places()));
+        // Jeeps passing a point (lat, lng): routes whose road is within TripPlanner.PASSING_M, nearest first.
+        // "routeId|name|meters|lat~lng|firstStop|lastStop|oneway" per line; lat~lng = where its road passes closest
+        route(s, "/passing", "GET", null, (u, p) -> {
+            StringBuilder b = new StringBuilder();
+            for (TripPlanner.Passing x : planner.passing(num(p, "lat"), num(p, "lng"), TripPlanner.PASSING_M)) {
+                b.append(String.format(Locale.ROOT, "%s|%s|%d|%.6f~%.6f|%s|%s|%b", x.routeId(), x.name(), x.meters(),
+                        x.at().lat(), x.at().lng(), x.firstStop(), x.lastStop(), x.oneway())).append('\n');
+            }
+            return b.toString();
+        });
         // Between two stops (from, to) or two points (fromLat, fromLng, toLat, toLng, optional fromLabel/toLabel).
-        // line per plan: label|km|transfers|fareCents|minutes|route~from~to~km;... (route WALK = walking)
+        // line per plan: label|km|transfers|fareCents|minutes|route~from~to~km~fromLat,fromLng~toLat,toLng;...
+        // (route WALK = walking). A ride can start or end at "the roadside near X": a jeep flagged down
+        // on its road, not at a stop, hence the coordinates. Older apps read the first four fields.
         route(s, "/plan", "GET", null, (u, p) -> {
             FareRule rule = u instanceof Passenger x ? x.getFareRule() : new RegularFare();
             List<TripPlanner.Plan> plans = p.containsKey("fromLat")
-                    ? planner.plan(num(p, "fromLat"), num(p, "fromLng"), p.getOrDefault("fromLabel", "Start"),
-                                   num(p, "toLat"), num(p, "toLng"), p.getOrDefault("toLabel", "Destination"), rule)
+                    ? planner.plan(num(p, "fromLat"), num(p, "fromLng"), label(p, "fromLabel", "Start"),
+                                   num(p, "toLat"), num(p, "toLng"), label(p, "toLabel", "Destination"), rule)
                     : planner.plan(req(p, "from"), req(p, "to"), rule);
             StringBuilder b = new StringBuilder();
             for (TripPlanner.Plan pl : plans) {
                 List<String> legs = new ArrayList<>();
-                for (TripPlanner.Leg l : pl.legs()) legs.add(String.format(Locale.ROOT, "%s~%s~%s~%.2f", l.route(), l.from(), l.to(), l.km()));
+                for (TripPlanner.Leg l : pl.legs()) legs.add(String.format(Locale.ROOT, "%s~%s~%s~%.2f~%.6f,%.6f~%.6f,%.6f",
+                        l.route(), l.from(), l.to(), l.km(), l.fromAt().lat(), l.fromAt().lng(), l.toAt().lat(), l.toAt().lng()));
                 b.append(String.format(Locale.ROOT, "%s|%.1f|%d|%d|%d|", pl.label(), pl.km(), pl.transfers(), pl.fareCents(), pl.minutes()))
                  .append(String.join(";", legs)).append('\n');
             }
@@ -383,7 +402,7 @@ public final class Main {
             book = new RouteBook(dir);                       // planner sees the new route at once
             shapes = new RouteShapes(dir);                   // a new route has no road path until FetchRouteShapes runs
             Fares.setRoadKm(RoadDistances.load(dir, book.routes()));
-            planner = new TripPlanner(book);
+            planner = new TripPlanner(book, shapes);
             return json("ok", "1");
         });
         route(s, "/admin/api/fares", "GET", "ADMIN", (u, p) -> {

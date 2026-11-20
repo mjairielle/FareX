@@ -26,11 +26,26 @@ public final class TripTracker {
 
     private final TripProgress progress;
     private final LocationSource source;
+    private final Map<String, String> headedTo;         // route id -> the end its jeep is driving to
     private Listener listener;
 
-    private TripTracker(TripProgress progress, LocationSource source) {
+    private TripTracker(TripProgress progress, LocationSource source, Map<String, String> headedTo) {
         this.progress = progress;
         this.source = source;
+        this.headedTo = headedTo;
+    }
+
+    // Where the jeep on this route is going ("North Ave near EDSA"), or null
+    public String headedTo(String routeId) {
+        return headedTo.get(routeId);
+    }
+
+    // The jeep that matters at this point of the trip: the one you are on, or, while walking, the
+    // one you are walking to catch. Null on the final walk.
+    public String jeepAt(TripProgress.Status s) {
+        TripProgress.Ride leg = progress.legAt(s.doneKm());
+        if (!leg.walk()) return leg.route();
+        return s.next() == null ? null : s.next().route();
     }
 
     // Builds the trip's road paths in the background (they come from the server), then calls
@@ -46,9 +61,15 @@ public final class TripTracker {
                     return;
                 }
                 TripProgress progress = new TripProgress(legs);
+                Map<String, String> heads = new java.util.HashMap<>();
+                for (Api.PlanRide r : rides) {
+                    if (r.walk()) continue;
+                    String to = LeafletMap.headedTo(r);
+                    if (to != null) heads.putIfAbsent(r.route(), to);
+                }
                 Platform.runLater(() -> {
                     stopCurrent();
-                    current = new TripTracker(progress, LocationSource.best(progress));
+                    current = new TripTracker(progress, LocationSource.best(progress), heads);
                     ready.accept(current);
                 });
             } catch (RuntimeException offline) {
