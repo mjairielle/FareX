@@ -137,6 +137,8 @@
                     <appIdentifier>com.farex.app</appIdentifier>
                     <resourcesList>
                         <list>.*[.]ttf$</list>     <!-- the bundled Inter font -->
+                        <list>.*carto[.]key$</list>  <!-- the CARTO map key (VoyagerTiles); gitignored -->
+                        <list>META-INF/services/.*</list>  <!-- ServiceLoader finds VoyagerTiles through this -->
                     </resourcesList>
                     <releaseConfiguration>
                         <appLabel>FareX</appLabel>

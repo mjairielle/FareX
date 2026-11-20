@@ -537,7 +537,7 @@ public class RouteMap extends StackPane {
             g.setTextBaseline(VPos.BOTTOM);
             g.setGlobalAlpha(0.8);
             g.setFill(INK);
-            String credit = "© OpenStreetMap contributors © CARTO";
+            String credit = VoyagerTiles.CREDIT;
             g.fillText(credit, w - width(credit, g.getFont()) - 6, h - bottomInset - 2);
             g.setGlobalAlpha(1);
         }
