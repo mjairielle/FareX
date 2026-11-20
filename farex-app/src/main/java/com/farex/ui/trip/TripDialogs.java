@@ -13,7 +13,7 @@ import com.farex.ui.common.PopupDialog;
 import com.farex.ui.common.Theme;
 import com.farex.ui.common.WarningDialog;
 
-// The Trip Planner's pop-ups (shown over TripScreen instead of opening pages).
+// The Trip Planner's pop-ups (shown over the Routes map instead of opening pages).
 // Each one takes what its buttons should do, e.g. noRoute(tryAgain, editLocations).
 public final class TripDialogs {
 
