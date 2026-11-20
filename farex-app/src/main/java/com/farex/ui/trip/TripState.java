@@ -192,6 +192,7 @@ public final class TripState {
     }
 
     public static void clear() {
+        TripTracker.stopCurrent();      // leaving the trip always stops location tracking
         start = null;
         destination = null;
         routeIndex = 0;

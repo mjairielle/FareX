@@ -71,6 +71,12 @@
             <artifactId>util</artifactId>
             <version>${attach.version}</version>
         </dependency>
+        <dependency>
+            <!-- phone GPS for trip tracking (ui/trip/LocationSource) -->
+            <groupId>com.gluonhq.attach</groupId>
+            <artifactId>position</artifactId>
+            <version>${attach.version}</version>
+        </dependency>
     </dependencies>
 
     <repositories>

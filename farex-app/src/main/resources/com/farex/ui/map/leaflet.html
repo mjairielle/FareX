@@ -127,6 +127,24 @@
       map.on('click', function (e) { farexTap(e.latlng.lat, e.latlng.lng); });
     };
 
+    // "You are here" during a tracked trip: its own layer, so farexDraw does not wipe it and moving
+    // it does not re-fit the map. Pans only when the dot leaves the view.
+    var meLayer = L.layerGroup().addTo(map), meDot = null;
+    window.farexMe = function (lat, lng, offRoute) {
+      if (lat === null) { meLayer.clearLayers(); meDot = null; return; }
+      var style = { radius: 8, color: '#FFFFFF', weight: 3, fillColor: offRoute ? '#EF4444' : '#3B82F6', fillOpacity: 1 };
+      if (!meDot) {
+        meDot = L.circleMarker([lat, lng], style).bindTooltip('You', { direction: 'right', className: 'farex-label' }).addTo(meLayer);
+        map.setView([lat, lng], 15, { animate: false });   // first fix: follow the passenger, street level
+        return;
+      } else {
+        meDot.setLatLng([lat, lng]);
+        meDot.setStyle(style);
+        meDot.bringToFront();
+      }
+      if (!map.getBounds().pad(-0.1).contains([lat, lng])) map.panTo([lat, lng], { animate: false });
+    };
+
     var lastFit = [];
     function refit() {
       map.invalidateSize();   // measure the real size first, or the fit is for a stale, smaller box

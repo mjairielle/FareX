@@ -95,6 +95,36 @@ public class TripProgressTest {
         assertEquals(t.path().get(t.path().size() - 1), t.pointAt(t.totalKm() + 5));
     }
 
+    // Walk 0.5 km to A, ride R1 to B, walk 0.5 km on: walks are slower and have their own checkpoint
+    private static TripProgress walkRideWalk() {
+        return new TripProgress(List.of(
+                new TripProgress.Ride(TripPlanner.WALK, "Home", "A", List.of(new Point(14.5955, 121.0), new Point(14.60, 121.0))),
+                new TripProgress.Ride("R1", "A", "B", line(14.60, 14.62)),
+                new TripProgress.Ride(TripPlanner.WALK, "B", "Office", List.of(new Point(14.62, 121.0), new Point(14.6245, 121.0)))));
+    }
+
+    @Test
+    void walksHaveCheckpointsAndTheFirstRideIsStillBoarding() {
+        List<TripProgress.Checkpoint> c = walkRideWalk().checkpoints();
+        assertEquals(List.of(TripProgress.Kind.WALK, TripProgress.Kind.BOARD, TripProgress.Kind.WALK, TripProgress.Kind.ALIGHT),
+                c.stream().map(TripProgress.Checkpoint::kind).toList());
+        assertEquals("A", c.get(0).stop(), "walk checkpoint names where you walk to");
+        assertEquals("Office", c.get(3).stop());
+    }
+
+    @Test
+    void walkingTakesLongerPerKmThanRiding() {
+        TripProgress t = walkRideWalk();
+        TripProgress.Status s = t.update(14.5955, 121.0);
+        double walkKm = 2 * 0.5, rideKm = t.totalKm() - walkKm;
+        int expected = (int) Math.ceil(walkKm / TripProgress.WALK_KPH * 60 + rideKm / TripProgress.JEEP_KPH * 60);
+        assertEquals(expected, s.minutesLeft(), 1);
+        assertEquals(TripProgress.Kind.WALK, s.next().kind());
+        assertTrue(t.legAt(0.1).walk());
+        assertEquals("R1", t.legAt(1.0).route());
+        assertTrue(t.legAt(t.totalKm() - 0.1).walk());
+    }
+
     @Test
     void rejectsEmptyTripsAndPathlessRides() {
         assertThrows(IllegalArgumentException.class, () -> new TripProgress(List.of()));

@@ -104,12 +104,28 @@ public final class TripUi {
         return box;
     }
 
+    // The pinned ends of the trip (not stops), by name, so walks to and from them can be placed
+    public static java.util.Map<String, farex.shared.data.RouteStop> pinnedPoints() {
+        java.util.Map<String, farex.shared.data.RouteStop> pins = new java.util.HashMap<>();
+        for (TripPlace p : new TripPlace[]{TripState.getStart(), TripState.getDestination()}) {
+            if (p != null && p.isPin()) pins.put(p.getName(), new farex.shared.data.RouteStop(p.getName(), p.getLat(), p.getLng()));
+        }
+        return pins;
+    }
+
     // Map card with a black tag at the bottom. A real plan is drawn on it (lime line, start and
     // end labels); the offline sample routes have no map data, so that map is area context only.
     public static StackPane mapCard(double height) {
+        return mapCard(height, null, map -> { });
+    }
+
+    // Same with its own tag text (null = the default), handing over the map: the tracking screen
+    // moves a "you are here" dot on it
+    public static StackPane mapCard(double height, String tagText, java.util.function.Consumer<LeafletMap> withMap) {
         java.util.List<com.farex.Api.PlanRide> rides = TripState.getRoute().getRides();
-        Label tag = new Label(rides.isEmpty() ? "Manila · map context, not live GPS"
-                                              : "Your route in lime · not live GPS");
+        Label tag = new Label(tagText != null ? tagText
+                : rides.isEmpty() ? "Manila · map context, not live GPS"
+                                  : "Your route in lime · not live GPS");
         tag.setTextFill(Theme.WHITE);
         tag.setFont(Theme.bold(9));
         tag.setPadding(new Insets(5, 10, 5, 10));
@@ -121,12 +137,9 @@ public final class TripUi {
         LeafletMap map = new LeafletMap(320, height, 12);
         if (!rides.isEmpty()) {
             // pinned ends are not stops: tell the map where they are so their walks can be drawn
-            java.util.Map<String, farex.shared.data.RouteStop> pins = new java.util.HashMap<>();
-            for (TripPlace p : new TripPlace[]{TripState.getStart(), TripState.getDestination()}) {
-                if (p != null && p.isPin()) pins.put(p.getName(), new farex.shared.data.RouteStop(p.getName(), p.getLat(), p.getLng()));
-            }
-            map.withFarexTrip(rides, pins);
+            map.withFarexTrip(rides, pinnedPoints());
         }
+        withMap.accept(map);
         StackPane card = new StackPane(map, tag);
         card.setMaxSize(320, height);
         return card;

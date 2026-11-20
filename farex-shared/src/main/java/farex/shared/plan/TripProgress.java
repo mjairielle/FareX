@@ -7,24 +7,29 @@ import java.util.*;
 /**
  * Where a passenger is along a planned trip, from position fixes (phone GPS or a simulator).
  *
- * The trip is its rides' road paths joined end to end, with checkpoints where you board,
- * transfer and get off. Each fix is projected onto that path to give km done, the next
- * checkpoint, minutes left, arrival and off-route. Progress never goes backwards: GPS jitter
- * near a stop must not make "next stop" flicker.
+ * The trip is its legs' paths joined end to end: rides along the jeep's road path, walks as a
+ * straight line between their two ends. Checkpoints mark where you start a walk, board, transfer
+ * and arrive. Each fix is projected onto that path to give km done, the next checkpoint, minutes
+ * left, arrival and off-route. Progress never goes backwards: GPS jitter near a stop must not make
+ * "next stop" flicker.
  */
 public final class TripProgress {
-    public static final double JEEP_KPH = 15.0;          // same average speed as TripPlanner's estimate
-    public static final int TRANSFER_MINUTES = 5;
+    public static final double JEEP_KPH = TripPlanner.JEEP_KPH;      // same speeds as TripPlanner's estimate
+    public static final double WALK_KPH = TripPlanner.WALK_KPH;
+    public static final int TRANSFER_MINUTES = TripPlanner.TRANSFER_MINUTES;
     public static final double ARRIVED_METERS = 80;
     public static final double OFF_ROUTE_METERS = 300;
     private static final double BACKTRACK_KM = 0.3;      // how far back a fix may match (U-turn loops, jitter)
 
-    /** One ride: board `from`, ride `route` along `path`, get off at `to`. */
-    public record Ride(String route, String from, String to, List<Point> path) {}
+    /** One leg: board `from`, ride `route` along `path`, get off at `to`. A walk has route TripPlanner.WALK. */
+    public record Ride(String route, String from, String to, List<Point> path) {
+        public boolean walk() { return TripPlanner.WALK.equals(route); }
+    }
 
-    public enum Kind { BOARD, TRANSFER, ALIGHT }
+    /** WALK: start walking to `stop`. BOARD / TRANSFER: get on `route` at `stop`. ALIGHT: the trip ends at `stop`. */
+    public enum Kind { WALK, BOARD, TRANSFER, ALIGHT }
 
-    /** A place on the trip where something happens. route = the jeep to ride from here (null when getting off). */
+    /** A place on the trip where something happens. route = the jeep to ride from here (null for walks and the end). */
     public record Checkpoint(Kind kind, String stop, String route, double atKm) {}
 
     public record Status(double doneKm, double totalKm, double offRouteMeters, Checkpoint next,
@@ -33,26 +38,37 @@ public final class TripProgress {
         public double fraction() { return totalKm <= 0 ? 1 : Math.min(1, doneKm / totalKm); }
     }
 
+    private final List<Ride> legs;
     private final List<Point> path = new ArrayList<>();
     private final double[] cumKm;                       // km along the path at each point
+    private final double[] legStartKm;                  // km along the trip where each leg starts
     private final List<Checkpoint> checkpoints = new ArrayList<>();
     private double doneKm = 0;
 
     public TripProgress(List<Ride> rides) {
-        if (rides.isEmpty()) throw new IllegalArgumentException("A trip needs at least one ride");
+        if (rides.isEmpty()) throw new IllegalArgumentException("A trip needs at least one leg");
+        legs = List.copyOf(rides);
         int[] firstPoint = new int[rides.size()];
         for (int i = 0; i < rides.size(); i++) {
             Ride r = rides.get(i);
-            if (r.path().size() < 2) throw new IllegalArgumentException("Ride " + r.route() + " has no path");
+            if (r.path().size() < 2) throw new IllegalArgumentException("Leg " + r.route() + " has no path");
             firstPoint[i] = path.size();
             path.addAll(r.path());
         }
         cumKm = new double[path.size()];
         for (int i = 1; i < path.size(); i++) cumKm[i] = cumKm[i - 1] + km(path.get(i - 1), path.get(i));
 
+        legStartKm = new double[rides.size()];
+        boolean ridden = false;
         for (int i = 0; i < rides.size(); i++) {
             Ride r = rides.get(i);
-            checkpoints.add(new Checkpoint(i == 0 ? Kind.BOARD : Kind.TRANSFER, r.from(), r.route(), cumKm[firstPoint[i]]));
+            legStartKm[i] = cumKm[firstPoint[i]];
+            if (r.walk()) {
+                checkpoints.add(new Checkpoint(Kind.WALK, r.to(), null, legStartKm[i]));
+            } else {
+                checkpoints.add(new Checkpoint(ridden ? Kind.TRANSFER : Kind.BOARD, r.from(), r.route(), legStartKm[i]));
+                ridden = true;
+            }
         }
         checkpoints.add(new Checkpoint(Kind.ALIGHT, rides.get(rides.size() - 1).to(), null, totalKm()));
     }
@@ -60,6 +76,14 @@ public final class TripProgress {
     public double totalKm() { return cumKm[cumKm.length - 1]; }
     public List<Checkpoint> checkpoints() { return Collections.unmodifiableList(checkpoints); }
     public List<Point> path() { return Collections.unmodifiableList(path); }
+    public List<Ride> legs() { return legs; }
+
+    /** The leg being travelled `km` along the trip (the last leg past the end). */
+    public Ride legAt(double km) {
+        int i = legs.size() - 1;
+        while (i > 0 && legStartKm[i] > km) i--;
+        return legs.get(i);
+    }
 
     /** The point `km` along the trip (clamped to its ends). Used by the desktop simulator. */
     public Point pointAt(double km) {
@@ -89,7 +113,7 @@ public final class TripProgress {
         if (arrived) doneKm = total;
 
         // Checkpoints are in trip order: the next one is the first not yet passed (50 m slack).
-        // Getting off is never "passed", so there is always a next one.
+        // Arriving is never "passed", so there is always a next one.
         Checkpoint next = null;
         int transfersLeft = 0;
         for (Checkpoint c : checkpoints) {
@@ -97,8 +121,19 @@ public final class TripProgress {
             if (next == null) next = c;
             if (c.kind() == Kind.TRANSFER) transfersLeft++;
         }
-        int minutes = arrived ? 0 : (int) Math.ceil(left / JEEP_KPH * 60) + transfersLeft * TRANSFER_MINUTES;
+        int minutes = arrived ? 0 : (int) Math.ceil(minutesFrom(doneKm)) + transfersLeft * TRANSFER_MINUTES;
         return new Status(doneKm, total, best.meters, next, Math.max(0, next.atKm() - doneKm), minutes, arrived);
+    }
+
+    // Travel minutes from `km` to the end: what is left of each leg, at walking or jeep speed
+    private double minutesFrom(double km) {
+        double minutes = 0;
+        for (int i = 0; i < legs.size(); i++) {
+            double end = i + 1 < legs.size() ? legStartKm[i + 1] : totalKm();
+            double part = end - Math.max(km, legStartKm[i]);
+            if (part > 0) minutes += part / (legs.get(i).walk() ? WALK_KPH : JEEP_KPH) * 60;
+        }
+        return minutes;
     }
 
     private record Match(double km, double meters) {}
