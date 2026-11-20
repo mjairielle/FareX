@@ -119,7 +119,7 @@ public class NotificationsView extends SubScreen {
 
         Label title = new Label(n.getTitle());
         title.setTextFill(unread ? Theme.LIME : Theme.WHITE);
-        title.setFont(Font.font("System", 14));
+        title.setFont(Font.font(Theme.FONT, 14));
 
         VBox text = new VBox(2, title, message(n.getMessage()));
         HBox.setHgrow(text, Priority.ALWAYS);
@@ -147,7 +147,7 @@ public class NotificationsView extends SubScreen {
         for (int i = 0; i < parts.length; i++) {
             Text piece = new Text(parts[i]);
             piece.setFill(Theme.WHITE);
-            piece.setFont(i % 2 == 1 ? Theme.bold(11) : Font.font("System", 11));   // odd parts were inside **
+            piece.setFont(i % 2 == 1 ? Theme.bold(11) : Font.font(Theme.FONT, 11));   // odd parts were inside **
             flow.getChildren().add(piece);
         }
         return flow;

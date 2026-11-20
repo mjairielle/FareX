@@ -37,7 +37,7 @@ public class CardChoiceTile extends VBox {
 
         Label number = new Label(card.getCardNumber());
         number.setTextFill(Color.web("#CFCFCF"));
-        number.setFont(Font.font("System", 10));
+        number.setFont(Font.font(Theme.FONT, 10));
 
         getChildren().addAll(cardIcon(), name, number);
         setSpacing(2);

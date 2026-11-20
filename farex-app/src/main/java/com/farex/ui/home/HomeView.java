@@ -116,7 +116,7 @@ public class HomeView extends ScrollPane {
         Circle dot = new Circle(3.5, hasCard ? Theme.LIME : Color.web("#777777"));
         Label label = new Label(hasCard ? "Card Active" : "No Card");
         label.setTextFill(Theme.WHITE);
-        label.setFont(Font.font("System", 10));
+        label.setFont(Font.font(Theme.FONT, 10));
 
         HBox chip = new HBox(6, dot, label);
         chip.setAlignment(Pos.CENTER);
@@ -160,7 +160,7 @@ public class HomeView extends ScrollPane {
         Label message = new Label("Add your xPress card to start loading, earning points, "
                 + "and tracking your transit activity.");
         message.setTextFill(Color.web("#CFCFCF"));
-        message.setFont(Font.font("System", 12));
+        message.setFont(Font.font(Theme.FONT, 12));
         message.setWrapText(true);
         message.setTextAlignment(TextAlignment.CENTER);
         message.setAlignment(Pos.CENTER);
@@ -260,13 +260,13 @@ public class HomeView extends ScrollPane {
 
         Label sub = new Label("Equivalent to \u20B1" + pointsText + " transit credit");
         sub.setTextFill(Theme.GRAY);
-        sub.setFont(Font.font("System", 11));
+        sub.setFont(Font.font(Theme.FONT, 11));
 
         VBox text = new VBox(2, topLine, sub);
         HBox.setHgrow(text, Priority.ALWAYS);
 
         Button redeem = new Button("Redeem");
-        redeem.setFont(Font.font("System", 11));
+        redeem.setFont(Font.font(Theme.FONT, 11));
         redeem.setPadding(new Insets(5, 14, 5, 14));
         Theme.paintButton(redeem, "#363636", "#404040", "#2C2C2C", 50, "#CAFE06");
         redeem.setMinWidth(Region.USE_PREF_SIZE);
@@ -295,7 +295,7 @@ public class HomeView extends ScrollPane {
         titleLabel.setFont(Theme.bold(15));
         Label subLabel = new Label(subtitle);
         subLabel.setTextFill(Theme.GRAY);
-        subLabel.setFont(Font.font("System", 11));
+        subLabel.setFont(Font.font(Theme.FONT, 11));
         subLabel.setWrapText(true);
         VBox text = new VBox(2, titleLabel, subLabel);
         HBox.setHgrow(text, Priority.ALWAYS);

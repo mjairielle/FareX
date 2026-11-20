@@ -418,7 +418,7 @@ public class LostCardScreen extends StepScreen {
             boxes.setSpacing(6);
             boxes.setAlignment(Pos.CENTER_LEFT);
             Label timer = getTimerLabel();
-            timer.setFont(Font.font("System", 11));
+            timer.setFont(Font.font(Theme.FONT, 11));
             HBox expires = new HBox(4, CommonUi.small("Code expires in", Theme.WHITE), timer);
             expires.setAlignment(Pos.CENTER_LEFT);
             VBox codePanel = CommonUi.panel(CommonUi.small("Verification code", Theme.WHITE), boxes, expires);
@@ -435,14 +435,25 @@ public class LostCardScreen extends StepScreen {
             setPadding(Insets.EMPTY);
             setBackground(null);
             VBox.setVgrow(this, Priority.ALWAYS);
+            Label hint = demoHint();                       // mock mode only: no server to email the code
+            hint.setVisible(!MockData.isLive());
+            hint.setManaged(!MockData.isLive());
             getChildren().setAll(
-                    heading, codePanel, demoHint(), getErrorLabel(),
+                    heading, codePanel, hint, getErrorLabel(),
                     CommonUi.note("Never share this code. FareX support will not ask for your verification code."),
                     CommonUi.spacer(),
                     CommonUi.limeButton("Verify and submit report", this::verifyNow),
                     CommonUi.link("Resend code", this::resendCode));
         }
-        @Override protected void onCodeAccepted() { onAccepted.run(); }
+        // The code goes to the logged-in account's own email; the server checks it before freezing
+        @Override protected String otpPurpose() { return "LOST"; }
+        @Override protected String otpEmail() { return ""; }   // the server uses the account's email
+        @Override protected void sendCode() { if (MockData.isLive()) super.sendCode(); }
+        @Override protected String verify(String code) { return MockData.isLive() ? super.verify(code) : verifyDemo(code); }
+        @Override protected void onCodeAccepted() {
+            LostCardState.setOtpPass(otpPass);
+            onAccepted.run();
+        }
     }
 
     // ---- formerly LostTransferStep.java ----

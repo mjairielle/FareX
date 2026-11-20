@@ -27,7 +27,12 @@ Notes
   e.g. http://192.168.1.5:8080
 - "The server is out of date": an older server is still running. Close it and start run-server.bat again.
 - Delete account (Profile > Privacy) asks for the password, removes both roles and writes off the card balance.
-- OTP screens show the demo code (123456). No SMS or email is sent.
+- Email codes (sign-up and lost card): the server emails a 6-digit code through Gmail. Set up once:
+  1. Use the team Gmail. Turn on 2-Step Verification (myaccount.google.com > Security).
+  2. Create an App Password (myaccount.google.com/apppasswords), name it FareX, copy the 16 letters.
+  3. In .env add:  SMTP_USER=yourteam@gmail.com   and   SMTP_PASSWORD=the 16 letters (spaces are fine)
+  4. Restart run-server.bat. Codes go to the email typed in the app; check Spam the first time.
+  Without SMTP_USER / SMTP_PASSWORD the server prints each code in its window instead: "OTP for x@y.com: 123456".
 - Trip planner = the Routes tab. Drag the map freely. Type in From / To (stops), tap the map ("Start here" / "Go here",
   plus the jeeps passing there) or press the location button. With both ends set, up to 3 routes appear at the bottom;
   tap one to see its steps on the map, then Start trip (phone GPS, or a simulated ride on the laptop).

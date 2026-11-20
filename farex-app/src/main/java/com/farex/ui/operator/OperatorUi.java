@@ -67,7 +67,7 @@ public final class OperatorUi {
         Label big = TripUi.bold(String.valueOf(number), 30);
         big.setTextFill(Theme.LIME);
         Label small = CommonUi.small(unit, Theme.WHITE);
-        small.setFont(Font.font("System", 12));
+        small.setFont(Font.font(Theme.FONT, 12));
         HBox line = new HBox(6, big, small);
         line.setAlignment(Pos.BASELINE_LEFT);
         return line;

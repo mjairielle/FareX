@@ -38,7 +38,7 @@ public class AmountField extends HBox {
         // The peso sign only shows once something is typed; the prompt has its own
         Label peso = new Label("₱");
         peso.setTextFill(Theme.WHITE);
-        peso.setFont(Font.font("System", 14));
+        peso.setFont(Font.font(Theme.FONT, 14));
         peso.managedProperty().bind(peso.visibleProperty());
         peso.setVisible(false);
 
@@ -46,7 +46,7 @@ public class AmountField extends HBox {
         field.setBackground(Background.EMPTY);
         field.setBorder(null);
         field.setPadding(new Insets(13, 0, 13, 0));
-        field.setFont(Font.font("System", 14));
+        field.setFont(Font.font(Theme.FONT, 14));
         field.setStyle("-fx-text-fill: white; -fx-prompt-text-fill: #6F6F6F;");
         HBox.setHgrow(field, Priority.ALWAYS);
 

@@ -57,11 +57,11 @@ public class LoadAmountStep extends VBox {
 
         Label caption = new Label("Enter desired load amount");
         caption.setTextFill(Theme.WHITE);
-        caption.setFont(Font.font("System", 12));
+        caption.setFont(Font.font(Theme.FONT, 12));
 
         Label helper = new Label("From ₱5.00 to ₱5,000.00 only");
         helper.setTextFill(Theme.WHITE);
-        helper.setFont(Font.font("System", 10));
+        helper.setFont(Font.font(Theme.FONT, 10));
 
         errorLabel.setTextFill(Theme.ERROR);
         errorLabel.setWrapText(true);
@@ -114,7 +114,7 @@ public class LoadAmountStep extends VBox {
             double value = PRESETS[i];
             Label box = new Label(String.format(Locale.US, "₱%.2f", value));   // "₱10.00"
             box.setTextFill(Color.web("#D6D6D6"));
-            box.setFont(Font.font("System", 13));
+            box.setFont(Font.font(Theme.FONT, 13));
             box.setAlignment(Pos.CENTER);
             box.setMaxWidth(Double.MAX_VALUE);
             box.setMinHeight(52);

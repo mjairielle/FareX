@@ -58,7 +58,7 @@ public class LoadMethodStep extends VBox {
         if (subtitle != null) {
             Label sub = new Label(subtitle);
             sub.setTextFill(Theme.WHITE);
-            sub.setFont(Font.font("System", 10));
+            sub.setFont(Font.font(Theme.FONT, 10));
             text.getChildren().add(sub);
         }
 

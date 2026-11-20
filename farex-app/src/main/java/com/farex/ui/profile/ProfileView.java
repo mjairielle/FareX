@@ -130,7 +130,7 @@ public class ProfileView extends VBox {
     private Label statusChip(String text, Color color) {
         Label chip = new Label(text);
         chip.setTextFill(Theme.BLACK);
-        chip.setFont(Font.font("System", 8));
+        chip.setFont(Font.font(Theme.FONT, 8));
         chip.setPadding(new Insets(2, 10, 2, 10));
         chip.setBackground(Theme.rounded(color, 50));
         return chip;

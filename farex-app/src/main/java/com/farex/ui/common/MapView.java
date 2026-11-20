@@ -131,7 +131,7 @@ public class MapView extends Pane {
     private StackPane badge(String text, double x, double y) {
         Label label = new Label(text);
         label.setTextFill(Color.WHITE);
-        label.setFont(Font.font("System", FontWeight.BOLD, 9));
+        label.setFont(Font.font(Theme.FONT, FontWeight.BOLD, 9));
         StackPane badge = new StackPane(label);
         badge.setAlignment(Pos.CENTER);
         badge.setStyle("-fx-background-color: #6D9F45; -fx-background-radius: 3; "
@@ -143,7 +143,7 @@ public class MapView extends Pane {
     private Label cityName() {
         Label manila = new Label("Manila");
         manila.setTextFill(Color.web("#3C4043"));
-        manila.setFont(Font.font("System", FontWeight.MEDIUM, 28));
+        manila.setFont(Font.font(Theme.FONT, FontWeight.MEDIUM, 28));
         manila.relocate(18, 410);
         return manila;
     }

@@ -72,6 +72,18 @@
             <version>${attach.version}</version>
         </dependency>
         <dependency>
+            <!-- phone keyboard height, to keep the field being typed in above it -->
+            <groupId>com.gluonhq.attach</groupId>
+            <artifactId>keyboard</artifactId>
+            <version>${attach.version}</version>
+        </dependency>
+        <dependency>
+            <!-- opens the PayMongo checkout in the phone's browser -->
+            <groupId>com.gluonhq.attach</groupId>
+            <artifactId>browser</artifactId>
+            <version>${attach.version}</version>
+        </dependency>
+        <dependency>
             <!-- phone GPS for trip tracking (ui/trip/LocationSource) -->
             <groupId>com.gluonhq.attach</groupId>
             <artifactId>position</artifactId>
@@ -119,8 +131,13 @@
                         <list>statusbar</list>
                         <list>storage</list>
                         <list>position</list>   <!-- phone GPS for trip tracking -->
+                        <list>keyboard</list>
+                        <list>browser</list>
                     </attachList>
                     <appIdentifier>com.farex.app</appIdentifier>
+                    <resourcesList>
+                        <list>.*[.]ttf$</list>     <!-- the bundled Inter font -->
+                    </resourcesList>
                     <releaseConfiguration>
                         <appLabel>FareX</appLabel>
                         <versionCode>1</versionCode>

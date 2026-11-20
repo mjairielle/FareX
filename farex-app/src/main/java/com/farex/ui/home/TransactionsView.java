@@ -56,7 +56,7 @@ public class TransactionsView extends ScrollPane {
             for (Map.Entry<LocalDate, List<DemoTransaction>> day : groupByDay(all).entrySet()) {
                 Label date = new Label(day.getKey().format(DAY));
                 date.setTextFill(Theme.WHITE);
-                date.setFont(Font.font("System", FontWeight.MEDIUM, 13));
+                date.setFont(Font.font(Theme.FONT, FontWeight.MEDIUM, 13));
                 VBox.setMargin(date, new Insets(6, 0, 0, 0));
                 content.getChildren().addAll(date, group(day.getValue()));
             }
@@ -101,7 +101,7 @@ public class TransactionsView extends ScrollPane {
         title.setFont(Theme.bold(12));
         Label detail = new Label(t.getDetail());
         detail.setTextFill(Color.web("#CFCFCF"));
-        detail.setFont(Font.font("System", 8));
+        detail.setFont(Font.font(Theme.FONT, 8));
         VBox text = new VBox(1, title, detail);
 
         Region fill = new Region();
@@ -109,7 +109,7 @@ public class TransactionsView extends ScrollPane {
 
         Label amount = new Label(signedPeso(t.getAmount()));
         amount.setTextFill(Theme.WHITE);
-        amount.setFont(Font.font("System", 11));
+        amount.setFont(Font.font(Theme.FONT, 11));
 
         HBox row = new HBox(14, Icons.view(t.getIconName(), 20), text, fill, amount);
         row.setAlignment(Pos.CENTER_LEFT);

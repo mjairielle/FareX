@@ -54,6 +54,35 @@ public final class Main {
         if (fails.size() > 10000) fails.values().removeIf(x -> now - x[1] >= LOCK_MS);
     }
     static final Map<String, TapDesk> desks = new HashMap<>();
+
+    // ----- Email codes (OTP): sign-up and lost card prove the person owns the email -----
+    record Otp(String code, long expires, int[] wrong) {}
+    static final Map<String, Otp> otps = new HashMap<>();                 // "SIGNUP|email" -> the code sent
+    static final Map<String, String[]> verified = new HashMap<>();        // pass -> {"SIGNUP|email", expires millis}
+    static final long OTP_MS = 5L * 60 * 1000, PASS_MS = 15L * 60 * 1000;
+    static final java.security.SecureRandom RANDOM = new java.security.SecureRandom();
+    // Emails go out on their own thread, so a slow mail server never holds up taps
+    static final java.util.concurrent.ExecutorService MAILER = java.util.concurrent.Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "farex-mail");
+        t.setDaemon(true);
+        return t;
+    });
+
+    static String otpKey(String purpose, String email) {
+        if (!purpose.equals("SIGNUP") && !purpose.equals("LOST")) throw new IllegalArgumentException("Bad purpose");
+        return purpose + "|" + email.trim().toLowerCase();
+    }
+
+    /** The verified-email pass from /otp/verify must match; consume = use it up (after the action worked). */
+    static void checkPass(Map<String, String> p, String purpose, String email, boolean consume) {
+        String pass = p.getOrDefault("otp", "");
+        String[] v = verified.get(pass);
+        if (v == null || !v[0].equals(otpKey(purpose, email)) || System.currentTimeMillis() > Long.parseLong(v[1])) {
+            verified.remove(pass);
+            throw new IllegalArgumentException("Email not verified. Request a new code.");
+        }
+        if (consume) verified.remove(pass);
+    }
     static final String SUSPENDED_H = "userId,action,time";
     // shortcut: dev default key, set CARD_KEY in .env before any real card is written
     static final byte[] CARD_KEY = Env.get("CARD_KEY", "farex-dev-card-key").getBytes(java.nio.charset.StandardCharsets.UTF_8);
@@ -302,6 +331,53 @@ public final class Main {
             throw new IllegalStateException("Port " + port + " is busy: another FareX server is still running. Close it first.");
         }
 
+        // Sends a 6-digit code to the email. SIGNUP: the email typed at sign-up; LOST: the logged-in account's email.
+        // Without SMTP settings the code is printed in this server window instead (laptop demo).
+        route(s, "/otp/send", "POST", null, (u, p) -> {
+            String purpose = req(p, "purpose").toUpperCase();
+            if (purpose.equals("LOST") && u == null) throw new IllegalStateException("Please log in again");
+            String email = purpose.equals("LOST") ? u.getEmail() : req(p, "email").trim().toLowerCase();
+            if (!email.matches("[^\\s,<>@]+@[^\\s,<>@]+")) throw new IllegalArgumentException("Email is not valid");
+            long now = System.currentTimeMillis();
+            String key = otpKey(purpose, email), ipKey = "otp|" + p.get("_ip");
+            Otp last = otps.get(key);
+            if (last != null && now < last.expires() - OTP_MS + 30_000) throw new IllegalStateException("Wait 30 seconds before asking for another code");
+            if (locked(ipKey, 20, now)) throw new IllegalStateException("Too many codes requested. Wait 15 minutes");
+            fail(ipKey, now);                                        // counts sends: 20 per IP per 15 minutes
+            String code = String.format("%06d", RANDOM.nextInt(1_000_000));
+            otps.put(key, new Otp(code, now + OTP_MS, new int[1]));
+            if (Mail.configured()) {
+                String to = email;
+                MAILER.submit(() -> {
+                    try {
+                        Mail.send(to, "Your FareX code: " + code, "Your FareX verification code is " + code
+                                + ".\nIt expires in 5 minutes. Never share it; FareX will never ask for it.\n\nIf you did not ask for this code, ignore this email.");
+                    } catch (Exception e) {
+                        System.err.println("Could not email the code to " + to + ": " + e.getMessage());
+                    }
+                });
+            } else {
+                System.out.println("OTP for " + email + ": " + code + "  (SMTP_USER and SMTP_PASSWORD not set, so it was not emailed)");
+            }
+            return json("sent", "1");
+        });
+        // Right code -> a one-time pass for 15 minutes that /register or /cards/freeze needs. 5 wrong tries kill the code.
+        route(s, "/otp/verify", "POST", null, (u, p) -> {
+            String purpose = req(p, "purpose").toUpperCase();
+            if (purpose.equals("LOST") && u == null) throw new IllegalStateException("Please log in again");
+            String key = otpKey(purpose, purpose.equals("LOST") ? u.getEmail() : req(p, "email"));
+            Otp o = otps.get(key);
+            if (o == null || System.currentTimeMillis() > o.expires()) { otps.remove(key); throw new IllegalArgumentException("Code expired. Tap Resend code."); }
+            if (!java.security.MessageDigest.isEqual(o.code().getBytes(StandardCharsets.UTF_8), req(p, "code").trim().getBytes(StandardCharsets.UTF_8))) {
+                if (++o.wrong()[0] >= 5) { otps.remove(key); throw new IllegalArgumentException("Too many wrong codes. Tap Resend code."); }
+                throw new IllegalArgumentException("Wrong code. Try again.");
+            }
+            otps.remove(key);
+            String pass = UUID.randomUUID().toString();
+            if (verified.size() > 5000) verified.values().removeIf(v -> System.currentTimeMillis() > Long.parseLong(v[1]));
+            verified.put(pass, new String[]{key, String.valueOf(System.currentTimeMillis() + PASS_MS)});
+            return json("otp", pass);
+        });
         route(s, "/register", "POST", null, (u, p) -> {
             String role = req(p, "role").toUpperCase();
             if (!role.equals("PASSENGER") && !role.equals("OPERATOR")) throw new IllegalArgumentException("Bad role");
@@ -309,7 +385,9 @@ public final class Main {
             if (!List.of("REGULAR", "STUDENT", "SENIOR", "PWD").contains(type)) type = "REGULAR";
             String phone = p.getOrDefault("phone", "").trim();
             if (!phone.isEmpty() && !phone.matches("09\\d{9}")) throw new IllegalArgumentException("Phone must be 11 digits starting with 09");
+            checkPass(p, "SIGNUP", req(p, "email"), false);                  // proves the email is theirs
             User n = store.register(req(p, "name"), req(p, "email"), req(p, "password"), role, type, p.getOrDefault("plate", ""));
+            checkPass(p, "SIGNUP", req(p, "email"), true);
             if (!phone.isEmpty()) store.setPhone(n.getId(), phone);
             // An operator can write fare rows, so admin must approve first. Admin page Reinstate lets them in.
             if (role.equals("OPERATOR")) Csv.append(dir.resolve("suspended.csv"), SUSPENDED_H, n.getId(), "PENDING", Instant.now().toString());
@@ -394,6 +472,7 @@ public final class Main {
         route(s, "/cards/freeze", "POST", "PASSENGER", (u, p) -> {
             String uid = req(p, "uid");
             mayUse(u, uid);
+            checkPass(p, "LOST", u.getEmail(), true);                          // the owner confirmed by email code
             store.freezeCard(uid);
             return json("ok", "1");
         });

@@ -45,8 +45,23 @@ public final class Theme {
         return new Background(new BackgroundFill(color, radii, Insets.EMPTY));
     }
 
+    // Inter ships inside the app (resources/com/farex/ui/fonts, OFL licence): phones have no "System" font
+    // that looks the same everywhere, and some lack the peso sign
+    public static final String FONT = "Inter";
+
+    // Call once at start, before any screen is built
+    public static void loadFonts() {
+        for (String weight : new String[]{"Regular", "Medium", "Bold"}) {
+            try (java.io.InputStream in = Theme.class.getResourceAsStream("/com/farex/ui/fonts/Inter-" + weight + ".ttf")) {
+                if (in != null) Font.loadFont(in, 12);
+            } catch (java.io.IOException e) {
+                // keep going: that weight falls back to a system font
+            }
+        }
+    }
+
     public static Font bold(double size) {
-        return Font.font("System", FontWeight.BOLD, size);
+        return Font.font(FONT, FontWeight.BOLD, size);
     }
 
     public static Label headline(String text, Color color) {
@@ -59,7 +74,7 @@ public final class Theme {
     public static Label bodyText(String text, Color color) {
         Label label = new Label(text);
         label.setTextFill(color);
-        label.setFont(Font.font("System", 14));
+        label.setFont(Font.font(Theme.FONT, 14));
         return label;
     }
 
@@ -103,7 +118,7 @@ public final class Theme {
         field.setPromptText(prompt);
         field.setBackground(rounded(FIELD, 10));
         field.setPadding(new Insets(14));
-        field.setFont(Font.font("System", 14));
+        field.setFont(Font.font(Theme.FONT, 14));
         field.setMaxWidth(Double.MAX_VALUE);
         field.setStyle("-fx-text-fill: white; -fx-prompt-text-fill: #9A9A9A;");
 

@@ -39,13 +39,13 @@ public class LoadAccountStep extends VBox {
         this.onDone = onDone;
         Label caption = new Label("Enter Phone/Account Number");
         caption.setTextFill(Theme.WHITE);
-        caption.setFont(Font.font("System", 12));
+        caption.setFont(Font.font(Theme.FONT, 12));
 
         field.setPromptText("Phone/Account Number");
         field.setBackground(Theme.rounded(Theme.FIELD, 8));
         field.setBorder(IDLE_BORDER);
         field.setPadding(new Insets(15, 14, 15, 14));
-        field.setFont(Font.font("System", 14));
+        field.setFont(Font.font(Theme.FONT, 14));
         field.setStyle("-fx-text-fill: white; -fx-prompt-text-fill: #6F6F6F;");
         field.focusedProperty().addListener((obs, was, now) ->
                 field.setBorder(now ? FOCUS_BORDER : IDLE_BORDER));

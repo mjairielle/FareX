@@ -50,7 +50,7 @@ public final class CommonUi {
     public static Label small(String text, Color color) {
         Label label = new Label(text);
         label.setTextFill(color);
-        label.setFont(Font.font("System", 11));
+        label.setFont(Font.font(Theme.FONT, 11));
         return label;
     }
 

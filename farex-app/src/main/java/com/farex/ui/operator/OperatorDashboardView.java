@@ -159,7 +159,7 @@ public class OperatorDashboardView extends StackPane {
 
     private HBox infoRow(String label, Node value) {
         Label left = CommonUi.small(label, Theme.WHITE);
-        left.setFont(javafx.scene.text.Font.font("System", 12));
+        left.setFont(javafx.scene.text.Font.font(Theme.FONT, 12));
         Region fill = new Region();
         HBox.setHgrow(fill, Priority.ALWAYS);
         HBox row = new HBox(8, left, fill, value);

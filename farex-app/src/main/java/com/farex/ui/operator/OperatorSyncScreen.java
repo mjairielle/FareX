@@ -52,7 +52,7 @@ public class OperatorSyncScreen extends StepScreen {
             return;
         }
         Label intro = CommonUi.subtitle("Send locally saved transactions when you have a connection.");
-        intro.setFont(javafx.scene.text.Font.font("System", 13));
+        intro.setFont(javafx.scene.text.Font.font(Theme.FONT, 13));
 
         body.getChildren().addAll(
                 TripUi.eyebrow("DATA SYNC"),

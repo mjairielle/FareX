@@ -105,7 +105,7 @@ public class LoadReceiptStep extends VBox {
         method.setFont(Theme.bold(13));
         Label number = new Label(BuyLoadState.getAccountNumber());
         number.setTextFill(Color.web("#D6D6D6"));
-        number.setFont(Font.font("System", 9));
+        number.setFont(Font.font(Theme.FONT, 9));
         VBox value = new VBox(0, method, number);
         value.setAlignment(Pos.CENTER_RIGHT);
         return value;
@@ -121,7 +121,7 @@ public class LoadReceiptStep extends VBox {
     private HBox row(String label, Node value) {
         Label left = new Label(label);
         left.setTextFill(Color.web("#E6E6E6"));
-        left.setFont(Font.font("System", 13));
+        left.setFont(Font.font(Theme.FONT, 13));
         Region fill = new Region();
         HBox.setHgrow(fill, Priority.ALWAYS);
         HBox row = new HBox(8, left, fill, value);

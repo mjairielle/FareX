@@ -125,7 +125,7 @@ public class ReadyModeView extends StackPane {
         title.setWrapText(false);
         title.setMinWidth(Region.USE_PREF_SIZE);
         Label route = CommonUi.small("Philcoa — Fairview", Theme.WHITE);
-        route.setFont(Font.font("System", 10));
+        route.setFont(Font.font(Theme.FONT, 10));
         return spread(title, route);
     }
 
@@ -166,7 +166,7 @@ public class ReadyModeView extends StackPane {
         number.setTextFill(Theme.LIME);
         number.setWrapText(false);
         Label rest = CommonUi.small(small, Theme.WHITE);
-        rest.setFont(Font.font("System", 11));
+        rest.setFont(Font.font(Theme.FONT, 11));
         HBox value = new HBox(1, number, rest);
         value.setAlignment(Pos.BASELINE_LEFT);
 
@@ -201,7 +201,7 @@ public class ReadyModeView extends StackPane {
         stopName.setMinWidth(Region.USE_PREF_SIZE);
         Label coords = CommonUi.small(String.format(Locale.US, "%.4f° N, %.4f° E", stop.lat(), stop.lng()),
                 Theme.WHITE);
-        coords.setFont(Font.font("System", 8));
+        coords.setFont(Font.font(Theme.FONT, 8));
         coords.setMinWidth(Region.USE_PREF_SIZE);
 
         // Auto Drive: tap to switch ACTIVE / OFF
@@ -275,7 +275,7 @@ public class ReadyModeView extends StackPane {
         preview.setOnMouseClicked(e -> Navigator.showOverlay(new TapPreviewDialog()));
 
         Label prompt = CommonUi.small("Choose a card or app user to tap", Theme.WHITE);
-        prompt.setFont(Font.font("System", 12));
+        prompt.setFont(Font.font(Theme.FONT, 12));
         Label chevron = CommonUi.smallBold("▾", Theme.WHITE);
         chevron.setFont(Theme.bold(14));
         HBox dropDown = spread(prompt, chevron);

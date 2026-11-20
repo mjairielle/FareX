@@ -38,7 +38,7 @@ public class LoadReviewStep extends VBox {
         title.setFont(Theme.bold(17));
         Label subtitle = new Label("Review your detail before proceeding to buy a xPress Load");
         subtitle.setTextFill(Color.web("#E0E0E0"));
-        subtitle.setFont(Font.font("System", 10));
+        subtitle.setFont(Font.font(Theme.FONT, 10));
         VBox heading = new VBox(2, title, subtitle);
 
         Region divider = new Region();
@@ -79,10 +79,10 @@ public class LoadReviewStep extends VBox {
         FontWeight weight = bold ? FontWeight.BOLD : FontWeight.NORMAL;
         Label left = new Label(label);
         left.setTextFill(Theme.WHITE);
-        left.setFont(Font.font("System", weight, 12));
+        left.setFont(Font.font(Theme.FONT, weight, 12));
         Label right = new Label(value);
         right.setTextFill(Theme.WHITE);
-        right.setFont(Font.font("System", weight, 12));
+        right.setFont(Font.font(Theme.FONT, weight, 12));
         Region fill = new Region();
         HBox.setHgrow(fill, Priority.ALWAYS);
         return new HBox(8, left, fill, right);

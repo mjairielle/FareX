@@ -69,9 +69,9 @@ public class WarningDialog extends StackPane {
         Text start = new Text("No xPress Card yet,\nClick ");
         Text bold = new Text("Add Card");
         Text end = new Text(" to continue");
-        start.setFont(Font.font("System", 12));
-        bold.setFont(Font.font("System", FontWeight.BOLD, 12));
-        end.setFont(Font.font("System", 12));
+        start.setFont(Font.font(Theme.FONT, 12));
+        bold.setFont(Font.font(Theme.FONT, FontWeight.BOLD, 12));
+        end.setFont(Font.font(Theme.FONT, 12));
         for (Text part : new Text[] {start, bold, end}) {
             part.setFill(Theme.WHITE);
         }

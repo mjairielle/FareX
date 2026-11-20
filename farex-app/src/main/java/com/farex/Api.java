@@ -61,9 +61,20 @@ public final class Api {
 
     // ---------- account ----------
 
-    public static void register(String name, String email, String pw, String role, String type, String plate, String phone) {
+    /** otp = the pass from verifyOtp for this email (purpose SIGNUP). */
+    public static void register(String name, String email, String pw, String role, String type, String plate, String phone, String otp) {
         call("POST", "/register", form("name", name, "email", email, "password", pw, "role", role, "passengerType", type,
-                "plate", plate, "phone", phone));
+                "plate", plate, "phone", phone, "otp", otp));
+    }
+
+    /** Emails a 6-digit code. purpose SIGNUP (the given email) or LOST (the logged-in account's email). */
+    public static void sendOtp(String purpose, String email) {
+        call("POST", "/otp/send", form("purpose", purpose, "email", email));
+    }
+
+    /** Checks the code; returns the one-time pass that register / freezeCard need. */
+    public static String verifyOtp(String purpose, String email, String code) {
+        return field(call("POST", "/otp/verify", form("purpose", purpose, "email", email, "code", code)), "otp", "");
     }
 
     /** user = the role the token acts as now; roles = every role of the account; pending = roles waiting for admin. */
@@ -118,7 +129,7 @@ public final class Api {
 
     public static void addCard(String tagUid) { call("POST", "/cards/add", form("uid", tagUid)); }
 
-    public static void freezeCard(String uid) { call("POST", "/cards/freeze", form("uid", uid)); }
+    public static void freezeCard(String uid, String otp) { call("POST", "/cards/freeze", form("uid", uid, "otp", otp)); }
 
     /** Returns {newUid, balanceCents}. */
     public static String[] reportLostCard(String oldUid, String newTagUid) {

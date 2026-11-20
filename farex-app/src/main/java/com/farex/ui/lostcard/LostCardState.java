@@ -55,6 +55,13 @@ public final class LostCardState {
         return newCardNumber;
     }
 
+    // From the email code step: the server freezes only with it
+    private static String otpPass = "";
+
+    public static void setOtpPass(String pass) {
+        otpPass = pass;
+    }
+
     public static void setNewCardNumber(String fullNumber) {
         newCardNumber = fullNumber;
     }
@@ -93,7 +100,7 @@ public final class LostCardState {
         DemoCard current = getCard();
         if (MockData.isLive()) {
             try {
-                Api.freezeCard(current.getCardNumber());
+                Api.freezeCard(current.getCardNumber(), otpPass);
             } catch (Api.ApiException e) {
                 return false;
             }

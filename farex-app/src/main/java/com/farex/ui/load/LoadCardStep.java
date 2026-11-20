@@ -39,7 +39,7 @@ public class LoadCardStep extends VBox {
         this.onDone = onDone;
         Label caption = new Label("xPress Card Number (last 8 digits)");
         caption.setTextFill(Theme.WHITE);
-        caption.setFont(Font.font("System", 12));
+        caption.setFont(Font.font(Theme.FONT, 12));
 
         errorLabel.setTextFill(Theme.ERROR);
         errorLabel.setWrapText(true);

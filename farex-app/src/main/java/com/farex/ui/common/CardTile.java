@@ -123,11 +123,11 @@ public class CardTile extends StackPane {
         Label holderCaption = caption("CARDHOLDER");
         Label holder = new Label(card.getHolderName());
         holder.setTextFill(Theme.WHITE);
-        holder.setFont(Font.font("System", FontWeight.MEDIUM, 17));
+        holder.setFont(Font.font(Theme.FONT, FontWeight.MEDIUM, 17));
 
         Label number = new Label(card.getFormattedNumber());
         number.setTextFill(Color.web("#D6D6D6"));
-        number.setFont(Font.font("Consolas", 12));
+        number.setFont(Font.font(Theme.FONT, 12));
         HBox numberRow = new HBox(6, number);
         numberRow.setAlignment(Pos.CENTER_LEFT);
         if (showBalance) {
@@ -162,7 +162,7 @@ public class CardTile extends StackPane {
     private Node balanceBox(DemoCard card) {
         Label small = new Label("AVAILABLE TRANSIT BALANCE");
         small.setTextFill(Color.web("#B8C7A0"));
-        small.setFont(Font.font("System", 9));
+        small.setFont(Font.font(Theme.FONT, 9));
 
         Label peso = new Label("₱");
         peso.setTextFill(Theme.LIME);
@@ -195,7 +195,7 @@ public class CardTile extends StackPane {
     private Label caption(String text) {
         Label label = new Label(text);
         label.setTextFill(Color.web("#8FA08A"));
-        label.setFont(Font.font("System", 8));
+        label.setFont(Font.font(Theme.FONT, 8));
         return label;
     }
 }

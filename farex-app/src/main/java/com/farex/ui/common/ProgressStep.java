@@ -89,13 +89,13 @@ public abstract class ProgressStep extends VBox {
             Label label = stepLabels[i];
             if (i < active) {
                 label.setTextFill(Theme.LIME);
-                label.setFont(Font.font("System", 12));
+                label.setFont(Font.font(Theme.FONT, 12));
             } else if (i == active) {
                 label.setTextFill(Theme.WHITE);
                 label.setFont(Theme.bold(12));
             } else {
                 label.setTextFill(WAITING);
-                label.setFont(Font.font("System", 12));
+                label.setFont(Font.font(Theme.FONT, 12));
             }
         }
     }

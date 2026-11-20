@@ -38,7 +38,7 @@ public class CardNumberField extends HBox {
 
         Label prefix = new Label(PREFIX);
         prefix.setTextFill(Theme.WHITE);
-        prefix.setFont(Font.font("System", 14));
+        prefix.setFont(Font.font(Theme.FONT, 14));
 
         Region divider = new Region();
         divider.setMinSize(1, 18);
@@ -50,7 +50,7 @@ public class CardNumberField extends HBox {
         field.setBackground(javafx.scene.layout.Background.EMPTY);
         field.setBorder(null);
         field.setPadding(new Insets(15, 0, 15, 0));
-        field.setFont(Font.font("System", 14));
+        field.setFont(Font.font(Theme.FONT, 14));
         field.setStyle("-fx-text-fill: white; -fx-prompt-text-fill: #6F6F6F;");
         HBox.setHgrow(field, Priority.ALWAYS);
 

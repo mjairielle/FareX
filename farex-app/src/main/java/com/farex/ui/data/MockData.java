@@ -39,6 +39,7 @@ public final class MockData {
     private static String pendingPassword = "";
     private static String pendingName = "";
     private static String pendingPhone = "";
+    private static String pendingOtp = "";      // pass from the sign-up email code
 
     // The email/number typed on the Register screen, shown later on the OTP screen
     private static String pendingContact = "";
@@ -249,6 +250,10 @@ public final class MockData {
         pendingPassword = password;
     }
 
+    public static void setPendingOtp(String pass) {
+        pendingOtp = pass;
+    }
+
     // From the sign-up "Your details" page
     public static void setPendingProfile(String name, String phone) {
         pendingName = name;
@@ -263,7 +268,7 @@ public final class MockData {
         String email = pendingContact.trim();
         String name = pendingName.isBlank() ? email.split("@")[0] : pendingName;
         try {
-            Api.register(name, email, pendingPassword, role, "REGULAR", plate, pendingPhone);
+            Api.register(name, email, pendingPassword, role, "REGULAR", plate, pendingPhone, pendingOtp);
             return null;
         } catch (Api.ApiException e) {
             if (DEV && e.getMessage().startsWith("Cannot reach")) {

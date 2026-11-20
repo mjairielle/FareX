@@ -42,7 +42,7 @@ public class LabeledField extends VBox {
         caption = CommonUi.small(captionText, Theme.WHITE);
         Label valueLabel = new Label(value);
         valueLabel.setTextFill(Theme.WHITE);
-        valueLabel.setFont(javafx.scene.text.Font.font("System", 13));
+        valueLabel.setFont(javafx.scene.text.Font.font(Theme.FONT, 13));
         setUp(valueLabel);
     }
 

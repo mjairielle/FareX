@@ -9,7 +9,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.input.KeyCode;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
@@ -20,14 +20,17 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
+import com.farex.Api;
 import com.farex.ui.data.MockData;
 
 /**
- * Demo code is 123456 (no real email is sent yet).
+ * Six digit boxes for an email code. The server sends the code and checks it (Api.sendOtp / verifyOtp).
+ * One invisible field sits over the boxes and takes all typing, so the phone keyboard stays open
+ * from the first digit to the last; the boxes only show its digits.
  */
 public class OtpView extends VBox {
 
-    private static final String DEMO_CODE = "123456";
+    private static final String DEMO_CODE = "123456";   // mock mode only (no server login)
     private static final int START_SECONDS = 300;
 
     private static final Border IDLE_BORDER = new Border(new BorderStroke(
@@ -35,7 +38,9 @@ public class OtpView extends VBox {
     private static final Border FILLED_BORDER = new Border(new BorderStroke(
             Theme.LIME, BorderStrokeStyle.SOLID, new CornerRadii(8), new BorderWidths(2)));
 
-    private final TextField[] boxes = new TextField[6];
+    private final Label[] boxes = new Label[6];
+    private final TextField input = new TextField();
+    protected String otpPass = "";       // one-time pass from the server for the next step (register, freeze)
     private final HBox boxRow = new HBox(8);
     private final Label timerLabel = new Label();
     private final Label errorLabel = new Label();
@@ -68,10 +73,33 @@ public class OtpView extends VBox {
         timerLabel.setText(formatTime(secondsLeft));
 
         boxRow.setAlignment(Pos.CENTER);
+        HBox digits = new HBox();
+        digits.spacingProperty().bind(boxRow.spacingProperty());
+        digits.alignmentProperty().bind(boxRow.alignmentProperty());
         for (int i = 0; i < boxes.length; i++) {
-            boxes[i] = createBox(i);
-            boxRow.getChildren().add(boxes[i]);
+            boxes[i] = createBox();
+            digits.getChildren().add(boxes[i]);
         }
+        input.setOpacity(0);                       // invisible, but it is what gets the taps and the keyboard
+        input.setPrefHeight(52);
+        input.setMaxWidth(Double.MAX_VALUE);
+        input.textProperty().addListener((obs, oldText, text) -> {
+            String clean = text.replaceAll("[^0-9]", "");
+            if (clean.length() > boxes.length) clean = clean.substring(0, boxes.length);
+            if (!clean.equals(text)) {
+                input.setText(clean);
+                return;
+            }
+            for (int i = 0; i < boxes.length; i++) {
+                boolean filled = i < text.length();
+                boxes[i].setText(filled ? String.valueOf(text.charAt(i)) : "");
+                boxes[i].setBorder(filled ? FILLED_BORDER : IDLE_BORDER);
+            }
+            input.end();                           // a tap in the middle must not insert digits there
+            if (text.length() == boxes.length) checkCode();
+        });
+        input.setOnMouseReleased(e -> input.end());
+        boxRow.getChildren().add(new StackPane(digits, input));
 
         errorLabel.setTextFill(Theme.ERROR);
         errorLabel.setWrapText(true);
@@ -86,14 +114,17 @@ public class OtpView extends VBox {
         resend.setOnMouseClicked(e -> resendCode());
 
         getChildren().addAll(title, sentLabel, contactLabel, timerLabel,
-                boxRow, demoHint(), errorLabel, didntGet, resend);
+                boxRow, errorLabel, didntGet, resend);
 
         timer.setCycleCount(Animation.INDEFINITE);
         timer.play();
-        Platform.runLater(() -> boxes[0].requestFocus());
+        Platform.runLater(() -> {
+            sendCode();
+            input.requestFocus();
+        });
     }
 
-    // shortcut: no SMS/email is sent yet, so the screen tells the code; remove once a real OTP service exists
+    // Mock mode only: there is no server to email a code, so the screen tells it
     protected static Label demoHint() {
         return Theme.bodyText("Demo: the code is " + DEMO_CODE, Theme.GRAY);
     }
@@ -112,50 +143,22 @@ public class OtpView extends VBox {
         return errorLabel;
     }
 
-    // One digit box. index = its position (0 to 5)
-    private TextField createBox(int index) {
-        TextField box = new TextField();
+    // One digit box: shows a digit of the invisible field
+    private Label createBox() {
+        Label box = new Label();
         box.setPrefSize(44, 52);
         box.setMinSize(44, 52);
         box.setMaxSize(44, 52);
-        box.setPadding(Insets.EMPTY);
         box.setAlignment(Pos.CENTER);
         box.setBackground(Theme.rounded(Theme.FIELD, 8));
         box.setFont(Theme.bold(20));
-        box.setStyle("-fx-text-fill: white;");
+        box.setTextFill(Theme.WHITE);
         box.setBorder(IDLE_BORDER);
-
-        box.textProperty().addListener((obs, oldText, newText) -> {
-            if (!newText.matches("\\d*")) {          // digits only
-                box.setText(oldText);
-                return;
-            }
-            if (newText.length() > 1) {
-                box.setText(newText.substring(newText.length() - 1));
-                return;
-            }
-            box.setBorder(newText.isEmpty() ? IDLE_BORDER : FILLED_BORDER);
-            if (newText.length() == 1 && index < boxes.length - 1) {
-                boxes[index + 1].requestFocus();
-            }
-            checkCode();
-        });
-
-        box.setOnKeyPressed(e -> {
-            if (e.getCode() == KeyCode.BACK_SPACE && box.getText().isEmpty() && index > 0) {
-                boxes[index - 1].requestFocus();     // Backspace on an empty box: go back and clear
-                boxes[index - 1].clear();
-            }
-        });
         return box;
     }
 
     private String enteredCode() {
-        StringBuilder code = new StringBuilder();
-        for (TextField box : boxes) {
-            code.append(box.getText());
-        }
-        return code.toString();
+        return input.getText();
     }
 
     private void checkCode() {
@@ -165,13 +168,49 @@ public class OtpView extends VBox {
         }
         if (secondsLeft <= 0) {
             showError("Code expired. Tap Resend code.");
-        } else if (code.equals(DEMO_CODE)) {
+            return;
+        }
+        String error = verify(code);
+        if (error == null) {
             timer.stop();
             onCodeAccepted();
         } else {
-            showError("Wrong code. Try again.");
+            showError(error);                      // e.g. "Wrong code. Try again."
             clearBoxes();
         }
+    }
+
+    // What the code is for and where it goes. Sign-up: the email typed on Register.
+    protected String otpPurpose() {
+        return "SIGNUP";
+    }
+
+    protected String otpEmail() {
+        return MockData.getPendingContact();
+    }
+
+    // Asks the server to email a code (it prints it in its window when no email account is set up)
+    protected void sendCode() {
+        try {
+            Api.sendOtp(otpPurpose(), otpEmail());
+        } catch (Api.ApiException e) {
+            showError(e.getMessage());             // e.g. "Wait 30 seconds before asking for another code"
+        }
+    }
+
+    // The server checks the code. null = right (and otpPass is set), else why not.
+    protected String verify(String code) {
+        try {
+            otpPass = Api.verifyOtp(otpPurpose(), otpEmail(), code);
+            return null;
+        } catch (Api.ApiException e) {
+            return e.getMessage();
+        }
+    }
+
+    // Mock mode (no server login): the old fixed code
+    protected static String verifyDemo(String code) {
+        return code.equals(DEMO_CODE) ? null : "Wrong code. Try again.";
     }
 
     // For a "Verify" button: checks now, or asks for the missing digits ("1234" -> error)
@@ -184,8 +223,9 @@ public class OtpView extends VBox {
     }
 
     // What happens after the right code. Registration goes on to "Your details", then Account Type;
-    // LoadOtpStep overrides this for Buy Load.
+    // LostCardScreen's code step overrides this.
     protected void onCodeAccepted() {
+        MockData.setPendingOtp(otpPass);       // sign-up sends it with the new account
         Navigator.go("signUpDetails");
     }
 
@@ -199,10 +239,8 @@ public class OtpView extends VBox {
     }
 
     private void clearBoxes() {
-        for (TextField box : boxes) {
-            box.clear();
-        }
-        boxes[0].requestFocus();
+        input.clear();
+        input.requestFocus();
     }
 
     protected void resendCode() {
@@ -211,6 +249,7 @@ public class OtpView extends VBox {
         errorLabel.setVisible(false);
         clearBoxes();
         timer.playFromStart();
+        sendCode();
     }
 
     private void tick() {

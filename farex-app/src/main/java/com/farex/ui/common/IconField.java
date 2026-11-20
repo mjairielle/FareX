@@ -78,7 +78,7 @@ public class IconField extends HBox {
         inner.setBackground(Background.EMPTY);
         inner.setBorder(null);
         inner.setPadding(new Insets(14, 0, 14, 0));
-        inner.setFont(Font.font("System", 14));
+        inner.setFont(Font.font(Theme.FONT, 14));
         inner.setStyle("-fx-text-fill: white; -fx-prompt-text-fill: #9A9A9A;");
         HBox.setHgrow(inner, Priority.ALWAYS);
     }

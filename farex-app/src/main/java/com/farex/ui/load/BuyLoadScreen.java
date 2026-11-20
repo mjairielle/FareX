@@ -1,10 +1,12 @@
 package com.farex.ui.load;
 
+import com.farex.ui.common.PopupDialog;
+import com.farex.ui.common.WarningDialog;
 import com.farex.ui.common.StepScreen;
 
 // Buy Load, all in one screen (opened from Home):
 //   card (Buy Load) -> payment method (Payment) -> account number (Payment) -> amount (Buy Load)
-//   -> review -> OTP (own back arrow, no lime bar) -> receipt (Load Receipt)
+//   -> review -> receipt (Load Receipt). PayMongo confirms the payment; there is no OTP step of our own.
 // Each step is its own class (LoadCardStep, LoadMethodStep, ...) and keeps its Figma title.
 // Back arrow = previous step; on the receipt it leaves to Home (the payment is done).
 public class BuyLoadScreen extends StepScreen {
@@ -39,12 +41,14 @@ public class BuyLoadScreen extends StepScreen {
 
     private void reviewStep() {
         setTitle("");
-        body.getChildren().add(new LoadReviewStep(() -> showStep(this::otpStep)));
-    }
-
-    private void otpStep() {
-        setHeaderShown(false);
-        body.getChildren().add(new LoadOtpStep(() -> restartAt(this::receiptStep), this::back));
+        body.getChildren().add(new LoadReviewStep(() -> {
+            String error = LoadPayment.pay();
+            if (error == null) {
+                restartAt(this::receiptStep);
+            } else {
+                new PopupDialog(WarningDialog.warningIcon(), "Payment not started", error).button("OK", () -> { }).show();
+            }
+        }));
     }
 
     // restartAt forgets the earlier steps, so back from the receipt goes Home

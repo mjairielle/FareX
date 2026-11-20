@@ -28,7 +28,7 @@ public class AddCardView extends SubScreen {
 
         Label caption = new Label("xPress Card Number (last 8 digits)");
         caption.setTextFill(Theme.WHITE);
-        caption.setFont(Font.font("System", 12));
+        caption.setFont(Font.font(Theme.FONT, 12));
 
         CardNumberField numberField = new CardNumberField();
 
