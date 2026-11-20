@@ -102,6 +102,10 @@ public final class Main {
         return v;
     }
 
+    static double num(Map<String, String> p, String k) {
+        try { return Double.parseDouble(req(p, k)); } catch (NumberFormatException e) { throw new IllegalArgumentException(k + " must be a number"); }
+    }
+
     static long cents(Map<String, String> p) {
         try { return Long.parseLong(req(p, "cents")); } catch (NumberFormatException e) { throw new IllegalArgumentException("bad amount"); }
     }
@@ -164,13 +168,14 @@ public final class Main {
             String newUid = store.replaceLostCard(oldUid, newTagUid, u.getId());
             return json("newUid", newUid, "cents", String.valueOf(store.balance(newUid)));
         });
+        // "routeId|stop~lat~lng;stop~lat~lng;...|display name" per line (older apps read the first two fields)
         route(s, "/routes", "GET", null, (u, p) -> {
             StringBuilder b = new StringBuilder();
             book.routes().forEach((id, stops) -> {
                 b.append(clean(id)).append('|');
                 List<String> stopStrs = new ArrayList<>();
                 for (RouteStop st : stops) stopStrs.add(st.name() + "~" + st.lat() + "~" + st.lng());
-                b.append(String.join(";", stopStrs)).append('\n');
+                b.append(String.join(";", stopStrs)).append('|').append(clean(book.name(id))).append('\n');
             });
             return b.toString();
         });
@@ -239,13 +244,18 @@ public final class Main {
         // Routes, stops, fares and trip plans are public transit information: no login needed.
         // A logged-in passenger is still quoted their own (discounted) fare; anyone else the regular one.
         route(s, "/places", "GET", null, (u, p) -> String.join("\n", book.places()));
-        // line per plan: label|km|transfers|fareCents|minutes|route~from~to~km;route~from~to~km
+        // Between two stops (from, to) or two points (fromLat, fromLng, toLat, toLng, optional fromLabel/toLabel).
+        // line per plan: label|km|transfers|fareCents|minutes|route~from~to~km;... (route WALK = walking)
         route(s, "/plan", "GET", null, (u, p) -> {
             FareRule rule = u instanceof Passenger x ? x.getFareRule() : new RegularFare();
+            List<TripPlanner.Plan> plans = p.containsKey("fromLat")
+                    ? planner.plan(num(p, "fromLat"), num(p, "fromLng"), p.getOrDefault("fromLabel", "Start"),
+                                   num(p, "toLat"), num(p, "toLng"), p.getOrDefault("toLabel", "Destination"), rule)
+                    : planner.plan(req(p, "from"), req(p, "to"), rule);
             StringBuilder b = new StringBuilder();
-            for (TripPlanner.Plan pl : planner.plan(req(p, "from"), req(p, "to"), rule)) {
+            for (TripPlanner.Plan pl : plans) {
                 List<String> legs = new ArrayList<>();
-                for (TripPlanner.Leg l : pl.legs()) legs.add(String.format(Locale.ROOT, "%s~%s~%s~%.1f", l.route(), l.from(), l.to(), l.km()));
+                for (TripPlanner.Leg l : pl.legs()) legs.add(String.format(Locale.ROOT, "%s~%s~%s~%.2f", l.route(), l.from(), l.to(), l.km()));
                 b.append(String.format(Locale.ROOT, "%s|%.1f|%d|%d|%d|", pl.label(), pl.km(), pl.transfers(), pl.fareCents(), pl.minutes()))
                  .append(String.join(";", legs)).append('\n');
             }

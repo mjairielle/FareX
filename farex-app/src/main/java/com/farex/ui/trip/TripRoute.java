@@ -77,48 +77,61 @@ public class TripRoute {
     }
 
     // A real plan from the server, e.g. "Fewest transfers + Cheapest" with rides R2 then R1:
-    //   01 Board at Cubao            Route R2 jeepney to Philcoa · 6.2 km
-    //   02 Transfer at Philcoa       Route R1 jeepney to Fairview Terminal · 12.8 km
-    //   03 Alight at Fairview Terminal   1 transfer · 19.0 km in total
+    //   01 Walk to Philcoa                Walk 240 m · about 4 min
+    //   02 Board at Philcoa               Commonwealth–SM Fairview jeepney to Batasan Rd · 6.2 km
+    //   03 Transfer at Batasan Rd         ... jeepney to SM City Fairview · 5.9 km
+    //   04 Arrive at Pinned destination   Walk 180 m · 1 transfer · 12.5 km in total
     public static TripRoute fromPlan(Api.PlanCard plan) {
         List<Leg> legs = new ArrayList<>();
         List<Api.PlanRide> rides = plan.rides();
-        for (int i = 0; i < rides.size(); i++) {
-            Api.PlanRide r = rides.get(i);
-            String km = i < plan.legs().size() ? rideKm(plan.legs().get(i)) : "";
-            legs.add(new Leg((i == 0 ? "Board at " : "Transfer at ") + r.from(),
-                    "Route " + r.route() + " jeepney to " + r.to() + km));
-        }
-        String last = rides.isEmpty() ? "your destination" : rides.get(rides.size() - 1).to();
-        legs.add(new Leg("Alight at " + last, transfers(plan.transfers()) + " · " + plan.km() + " km in total"));
-
         List<String> routeIds = new ArrayList<>();
-        for (Api.PlanRide r : rides) routeIds.add(r.route());
-        String summary = (plan.transfers() == 0 ? "Direct jeepney" : transfers(plan.transfers()))
-                + " · " + String.join(" → ", routeIds);
-        String jeepney = rides.isEmpty() ? "" : "Route " + rides.get(0).route() + " jeepney";
+        double walkedKm = 0;
+        String firstJeep = "";
+        for (Api.PlanRide r : rides) {
+            if (r.walk()) {
+                walkedKm += r.km();
+                legs.add(new Leg("Walk to " + r.to(), walk(r.km())));
+                continue;
+            }
+            String name = TripState.routeName(r.route());
+            if (routeIds.isEmpty()) firstJeep = name + " jeepney";
+            legs.add(new Leg((routeIds.isEmpty() ? "Board at " : "Transfer at ") + r.from(),
+                    name + " jeepney to " + r.to() + String.format(Locale.ROOT, " · %.1f km", r.km())));
+            routeIds.add(r.route());
+        }
+        String total = transfers(plan.transfers()) + " · " + plan.km() + " km in total";
+        Api.PlanRide last = rides.isEmpty() ? null : rides.get(rides.size() - 1);
+        if (last != null && !last.walk()) legs.add(new Leg("Alight at " + last.to(), total));
+        else if (!legs.isEmpty()) legs.set(legs.size() - 1, new Leg("Arrive at " + last.to(),
+                legs.get(legs.size() - 1).getDetail() + " · " + total));
 
+        String summary = (plan.transfers() == 0 ? "Direct jeepney" : transfers(plan.transfers()))
+                + (walkedKm > 0 ? " · walk " + meters(walkedKm) : "")
+                + (routeIds.isEmpty() ? "" : " · " + String.join(" → ", routeIds));
         return new TripRoute(title(plan.label()), Double.parseDouble(plan.km()), plan.minutes(), plan.fareCents(),
-                summary, jeepney, legs, List.copyOf(rides));
+                summary, firstJeep, legs, List.copyOf(rides));
+    }
+
+    // 0.24 -> "Walk 240 m · about 4 min" (4.5 km/h, the planner's walking speed)
+    private static String walk(double km) {
+        return "Walk " + meters(km) + " · about " + Math.max(1, Math.round(km / 4.5 * 60)) + " min";
+    }
+
+    // 0.244 -> "240 m", 1.26 -> "1.3 km"
+    private static String meters(double km) {
+        return km < 1 ? Math.round(km * 100) * 10 + " m" : String.format(Locale.ROOT, "%.1f km", km);
     }
 
     // Server label -> card title. One ranking uses the Figma wording ("Cheapest" -> "Cheapest fare");
-    // a plan that wins several keeps the short names so the title fits ("Shortest · Cheapest").
+    // a plan that wins several keeps the short names so the title fits ("Fastest · Cheapest").
     private static String title(String label) {
         String[] parts = label.split("\\s*\\+\\s*");
         if (parts.length > 1) return String.join(" · ", parts);
         return switch (label.trim()) {
-            case "Shortest" -> "Shortest distance";
+            case "Fastest" -> "Fastest route";
             case "Cheapest" -> "Cheapest fare";
             default -> label.trim();
         };
-    }
-
-    // "R1: Philcoa > Tandang Sora (1.6 km)" -> " · 1.6 km"
-    private static String rideKm(String leg) {
-        int open = leg.lastIndexOf('(');
-        int close = leg.lastIndexOf(')');
-        return (open >= 0 && close > open) ? " · " + leg.substring(open + 1, close) : "";
     }
 
     private static String transfers(int n) {

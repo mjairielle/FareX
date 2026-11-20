@@ -43,7 +43,9 @@ public class RoutesScreen extends Screen {
 
         Map<String, List<RouteStop>> all = new LinkedHashMap<>();
         for (Api.RouteDetail rd : routeList) {
-            String label = rd.id() + ": " + rd.stops().get(0).name() + " ➔ " + rd.stops().get(rd.stops().size() - 1).name();
+            String label = rd.name().equals(rd.id())
+                    ? rd.id() + ": " + rd.stops().get(0).name() + " ➔ " + rd.stops().get(rd.stops().size() - 1).name()
+                    : rd.id() + ": " + rd.name();
             routePicker.getItems().add(label);
             all.put(rd.id(), rd.stops());
         }

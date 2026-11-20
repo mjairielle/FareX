@@ -10,6 +10,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
@@ -26,6 +27,7 @@ import com.farex.ui.common.LeafletMap;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.StepScreen;
 import com.farex.ui.common.Theme;
+import farex.shared.data.RouteStop;
 
 // Trip Planner, all in one screen (opened from the Routes tab). Stops and route plans come from
 // the FareX server; offline it falls back to the Figma preview (see TripState).
@@ -128,35 +130,54 @@ public class TripScreen extends StepScreen {
         TripPlace start = TripState.getStart();
 
         String hint = pickingStart
-                ? "Select the stop where you will board."
+                ? "Search a stop or street, or tap the map where you are."
                 : "Starting at " + (start == null ? "your starting point" : start.getFullName()) + ".";
         VBox topCard = TripUi.floatingCard(
                 TripUi.eyebrow(pickingStart ? "STEP 1 OF 2" : "STEP 2 OF 2"),
                 TripUi.bold(pickingStart ? "Starting point" : "Destination", 22),
                 CommonUi.small(hint, Theme.WHITE));
 
-        // "SEARCH LOCATION" card: the stops to choose from, filled in once they are loaded
+        // "SEARCH LOCATION" card: a search box over the stops found, filled in once they are loaded
+        TextField search = new TextField();
+        search.setPromptText("Search a stop or street, e.g. Commonwealth");
+        search.setStyle("-fx-background-color: #2A2A2A; -fx-text-fill: white; -fx-prompt-text-fill: #9A9A9A;"
+                + " -fx-background-radius: 6; -fx-padding: 8 10 8 10;");
         VBox choices = new VBox(6, CommonUi.small("Loading stops…", Theme.WHITE));
         ScrollPane scroll = new ScrollPane(choices);
         scroll.setFitToWidth(true);
         scroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        scroll.setMaxHeight(176);
-        VBox placeCard = TripUi.floatingCard(TripUi.eyebrow("SEARCH LOCATION"), scroll);
+        scroll.setMaxHeight(150);
+        VBox placeCard = TripUi.floatingCard(TripUi.eyebrow("SEARCH LOCATION"), search, scroll);
+        placeCard.setSpacing(8);
 
         VBox tipCard = pickingStart
-                ? tip("Prefer your current location?",
-                        "You can enable location when you start tracking. Planning a trip does not require GPS.")
+                ? tip("Not at a stop?",
+                        "Tap the map to drop a pin. The trip starts with a short walk to the nearest jeepney.")
                 : tip("Stop-based route planning",
-                        "Routes are matched to boarding and alighting stops. A short walk may be needed.");
+                        "Search a stop or tap the map. A short walk may be needed at either end or between jeepneys.");
 
         Button choose = CommonUi.limeButton(pickingStart ? "Use this stop" : "Choose this stop", () -> { });
         choose.setDisable(true);
         Node second = TripUi.darkButton(pickingStart ? "Cancel" : "Back to starting point", this::back);
 
+        // The map fills the whole area under the header, with the FareX routes and their stops
+        LeafletMap map = new LeafletMap().withFarexRoutes();
+        Picker picker = new Picker(choices, choose, map, pickingStart);
+
         // Cached stops arrive at once (before this step is on screen); loading ones arrive later.
         // If the step was left meanwhile, filling its detached list is harmless.
-        TripState.loadPlaces(places -> fillChoices(choices, places, pickingStart, choose));
+        TripState.loadPlaces(places -> {
+            if (!TripState.isLive()) {
+                search.setVisible(false);
+                search.setManaged(false);
+                picker.show(places);                  // offline preview: the two sample stops
+                return;
+            }
+            picker.show(List.of());
+            search.textProperty().addListener((o, a, text) -> picker.show(text.isBlank() ? List.of() : TripState.search(text, 30)));
+            map.onPick((lat, lng) -> picker.select(TripPlace.pinned(pickingStart ? "Pinned start" : "Pinned destination", lat, lng)));
+        });
 
         Region push = new Region();
         VBox.setVgrow(push, Priority.ALWAYS);
@@ -164,50 +185,76 @@ public class TripScreen extends StepScreen {
         overlay.setPadding(new Insets(10, 12, 14, 12));
         overlay.setPickOnBounds(false);
 
-        // The map fills the whole area under the header, with the FareX routes and their stops
-        StackPane area = new StackPane(new LeafletMap().withFarexRoutes(), overlay);
+        StackPane area = new StackPane(map, overlay);
         VBox.setVgrow(area, Priority.ALWAYS);
         body.setPadding(Insets.EMPTY);
         body.getChildren().add(area);
     }
 
-    // One tappable row per stop; the picked one is outlined lime and named on the button
-    private void fillChoices(VBox choices, List<TripPlace> places, boolean pickingStart, Button choose) {
-        choices.getChildren().clear();
-        TripPlace start = TripState.getStart();
-        List<VBox> rows = new ArrayList<>();
-        for (TripPlace place : places) {
-            if (!pickingStart && start != null && place.getName().equals(start.getName())) {
-                continue;   // cannot travel to where you start
-            }
-            VBox row = new VBox(2, TripUi.bold(place.getName(), 14), CommonUi.small(place.getAddress(), Theme.GRAY));
-            row.setPadding(new Insets(6, 10, 6, 10));
-            row.setBackground(Theme.rounded(CommonUi.PANEL, 6));
-            row.setCursor(Cursor.HAND);
-            row.setOnMouseClicked(e -> {
-                rows.forEach(r -> r.setBorder(null));
-                row.setBorder(new Border(new BorderStroke(Theme.LIME,
-                        BorderStrokeStyle.SOLID, new CornerRadii(6), new BorderWidths(1.2))));
-                choose.setText((pickingStart ? "Use " : "Choose ") + place.getName());
-                choose.setDisable(false);
-                choose.setOnAction(a -> {
-                    if (pickingStart) {
-                        TripState.setStart(place);
-                        showStep(this::pickDestinationStep);
-                    } else {
-                        TripState.setDestination(place);
-                        restartAt(this::plannerStep);   // 05: both filled in
-                    }
-                });
-            });
-            rows.add(row);
-            choices.getChildren().add(row);
+    // The stop list and the lime button of one pick step: tap a row (or the map) to choose it
+    private final class Picker {
+        private final VBox choices;
+        private final Button choose;
+        private final LeafletMap map;
+        private final boolean pickingStart;
+        private final List<VBox> rows = new ArrayList<>();
+
+        Picker(VBox choices, Button choose, LeafletMap map, boolean pickingStart) {
+            this.choices = choices;
+            this.choose = choose;
+            this.map = map;
+            this.pickingStart = pickingStart;
         }
-        if (!TripState.isLive()) {
-            Label note = CommonUi.small("Offline preview · sample stops. Connect to the FareX "
-                    + "server for real routes.", Theme.LIME);
-            note.setWrapText(true);
-            choices.getChildren().add(note);
+
+        // One tappable row per stop; the picked one is outlined lime and named on the button
+        void show(List<TripPlace> places) {
+            choices.getChildren().clear();
+            rows.clear();
+            TripPlace start = TripState.getStart();
+            for (TripPlace place : places) {
+                if (!pickingStart && start != null && place.getName().equals(start.getName())) {
+                    continue;   // cannot travel to where you start
+                }
+                VBox row = new VBox(2, TripUi.bold(place.getName(), 14), CommonUi.small(place.getAddress(), Theme.GRAY));
+                row.setPadding(new Insets(6, 10, 6, 10));
+                row.setBackground(Theme.rounded(CommonUi.PANEL, 6));
+                row.setCursor(Cursor.HAND);
+                row.setOnMouseClicked(e -> {
+                    rows.forEach(r -> r.setBorder(null));
+                    row.setBorder(new Border(new BorderStroke(Theme.LIME,
+                            BorderStrokeStyle.SOLID, new CornerRadii(6), new BorderWidths(1.2))));
+                    select(place);
+                });
+                rows.add(row);
+                choices.getChildren().add(row);
+            }
+            String note = !TripState.isLive()
+                    ? "Offline preview · sample stops. Connect to the FareX server for real routes."
+                    : places.isEmpty() ? "Type to search " + "the FareX stops, or tap the map to drop a pin." : null;
+            if (note != null) {
+                Label label = CommonUi.small(note, TripState.isLive() ? Theme.GRAY : Theme.LIME);
+                label.setWrapText(true);
+                choices.getChildren().add(label);
+            }
+        }
+
+        // Make `place` the choice: name it on the button, and pin it on the map
+        void select(TripPlace place) {
+            if (place.isPin()) rows.forEach(r -> r.setBorder(null));
+            if (place.isPin() || !Double.isNaN(place.getLat())) {
+                map.showPin(new RouteStop(place.getName(), place.getLat(), place.getLng()));
+            }
+            choose.setText((pickingStart ? "Use " : "Choose ") + place.getName());
+            choose.setDisable(false);
+            choose.setOnAction(a -> {
+                if (pickingStart) {
+                    TripState.setStart(place);
+                    showStep(TripScreen.this::pickDestinationStep);
+                } else {
+                    TripState.setDestination(place);
+                    restartAt(TripScreen.this::plannerStep);   // 05: both filled in
+                }
+            });
         }
     }
 
@@ -305,7 +352,7 @@ public class TripScreen extends StepScreen {
             TripRoute.Leg leg = route.getLegs().get(i);
             legs.getChildren().add(new VBox(2,
                     TripUi.bold(TripRoute.number(i) + "  " + leg.getTitle(), 12),
-                    CommonUi.small(leg.getDetail(), Theme.WHITE)));
+                    TripUi.wrapped(leg.getDetail())));
         }
 
         body.getChildren().addAll(

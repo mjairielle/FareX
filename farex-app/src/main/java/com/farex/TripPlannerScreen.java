@@ -59,7 +59,7 @@ public class TripPlannerScreen extends Screen {
         for (Api.PlanCard p : plans) {
             VBox card = new VBox(4, lime(p.label(), 14),
                     text(peso(p.fareCents()) + "  |  " + p.km() + " km  |  " + p.transfers() + " transfers  |  about " + p.minutes() + " min"));
-            p.legs().forEach(l -> card.getChildren().add(text("Ride " + l)));
+            p.legs().forEach(l -> card.getChildren().add(text(l)));   // "Ride R1: ..." / "Walk: ..."
             card.setStyle(CARD);
             card.setCursor(Cursor.HAND);
             card.setOnMouseClicked(e -> pick(p, card, cards));   // tap a plan to see it on the map

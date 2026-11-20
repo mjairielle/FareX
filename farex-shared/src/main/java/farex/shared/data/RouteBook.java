@@ -3,10 +3,18 @@ package farex.shared.data;
 import java.nio.file.*;
 import java.util.*;
 
-/** All jeepney routes, each an ordered list of stops. Rows: routeId,seq,name,lat,lng. First run seeds sample routes. */
+/**
+ * All jeepney routes, each an ordered list of stops. Rows: routeId,seq,name,lat,lng. First run seeds sample routes.
+ * Optional route_names.csv (routeId,name,oneway) gives a route its display name and marks it one-way:
+ * OpenStreetMap maps most jeepney routes once per direction, and each direction is ridden forward only.
+ */
 public final class RouteBook {
     private static final String H = "routeId,seq,name,lat,lng";
+    public static final String NAMES_FILE = "route_names.csv";
+    public static final String NAMES_HEADER = "routeId,name,oneway";
     private final Map<String, List<RouteStop>> routes = new LinkedHashMap<>();
+    private final Map<String, String> names = new HashMap<>();
+    private final Set<String> oneway = new HashSet<>();
 
     public RouteBook(Path dir) {
         Path file = dir.resolve("routes.csv");
@@ -17,9 +25,20 @@ public final class RouteBook {
                .put(Integer.parseInt(r[1]), new RouteStop(r[2], Double.parseDouble(r[3]), Double.parseDouble(r[4])));
         }
         tmp.forEach((id, m) -> routes.put(id, List.copyOf(m.values())));
+        for (String[] r : Csv.read(dir.resolve(NAMES_FILE))) {
+            if (r.length < 2 || !routes.containsKey(r[0])) continue;
+            names.put(r[0], r[1]);
+            if (r.length > 2 && Boolean.parseBoolean(r[2].trim())) oneway.add(r[0]);
+        }
     }
 
     public Map<String, List<RouteStop>> routes() { return routes; }
+
+    /** "Commonwealth–SM Fairview via Regalado (to SM City Fairview)"; the id when no name is known. */
+    public String name(String routeId) { return names.getOrDefault(routeId, routeId); }
+
+    /** True when the route is ridden in stop order only (the other direction is its own route). */
+    public boolean isOneway(String routeId) { return oneway.contains(routeId); }
 
     /** Admin adds a new route. Existing routes are never edited, so old trips stay valid. Stops: name, lat, lng. */
     public static void addRoute(Path dir, String id, List<String[]> stops) {

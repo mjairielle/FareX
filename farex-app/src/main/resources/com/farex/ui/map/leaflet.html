@@ -28,8 +28,10 @@
   if (typeof L !== 'undefined') {
     // Metro Manila until there is something to fit
     // Animations off: in the WebView they leave tiles half drawn
-    var map = L.map('map', { zoomControl: true, zoomAnimation: false, fadeAnimation: false, markerZoomAnimation: false })
-               .setView([14.60, 121.00], 12);
+    // Canvas, not SVG: with every QC route that is ~2,000 stop markers, which SVG draws slowly
+    var map = L.map('map', { zoomControl: true, zoomAnimation: false, fadeAnimation: false, markerZoomAnimation: false,
+                             preferCanvas: true })
+               .setView([14.65, 121.05], 12);
     map.attributionControl.setPrefix('Leaflet');   // plain text: a link would navigate the WebView away
     L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
@@ -45,10 +47,11 @@
     function line(x) { return x.path && x.path.length > 1 ? x.path : latlngs(x.stops); }
 
     // data = { routes: [{id, stops:[{name,lat,lng}], path:[[lat,lng],...]}], focus: "R1" or null,
-    //          trip: [{route, stops:[...], path:[...]}] }
+    //          trip: [{route, walk, stops:[...], path:[...]}], pin: [{name,lat,lng}] or null }
     window.farexDraw = function (data) {
       layer.clearLayers();
       var hasTrip = data.trip && data.trip.length > 0;
+      var many = (data.routes || []).length > 20;      // the whole network: thinner lines, smaller dots
       var fit = [];
 
       (data.routes || []).forEach(function (r, i) {
@@ -56,43 +59,79 @@
         var dim = hasTrip || (data.focus && !focused);
         var color = COLORS[i % COLORS.length];
         var pts = line(r);
-        L.polyline(pts, { color: focused ? LIME : color, weight: focused ? 6 : 4, opacity: dim ? 0.35 : 0.9 })
+        // with a trip shown, the rest of the network is faint context only: thin lines, no stop dots
+        L.polyline(pts, { color: focused ? LIME : color, weight: focused ? 6 : (many ? 2.5 : 4),
+                          opacity: hasTrip ? 0.15 : (dim ? 0.3 : 0.85) })
           .bindTooltip('Route ' + r.id, { sticky: true }).addTo(layer);
+        if (hasTrip && many) return;
         r.stops.forEach(function (s) {
-          L.circleMarker([s.lat, s.lng], { radius: focused ? 6 : 4, color: '#111111', weight: 1,
-                                           fillColor: focused ? LIME : color, fillOpacity: dim ? 0.4 : 1 })
+          L.circleMarker([s.lat, s.lng], { radius: focused ? 6 : (many ? 2.5 : 4), color: '#111111', weight: 1,
+                                           fillColor: focused ? LIME : color, fillOpacity: dim ? 0.35 : 1 })
             .bindTooltip(s.name).addTo(layer);
         });
-        if (focused || (!hasTrip && !data.focus)) fit = fit.concat(pts);
+        if (focused || (!hasTrip && !data.focus && !many)) fit = fit.concat(pts);
       });
 
       if (hasTrip) {
+        var rides = 0;
         data.trip.forEach(function (leg, i) {
           var pts = line(leg);
-          L.polyline(pts, { color: LIME, weight: 7, opacity: 0.95 })
-            .bindTooltip('Ride ' + leg.route, { sticky: true }).addTo(layer);
-          var board = leg.stops[0];
-          // Start and End keep a label; transfers only on hover, or the labels pile up when zoomed out
-          L.circleMarker([board.lat, board.lng], { radius: 7, color: '#111111', weight: 2, fillColor: LIME, fillOpacity: 1 })
-            .bindTooltip((i === 0 ? 'Start: ' : 'Transfer to ' + leg.route + ': ') + board.name,
-                         { permanent: i === 0, direction: 'top', className: 'farex-label' }).addTo(layer);
+          if (leg.walk) {                               // walking: dashed white, no marker of its own
+            L.polyline(pts, { color: '#FFFFFF', weight: 4, opacity: 0.95, dashArray: '2 8' })
+              .bindTooltip('Walk', { sticky: true }).addTo(layer);
+          } else {
+            L.polyline(pts, { color: LIME, weight: 7, opacity: 0.95 })
+              .bindTooltip('Ride ' + leg.route, { sticky: true }).addTo(layer);
+            var board = leg.stops[0];
+            // the first boarding keeps its label; transfers only on hover, or labels pile up when zoomed out
+            L.circleMarker([board.lat, board.lng], { radius: 7, color: '#111111', weight: 2, fillColor: LIME, fillOpacity: 1 })
+              .bindTooltip((rides === 0 ? 'Board: ' : 'Transfer to ' + leg.route + ': ') + board.name,
+                           { permanent: rides === 0, direction: 'top', className: 'farex-label' }).addTo(layer);
+            rides++;
+          }
           fit = fit.concat(pts);
         });
+        var first = data.trip[0].stops[0];
+        if (data.trip[0].walk) {
+          L.circleMarker([first.lat, first.lng], { radius: 7, color: LIME, weight: 3, fillColor: '#FFFFFF', fillOpacity: 1 })
+            .bindTooltip('Start: ' + first.name, { permanent: true, direction: 'bottom', className: 'farex-label' }).addTo(layer);
+        }
         var lastLeg = data.trip[data.trip.length - 1];
         var end = lastLeg.stops[lastLeg.stops.length - 1];
         L.circleMarker([end.lat, end.lng], { radius: 8, color: LIME, weight: 3, fillColor: '#111111', fillOpacity: 1 })
           .bindTooltip('End: ' + end.name, { permanent: true, direction: 'top', className: 'farex-label' }).addTo(layer);
       }
 
+      if (data.pin) {
+        var p = data.pin[0];
+        L.circleMarker([p.lat, p.lng], { radius: 9, color: '#111111', weight: 3, fillColor: LIME, fillOpacity: 1 })
+          .bindTooltip(p.name, { permanent: true, direction: 'top', className: 'farex-label' }).addTo(layer);
+        if (!hasTrip) fit = [[p.lat, p.lng]];
+      }
+
       lastFit = fit;
       refit();
+    };
+
+    // Tapping the map hands the point to Java (LeafletMap.onPick) as the status text
+    // "farex-pick:lat,lng"; cleared straight after so tapping the same spot again still counts.
+    // A drag does not count as a tap.
+    window.farexTap = function (lat, lng) {
+      window.status = 'farex-pick:' + lat + ',' + lng;
+      window.status = '';
+    };
+    var picking = false;
+    window.farexEnablePick = function () {
+      if (picking) return;
+      picking = true;
+      map.on('click', function (e) { farexTap(e.latlng.lat, e.latlng.lng); });
     };
 
     var lastFit = [];
     function refit() {
       map.invalidateSize();   // measure the real size first, or the fit is for a stale, smaller box
       if (lastFit.length > 1) map.fitBounds(lastFit, { padding: [36, 36], maxZoom: 16 });
-      else if (lastFit.length === 1) map.setView(lastFit[0], 15);
+      else if (lastFit.length === 1) map.setView(lastFit[0], Math.max(map.getZoom(), 15));
     }
 
     // The WebView is often sized after the page loads; re-measure and re-fit whenever it changes.

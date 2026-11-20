@@ -37,11 +37,11 @@ public class TripPlannerTest {
         List<TripPlanner.Plan> plans = planner.plan("Cubao", "Fairview Terminal", new RegularFare());
         assertTrue(plans.size() >= 2 && plans.size() <= 3, "2 to 3 distinct plans returned");
 
-        TripPlanner.Plan shortest = plans.stream().filter(p -> p.label().contains("Shortest")).findFirst().orElseThrow();
+        TripPlanner.Plan fastest = plans.stream().filter(p -> p.label().contains("Fastest")).findFirst().orElseThrow();
         TripPlanner.Plan fewest = plans.stream().filter(p -> p.label().contains("Fewest")).findFirst().orElseThrow();
         TripPlanner.Plan cheapest = plans.stream().filter(p -> p.label().contains("Cheapest")).findFirst().orElseThrow();
 
-        assertTrue(plans.stream().allMatch(p -> p.km() >= shortest.km() - 1e-9));
+        assertTrue(plans.stream().allMatch(p -> p.minutes() >= fastest.minutes() - 1));   // 1: minutes are rounded
         assertTrue(plans.stream().allMatch(p -> p.transfers() >= fewest.transfers()));
         assertTrue(plans.stream().allMatch(p -> p.fareCents() >= cheapest.fareCents()));
     }

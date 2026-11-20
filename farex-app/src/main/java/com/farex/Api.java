@@ -157,25 +157,44 @@ public final class Api {
 
     // ---------- trip planner ----------
 
-    /** One ride of a trip: board `from`, ride `route`, get off at `to`. */
-    public record PlanRide(String route, String from, String to) {}
+    /** The planner's route id for walking (to the first jeep, between jeeps, from the last one). */
+    public static final String WALK = "WALK";
 
-    /** One suggested trip. legs look like "R1: Philcoa > Tandang Sora (1.9 km)"; rides are the same, for the map. */
+    /** One part of a trip: board `from`, ride `route`, get off at `to` (or walk, when route is WALK). */
+    public record PlanRide(String route, String from, String to, double km) {
+        public boolean walk() { return WALK.equals(route); }
+    }
+
+    /** One suggested trip. legs look like "Ride R1: Philcoa > Tandang Sora (1.90 km)" / "Walk: A > B (0.30 km)"; rides are the same, for the map. */
     public record PlanCard(String label, String km, int transfers, long fareCents, int minutes, List<String> legs,
                            List<PlanRide> rides) {}
 
     public static List<String> places() { return lines(call("GET", "/places", null)); }
 
+    /** Between two stops. */
     public static List<PlanCard> plan(String from, String to) {
+        return parsePlans(call("GET", "/plan?" + form("from", from, "to", to), null));
+    }
+
+    /** Between any two points, e.g. a pin on the map; the trip starts and ends with a walk to/from a stop. */
+    public static List<PlanCard> plan(double fromLat, double fromLng, String fromLabel,
+                                      double toLat, double toLng, String toLabel) {
+        return parsePlans(call("GET", "/plan?" + form(
+                "fromLat", String.valueOf(fromLat), "fromLng", String.valueOf(fromLng), "fromLabel", fromLabel,
+                "toLat", String.valueOf(toLat), "toLng", String.valueOf(toLng), "toLabel", toLabel), null));
+    }
+
+    private static List<PlanCard> parsePlans(String body) {
         List<PlanCard> out = new ArrayList<>();
-        for (String l : lines(call("GET", "/plan?" + form("from", from, "to", to), null))) {
+        for (String l : lines(body)) {
             String[] f = l.split("\\|", -1);
             List<String> legs = new ArrayList<>();
             List<PlanRide> rides = new ArrayList<>();
             for (String leg : f[5].split(";")) {
                 String[] x = leg.split("~");
-                legs.add(x[0] + ": " + x[1] + " > " + x[2] + " (" + x[3] + " km)");
-                rides.add(new PlanRide(x[0], x[1], x[2]));
+                PlanRide r = new PlanRide(x[0], x[1], x[2], Double.parseDouble(x[3]));
+                legs.add((r.walk() ? "Walk: " : "Ride " + x[0] + ": ") + x[1] + " > " + x[2] + " (" + x[3] + " km)");
+                rides.add(r);
             }
             out.add(new PlanCard(f[0], f[1], Integer.parseInt(f[2]), Long.parseLong(f[3]), Integer.parseInt(f[4]), legs, rides));
         }
@@ -290,7 +309,8 @@ public final class Api {
         return new String[]{field(r, "accepted", "0"), field(r, "skipped", "0")};
     }
 
-    public record RouteDetail(String id, List<RouteStop> stops) {}
+    /** name = "Commonwealth–SM Fairview via Regalado (to SM City Fairview)"; the id on older servers. */
+    public record RouteDetail(String id, List<RouteStop> stops, String name) {}
     public record VehicleInfo(String plate, String driverName, String operatorId) {}
     /** base covers the first baseKm; rate applies per km after that. */
     public record FareRuleInfo(long base, long rate, double baseKm) {}
@@ -308,7 +328,7 @@ public final class Api {
                         stList.add(new RouteStop(sp[0], Double.parseDouble(sp[1]), Double.parseDouble(sp[2])));
                     }
                 }
-                out.add(new RouteDetail(p[0], stList));
+                out.add(new RouteDetail(p[0], stList, p.length >= 3 && !p[2].isBlank() ? p[2] : p[0]));
             }
         }
         return out;

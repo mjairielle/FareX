@@ -35,9 +35,12 @@ public class TripSearchStep extends ProgressStep {
 
         // Start asking right away; the animation below runs while the server works
         if (TripState.isLive()) {
-            String from = TripState.getStart().getName();
-            String to = TripState.getDestination().getName();
-            search = CompletableFuture.supplyAsync(() -> Api.plan(from, to))
+            TripPlace from = TripState.getStart();
+            TripPlace to = TripState.getDestination();
+            // A pin at either end: plan between the two points (a stop's own point means no walk there)
+            search = CompletableFuture.supplyAsync(() -> from.isPin() || to.isPin()
+                            ? Api.plan(from.getLat(), from.getLng(), from.getName(), to.getLat(), to.getLng(), to.getName())
+                            : Api.plan(from.getName(), to.getName()))
                     .orTimeout(TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } else {
             search = CompletableFuture.completedFuture(null);   // offline preview: samples
@@ -53,7 +56,7 @@ public class TripSearchStep extends ProgressStep {
                 "Search available connections",
                 "Rank up to three routes"));
         panel.getChildren().add(CommonUi.small(
-                "Shortest distance · Fewest transfers · Cheapest fare", Theme.WHITE));
+                "Fastest route · Fewest transfers · Cheapest fare", Theme.WHITE));
         panel.setPadding(new Insets(16, 14, 18, 14));
 
         VBox tip = CommonUi.panel(
