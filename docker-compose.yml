@@ -1,0 +1,27 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: farex-server
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - PORT=8080
+      - DATA_DIR=/app/data
+      - FAKE_PAY=${FAKE_PAY:-1}
+      - CARD_KEY=${CARD_KEY:-Sh8jj3iiwS4QtS}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin123}
+      - PAYMONGO_SECRET=${PAYMONGO_SECRET:-sk_test_4Kxwf7gEVz238a3rPpqEZ5wF}
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/fares/current || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

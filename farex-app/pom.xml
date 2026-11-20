@@ -21,7 +21,7 @@
         <javafx.version>16</javafx.version>
         <glisten.version>6.0.5</glisten.version>
         <attach.version>4.0.8</attach.version>
-        <mainClassName>com.farex.ui.FarexApp</mainClassName>
+        <mainClassName>com.farex.ui.UiLauncher</mainClassName>
     </properties>
 
     <dependencies>
