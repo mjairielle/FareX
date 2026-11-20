@@ -59,6 +59,7 @@ jobs:
         run: |
           [ -n "$CARTO_API_KEY" ] && echo "::add-mask::$CARTO_API_KEY"
           if [ -n "$CARTO_API_KEY" ]; then
+            mkdir -p farex-app/src/main/resources/com/farex/ui/common    # not in git: it only holds the ignored key
             printf '%s\n' "$CARTO_API_KEY" > farex-app/src/main/resources/com/farex/ui/common/carto.key
             echo "CARTO key added: the APK shows CARTO Voyager tiles"
           else
