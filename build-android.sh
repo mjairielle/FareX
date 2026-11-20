@@ -15,7 +15,7 @@
 set -euo pipefail
 : "${GRAALVM_HOME:?Set GRAALVM_HOME to the Gluon GraalVM 23 folder, see the top of this file}"
 cd "$(dirname "$0")"
-mvn -q install -DskipTests -pl farex-shared            # the app needs the shared module installed
+mvn -q install -DskipTests -pl farex-shared -am        # the app needs the shared module (and the parent pom) installed
 
 cd farex-app
 cp pom.xml pom.xml.desktop
