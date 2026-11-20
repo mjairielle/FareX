@@ -9,21 +9,32 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 /**
- * Sends one plain-text email over SMTPS (TLS from the first byte, e.g. smtp.gmail.com port 465).
- * No library: the JDK's SSLSocket speaking SMTP. Settings in .env:
- *   SMTP_USER=team.farex@gmail.com   SMTP_PASSWORD=the 16-letter Gmail App Password
- *   SMTP_HOST / SMTP_PORT only to use another provider (defaults smtp.gmail.com / 465).
+ * Sends one plain-text email. Two ways, set in .env:
+ *   Brevo (HTTPS, works on Render's free plan, which blocks mail ports):
+ *     BREVO_API_KEY=xkeysib-...   MAIL_FROM=the sender address verified in Brevo
+ *   Gmail SMTPS (laptop or a paid server): TLS from the first byte to smtp.gmail.com port 465
+ *     SMTP_USER=team.farex@gmail.com   SMTP_PASSWORD=the 16-letter Gmail App Password
+ *     SMTP_HOST / SMTP_PORT only to use another provider.
+ * No library: the JDK's HttpClient and SSLSocket. Brevo wins when both are set.
  */
 final class Mail {
     private Mail() {}
 
     static boolean configured() {
-        return Env.get("SMTP_USER") != null && Env.get("SMTP_PASSWORD") != null;
+        return brevo() || (Env.get("SMTP_USER") != null && Env.get("SMTP_PASSWORD") != null);
+    }
+
+    private static boolean brevo() {
+        return Env.get("BREVO_API_KEY") != null && Env.get("MAIL_FROM") != null;
     }
 
     static void send(String to, String subject, String text) throws IOException {
-        // the address goes into SMTP commands and headers: one line, plain address only
-        if (!to.matches("[^\\s,<>@]+@[^\\s,<>@]+")) throw new IllegalArgumentException("Email is not valid");
+        // the address goes into SMTP commands, headers and JSON: one line, plain address only
+        if (!to.matches("[^\\s,<>@\"\\\\]+@[^\\s,<>@\"\\\\]+")) throw new IllegalArgumentException("Email is not valid");
+        if (brevo()) {
+            sendBrevo(to, subject, text);
+            return;
+        }
         String user = Env.get("SMTP_USER"), password = Env.get("SMTP_PASSWORD").replace(" ", "");
         String host = Env.get("SMTP_HOST", "smtp.gmail.com");
         int port = Integer.parseInt(Env.get("SMTP_PORT", "465"));
@@ -47,6 +58,27 @@ final class Mail {
             expect(in, "250");
             say(out, in, "QUIT", "221");
         }
+    }
+
+    // Brevo's transactional email API: one JSON POST over HTTPS
+    private static void sendBrevo(String to, String subject, String text) throws IOException {
+        String body = "{\"sender\":{\"name\":\"FareX\",\"email\":" + json(Env.get("MAIL_FROM")) + "},\"to\":[{\"email\":" + json(to)
+                + "}],\"subject\":" + json(subject) + ",\"textContent\":" + json(text) + "}";
+        java.net.http.HttpRequest req = java.net.http.HttpRequest.newBuilder(java.net.URI.create(Env.get("BREVO_URL", "https://api.brevo.com/v3/smtp/email")))
+                .timeout(java.time.Duration.ofSeconds(20))
+                .header("api-key", Env.get("BREVO_API_KEY")).header("Content-Type", "application/json").header("Accept", "application/json")
+                .POST(java.net.http.HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8)).build();
+        try {
+            java.net.http.HttpResponse<String> r = java.net.http.HttpClient.newHttpClient().send(req, java.net.http.HttpResponse.BodyHandlers.ofString());
+            if (r.statusCode() >= 300) throw new IOException("Brevo said " + r.statusCode() + ": " + r.body());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Interrupted while sending");
+        }
+    }
+
+    private static String json(String s) {
+        return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "") + "\"";
     }
 
     private static void say(Writer out, BufferedReader in, String line, String code) throws IOException {

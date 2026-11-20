@@ -33,6 +33,12 @@ Notes
   3. In .env add:  SMTP_USER=yourteam@gmail.com   and   SMTP_PASSWORD=the 16 letters (spaces are fine)
   4. Restart run-server.bat. Codes go to the email typed in the app; check Spam the first time.
   Without SMTP_USER / SMTP_PASSWORD the server prints each code in its window instead: "OTP for x@y.com: 123456".
+- On Render's free plan Gmail cannot work (Render blocks mail ports; the log says "Operation timed out").
+  Use Brevo instead (free, 300 emails/day, sends over HTTPS):
+  1. Sign up at brevo.com. Senders, Domains & Dedicated IPs > Senders > Add a sender: your Gmail; click the link Brevo emails you.
+  2. SMTP & API > API Keys > Generate a new API key, copy it (starts with xkeysib-).
+  3. Render > Environment: BREVO_API_KEY=the key   MAIL_FROM=the Gmail you verified in step 1. Save (Render restarts).
+  Brevo is used when both are set; SMTP_USER / SMTP_PASSWORD can stay for laptop runs.
 - Trip planner = the Routes tab. Drag the map freely. Type in From / To (stops), tap the map ("Start here" / "Go here",
   plus the jeeps passing there) or press the location button. With both ends set, up to 3 routes appear at the bottom;
   tap one to see its steps on the map, then Start trip (phone GPS, or a simulated ride on the laptop).
