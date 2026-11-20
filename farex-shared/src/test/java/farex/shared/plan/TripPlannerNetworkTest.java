@@ -82,13 +82,82 @@ public class TripPlannerNetworkTest {
         List<TripPlanner.Plan> plans = p.plan(14.5973, 121.00, "Home", 14.6218, 121.00, "School", new RegularFare());
         assertFalse(plans.isEmpty());
         List<TripPlanner.Leg> legs = plans.get(0).legs();
-        assertEquals(new TripPlanner.Leg(TripPlanner.WALK, "Home", "A", legs.get(0).km()), legs.get(0));
+        assertEquals(List.of(TripPlanner.WALK, "Home", "A"), List.of(legs.get(0).route(), legs.get(0).from(), legs.get(0).to()));
+        assertEquals(14.5973, legs.get(0).fromAt().lat(), 1e-9, "legs say where their ends are");
         assertEquals("R1", legs.get(1).route());
         assertEquals(TripPlanner.WALK, legs.get(2).route());
         assertEquals("School", legs.get(2).to());
         assertEquals(0.30 * TripPlanner.WALK_DETOUR, legs.get(0).km(), 0.02);
         assertTrue(plans.get(0).minutes() > 6, "walking time counts");
         assertEquals(0, plans.get(0).transfers(), "walking to the jeep is not a transfer");
+    }
+
+    // ----- flagging a jeep down on its road, between stops -----
+
+    private static List<String> routes(TripPlanner.Plan p) {
+        return p.legs().stream().map(TripPlanner.Leg::route).toList();
+    }
+
+    @Test
+    void flagsTheJeepDownRightWhereYouAre() throws Exception {
+        // R1 runs 2.2 km due north, stops only at its ends. Home is on its road halfway (~50 m off):
+        // no walk to a terminal, just wait there and ride.
+        TripPlanner p = new TripPlanner(book(tempDir, "R1|true|A,14.60,121.00;B,14.62,121.00"));
+        List<TripPlanner.Plan> plans = p.plan(14.61, 121.0005, "Home", 14.62, 121.00, "B", new RegularFare());
+        assertFalse(plans.isEmpty());
+        for (TripPlanner.Plan plan : plans) {
+            assertEquals(List.of("R1"), routes(plan), plan.label() + ": " + plan.legs());
+            TripPlanner.Leg ride = plan.legs().get(0);
+            assertEquals("Home", ride.from(), "boards where you are");
+            assertEquals(14.61, ride.fromAt().lat(), 1e-4, "on the road beside you");
+            assertEquals(121.00, ride.fromAt().lng(), 1e-6);
+            assertEquals(1.1, ride.km(), 0.05, "rides only the half it needs");
+        }
+    }
+
+    @Test
+    void flagsDownOnTheRoadWhenThatBeatsTheNearestStop() throws Exception {
+        // Home is 300 m east of R1's road, halfway: the nearest stop is 1.1 km away, the road 300 m
+        TripPlanner p = new TripPlanner(book(tempDir, "R1|true|A,14.60,121.00;B,14.62,121.00"));
+        TripPlanner.Plan plan = p.plan(14.61, 121.0028, "Home", 14.62, 121.00, "B", new RegularFare()).get(0);
+        assertEquals(List.of(TripPlanner.WALK, "R1"), routes(plan));
+        assertEquals("the roadside near A", plan.legs().get(0).to(), "ties go to the earlier stop");
+        assertEquals(0.30 * TripPlanner.WALK_DETOUR, plan.legs().get(0).km(), 0.02);
+    }
+
+    @Test
+    void getsOffWhereTheRoadPassesTheDestination() throws Exception {
+        TripPlanner p = new TripPlanner(book(tempDir, "R1|true|A,14.60,121.00;B,14.62,121.00"));
+        TripPlanner.Plan plan = p.plan(14.60, 121.00, "A", 14.615, 121.0009, "Office", new RegularFare()).get(0);
+        assertEquals(List.of("R1", TripPlanner.WALK), routes(plan));
+        assertEquals("the roadside near B", plan.legs().get(0).to());
+        assertEquals(1.67, plan.legs().get(0).km(), 0.05, "gets off before B, not at it");
+        assertEquals("Office", plan.legs().get(1).to());
+    }
+
+    @Test
+    void flaggedOneWayJeepsOnlyGoForward() throws Exception {
+        // From halfway, back to A: a one-way route cannot take you there, a two-way one can
+        String stops = "A,14.60,121.00;B,14.62,121.00";
+        assertTrue(new TripPlanner(book(tempDir.resolve("one"), "R1|true|" + stops))
+                .plan(14.61, 121.0005, "Home", 14.6001, 121.00, "A", new RegularFare()).isEmpty());
+        List<TripPlanner.Plan> twoWay = new TripPlanner(book(tempDir.resolve("two"), "R1|false|" + stops))
+                .plan(14.61, 121.0005, "Home", 14.6001, 121.00, "A", new RegularFare());
+        assertFalse(twoWay.isEmpty());
+        assertEquals(List.of("R1"), routes(twoWay.get(0)));
+    }
+
+    @Test
+    void passingListsRoutesWhoseRoadIsNear() throws Exception {
+        TripPlanner p = new TripPlanner(book(tempDir,
+                "R1|true|A,14.60,121.00;B,14.62,121.00",
+                "R2|false|C,14.61,120.99;D,14.61,121.01",
+                "R3|true|E,14.70,121.10;F,14.71,121.10"));
+        List<TripPlanner.Passing> here = p.passing(14.6101, 121.0003, TripPlanner.PASSING_M);
+        assertEquals(List.of("R2", "R1"), here.stream().map(TripPlanner.Passing::routeId).toList(), "nearest first, R3 too far");
+        assertEquals("A", here.get(1).firstStop());
+        assertEquals("B", here.get(1).lastStop());
+        assertTrue(here.get(1).oneway());
     }
 
     @Test
@@ -140,6 +209,25 @@ public class TripPlannerNetworkTest {
             }
         }
         assertTrue(reachable > pairs / 4, "network should be mostly connected: " + reachable + " of " + pairs);
+
+        // and between random points, where flag-downs on the roads add their own edges
+        int pointPairs = 0;
+        for (int k = 0; k < 150; k++) {
+            double[] a = {14.60 + rng.nextDouble() * 0.05, 121.00 + rng.nextDouble() * 0.05};
+            double[] b = {14.60 + rng.nextDouble() * 0.05, 121.00 + rng.nextDouble() * 0.05};
+            for (boolean fastest : new boolean[]{true, false}) {
+                double[] plain, bi;
+                try {
+                    plain = p.comparePoints(a, b, fastest, false);
+                    bi = p.comparePoints(a, b, fastest, true);
+                } catch (IllegalArgumentException noRouteNear) {
+                    continue;
+                }
+                assertEquals(plain[0], bi[0], 1e-9, Arrays.toString(a) + " -> " + Arrays.toString(b));
+                if (plain[0] != Double.MAX_VALUE) pointPairs++;
+            }
+        }
+        assertTrue(pointPairs > 20, "point searches with a trip: " + pointPairs);
         System.out.printf("    %d searches (%d reachable): plain Dijkstra settled %d nodes, bidirectional %d%n",
                 pairs, reachable, plainSettled, biSettled);
     }

@@ -32,8 +32,10 @@ public class LeafletMap extends StackPane {
 
     // One part of a planned trip: a ride (its stops from boarding to alighting, in order) or a walk
     // (just its two ends; drawn dashed)
-    public record TripLeg(String route, List<RouteStop> stops, boolean walk) {
-        public TripLeg(String route, List<RouteStop> stops) { this(route, stops, false); }
+    // path: its road path when already known (a ride from or to a roadside point), else null
+    public record TripLeg(String route, List<RouteStop> stops, boolean walk, List<RouteShapes.Point> path) {
+        public TripLeg(String route, List<RouteStop> stops, boolean walk) { this(route, stops, walk, null); }
+        public TripLeg(String route, List<RouteStop> stops) { this(route, stops, false, null); }
     }
 
     // The FareX network (stops and road paths), fetched once per run: it is ~2 MB with all QC routes
@@ -58,6 +60,8 @@ public class LeafletMap extends StackPane {
     private RouteStop pin;                                          // a picked point, or null
     private RouteShapes.Point me;                                   // tracked position, or null
     private boolean meOffRoute;
+    private String ridingRoute;                                     // the jeep being ridden, or null
+    private double bottomInset;                                     // px hidden under the app's cards
 
     // Map taps reach Java as the page's status text "farex-pick:lat,lng" (see farexTap in the page).
     // Not a Java object handed to JavaScript: getting `window` back from executeScript crashes the
@@ -124,7 +128,7 @@ public class LeafletMap extends StackPane {
                 Network n = network();
                 Platform.runLater(() -> {
                     showRoutes(n.routes(), n.shapes());
-                    if (!rides.isEmpty()) showTrip(legsFor(n.routes(), rides, points));
+                    if (!rides.isEmpty()) showTrip(legsFor(n, rides, points));
                 });
             } catch (RuntimeException offline) {
                 // no server: streets only
@@ -135,24 +139,17 @@ public class LeafletMap extends StackPane {
         return this;
     }
 
-    // Each ride's stops from boarding to alighting, and each walk's two ends, for showTrip
-    public static List<TripLeg> legsFor(Map<String, List<RouteStop>> allRoutes, List<Api.PlanRide> rides) {
-        return legsFor(allRoutes, rides, Map.of());
-    }
-
-    public static List<TripLeg> legsFor(Map<String, List<RouteStop>> allRoutes, List<Api.PlanRide> rides,
-                                        Map<String, RouteStop> points) {
+    // Each ride's stops and road path from boarding to alighting, and each walk's two ends, for showTrip
+    private static List<TripLeg> legsFor(Network n, List<Api.PlanRide> rides, Map<String, RouteStop> points) {
         List<TripLeg> legs = new ArrayList<>();
         for (Api.PlanRide r : rides) {
             if (r.walk()) {
-                RouteStop a = find(allRoutes, points, r.from()), b = find(allRoutes, points, r.to());
+                RouteStop a = end(n, points, r.from(), r.fromAt()), b = end(n, points, r.to(), r.toAt());
                 if (a != null && b != null) legs.add(new TripLeg(Api.WALK, List.of(a, b), true));
                 continue;
             }
-            List<RouteStop> line = allRoutes.get(r.route());
-            if (line == null) continue;
-            List<RouteStop> stops = between(line, r.from(), r.to());
-            if (stops.size() >= 2) legs.add(new TripLeg(r.route(), stops));
+            RideShape s = rideShape(n, r);
+            if (s != null) legs.add(new TripLeg(r.route(), s.stops(), false, s.path()));
         }
         return legs;
     }
@@ -166,18 +163,134 @@ public class LeafletMap extends StackPane {
         for (Api.PlanRide r : rides) {
             List<RouteShapes.Point> path;
             if (r.walk()) {
-                RouteStop a = find(n.routes(), points, r.from()), b = find(n.routes(), points, r.to());
+                RouteStop a = end(n, points, r.from(), r.fromAt()), b = end(n, points, r.to(), r.toAt());
                 if (a == null || b == null) return List.of();
                 path = List.of(point(a), point(b));
             } else {
-                List<RouteStop> line = n.routes().get(r.route());
-                int a = line == null ? -1 : indexOf(line, r.from()), b = line == null ? -1 : indexOf(line, r.to());
-                if (a < 0 || b < 0 || a == b) return List.of();
-                path = roadPath(n.shapes().getOrDefault(r.route(), Map.of()), line, a, b);
+                RideShape s = rideShape(n, r);
+                if (s == null || s.path().size() < 2) return List.of();
+                path = s.path();
             }
             out.add(new TripProgress.Ride(r.route(), r.from(), r.to(), path));
         }
         return out;
+    }
+
+    // Where a walk starts or ends: the coordinates the planner sent, else a stop or pin by name
+    private static RouteStop end(Network n, Map<String, RouteStop> points, String name, RouteStop at) {
+        return at != null ? at : find(n.routes(), points, name);
+    }
+
+    // The far end of the route in the direction this ride goes: where the jeep is headed
+    // ("Bagong Silang"), for the tracking screen. Null when unknown. Call off the FX thread.
+    public static String headedTo(Api.PlanRide r) {
+        Network n = network();
+        List<RouteStop> line = n.routes().get(r.route());
+        RideShape s = line == null ? null : rideShape(n, r);
+        if (s == null) return null;
+        return (s.forward() ? line.get(line.size() - 1) : line.get(0)).name();
+    }
+
+    // ----- one ride's geometry -----
+
+    // The stops passed (first = where you board, last = where you get off) and the road path, and
+    // whether that runs in the route's own stop order
+    private record RideShape(List<RouteStop> stops, List<RouteShapes.Point> path, boolean forward) {}
+
+    // Both ends stops of the route: stop to stop along its road segments. An end that is no stop
+    // ("the roadside near X": the jeep flagged down on its road) is placed by its coordinates,
+    // cutting the route's road where it passes closest.
+    private static RideShape rideShape(Network n, Api.PlanRide r) {
+        List<RouteStop> line = n.routes().get(r.route());
+        if (line == null || line.size() < 2) return null;
+        Map<Integer, List<RouteShapes.Point>> segs = n.shapes().getOrDefault(r.route(), Map.of());
+        int a = indexOf(line, r.from()), b = indexOf(line, r.to());
+        if (a >= 0 && b >= 0 && a != b) return new RideShape(between(line, r.from(), r.to()), roadPath(segs, line, a, b), a < b);
+
+        // The whole route as one path, with each stop's km along it
+        List<RouteShapes.Point> full = new ArrayList<>();
+        double[] stopKm = new double[line.size()];
+        for (int i = 0; i + 1 < line.size(); i++) {
+            if (!full.isEmpty()) stopKm[i] = km(full);
+            List<RouteShapes.Point> seg = roadPath(segs, line, i, i + 1);
+            full.addAll(seg);
+        }
+        stopKm[line.size() - 1] = km(full);
+        double[] cum = new double[full.size()];
+        for (int i = 1; i < full.size(); i++) cum[i] = cum[i - 1] + dist(full.get(i - 1), full.get(i));
+
+        double from = a >= 0 ? stopKm[a] : (r.fromAt() == null ? -1 : project(full, cum, r.fromAt()));
+        double to = b >= 0 ? stopKm[b] : (r.toAt() == null ? -1 : project(full, cum, r.toAt()));
+        if (from < 0 || to < 0 || Math.abs(to - from) < 1e-6) return null;
+        boolean forward = from < to;
+
+        List<RouteStop> stops = new ArrayList<>();
+        stops.add(a >= 0 ? line.get(a) : r.fromAt());
+        for (int i = 0; i < line.size(); i++) {
+            int k = forward ? i : line.size() - 1 - i;
+            double at = stopKm[k];
+            if (forward ? (at > from + 1e-6 && at < to - 1e-6) : (at < from - 1e-6 && at > to + 1e-6)) stops.add(line.get(k));
+        }
+        stops.add(b >= 0 ? line.get(b) : r.toAt());
+
+        List<RouteShapes.Point> path = slice(full, cum, Math.min(from, to), Math.max(from, to));
+        if (!forward) Collections.reverse(path);
+        return new RideShape(stops, path, forward);
+    }
+
+    // km along `path` (cumulative `cum`) of the point nearest to p
+    private static double project(List<RouteShapes.Point> path, double[] cum, RouteStop p) {
+        double k = Math.cos(Math.toRadians(p.lat())), px = p.lng() * k, py = p.lat();
+        double best = Double.MAX_VALUE, at = -1;
+        for (int i = 1; i < path.size(); i++) {
+            RouteShapes.Point a = path.get(i - 1), b = path.get(i);
+            double ax = a.lng() * k, ay = a.lat(), dx = b.lng() * k - ax, dy = b.lat() - ay, len2 = dx * dx + dy * dy;
+            double t = len2 == 0 ? 0 : Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
+            double ex = ax + t * dx - px, ey = ay + t * dy - py, d = ex * ex + ey * ey;
+            if (d < best) { best = d; at = cum[i - 1] + t * (cum[i] - cum[i - 1]); }
+        }
+        return at;
+    }
+
+    // The part of `path` between km lo and hi along it
+    private static List<RouteShapes.Point> slice(List<RouteShapes.Point> path, double[] cum, double lo, double hi) {
+        List<RouteShapes.Point> out = new ArrayList<>();
+        out.add(pointAt(path, cum, lo));
+        for (int i = 0; i < path.size(); i++) if (cum[i] > lo && cum[i] < hi) out.add(path.get(i));
+        out.add(pointAt(path, cum, hi));
+        return out;
+    }
+
+    private static RouteShapes.Point pointAt(List<RouteShapes.Point> path, double[] cum, double km) {
+        int i = 1;
+        while (i < path.size() - 1 && cum[i] < km) i++;
+        double seg = cum[i] - cum[i - 1], t = seg <= 0 ? 0 : Math.max(0, Math.min(1, (km - cum[i - 1]) / seg));
+        RouteShapes.Point a = path.get(i - 1), b = path.get(i);
+        return new RouteShapes.Point(a.lat() + t * (b.lat() - a.lat()), a.lng() + t * (b.lng() - a.lng()));
+    }
+
+    private static double km(List<RouteShapes.Point> path) {
+        double km = 0;
+        for (int i = 1; i < path.size(); i++) km += dist(path.get(i - 1), path.get(i));
+        return km;
+    }
+
+    private static double dist(RouteShapes.Point a, RouteShapes.Point b) {
+        return farex.shared.fare.Fares.haversineKm(a.lat(), a.lng(), b.lat(), b.lng());
+    }
+
+    // Pixels at the bottom of the map hidden by a card on top: zooming to a route keeps clear of them
+    public void setBottomInset(double px) {
+        bottomInset = px;
+        if (ready) run(String.format(Locale.ROOT, "farexInset(%.0f); true", px));
+    }
+
+    // While riding (trip tracking): the whole route of the jeep you are on, faint, so you see where
+    // it goes after your stop. null hides it.
+    public void showRiding(String routeId) {
+        if (java.util.Objects.equals(routeId, ridingRoute)) return;
+        ridingRoute = routeId;
+        redraw();
     }
 
     // "You are here" while a trip is tracked: a blue dot (red when off route); the map pans to keep it
@@ -294,6 +407,7 @@ public class LeafletMap extends StackPane {
         ready = true;
         fallback.setVisible(false);
         if (onPick != null) run("farexEnablePick(); true");
+        if (bottomInset > 0) run(String.format(Locale.ROOT, "farexInset(%.0f); true", bottomInset));
         run("farexResize(); true");
         redraw();
     }
@@ -334,9 +448,10 @@ public class LeafletMap extends StackPane {
             TripLeg leg = trip.get(i);
             b.append("{\"route\":").append(str(leg.route())).append(",\"walk\":").append(leg.walk())
              .append(",\"stops\":").append(stops(leg.stops()))
-             .append(",\"path\":").append(points(legPath(leg))).append('}');
+             .append(",\"path\":").append(points(leg.path() != null ? leg.path() : legPath(leg))).append('}');
         }
         b.append("],\"pin\":").append(pin == null ? "null" : stops(List.of(pin)));
+        b.append(",\"riding\":").append(ridingRoute == null ? "null" : str(ridingRoute));
         return b.append("}").toString();
     }
 

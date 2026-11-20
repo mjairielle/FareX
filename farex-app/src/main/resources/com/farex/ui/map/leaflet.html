@@ -59,6 +59,14 @@
         var dim = hasTrip || (data.focus && !focused);
         var color = COLORS[i % COLORS.length];
         var pts = line(r);
+        if (hasTrip && data.riding === r.id) {          // the jeep you are on: its whole route, so you see where it goes
+          L.polyline(pts, { color: LIME, weight: 4, opacity: 0.55, dashArray: '8 8' })
+            .bindTooltip('Your jeep · route ' + r.id, { sticky: true }).addTo(layer);
+          var last = r.stops[r.stops.length - 1];
+          L.circleMarker([last.lat, last.lng], { radius: 5, color: '#111111', weight: 2, fillColor: LIME, fillOpacity: 0.8 })
+            .bindTooltip('Route ' + r.id + ' ends: ' + last.name, { direction: 'top', className: 'farex-label' }).addTo(layer);
+          return;
+        }
         // with a trip shown, the rest of the network is faint context only: thin lines, no stop dots
         L.polyline(pts, { color: focused ? LIME : color, weight: focused ? 6 : (many ? 2.5 : 4),
                           opacity: hasTrip ? 0.15 : (dim ? 0.3 : 0.85) })
@@ -106,7 +114,7 @@
         var p = data.pin[0];
         L.circleMarker([p.lat, p.lng], { radius: 9, color: '#111111', weight: 3, fillColor: LIME, fillOpacity: 1 })
           .bindTooltip(p.name, { permanent: true, direction: 'top', className: 'farex-label' }).addTo(layer);
-        if (!hasTrip) fit = [[p.lat, p.lng]];
+        if (!hasTrip && fit.length === 0) fit = [[p.lat, p.lng]];   // a focused route keeps its own fit
       }
 
       lastFit = fit;
@@ -145,10 +153,14 @@
       if (!map.getBounds().pad(-0.1).contains([lat, lng])) map.panTo([lat, lng], { animate: false });
     };
 
+    // Pixels at the bottom covered by the app's own cards (e.g. "Jeeps passing here"): fits keep clear of them
+    var bottomInset = 0;
+    window.farexInset = function (px) { bottomInset = px; };
+
     var lastFit = [];
     function refit() {
       map.invalidateSize();   // measure the real size first, or the fit is for a stale, smaller box
-      if (lastFit.length > 1) map.fitBounds(lastFit, { padding: [36, 36], maxZoom: 16 });
+      if (lastFit.length > 1) map.fitBounds(lastFit, { paddingTopLeft: [36, 36], paddingBottomRight: [36, 36 + bottomInset], maxZoom: 16 });
       else if (lastFit.length === 1) map.setView(lastFit[0], Math.max(map.getZoom(), 15));
     }
 

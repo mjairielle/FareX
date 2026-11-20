@@ -160,9 +160,30 @@ public final class Api {
     /** The planner's route id for walking (to the first jeep, between jeeps, from the last one). */
     public static final String WALK = "WALK";
 
-    /** One part of a trip: board `from`, ride `route`, get off at `to` (or walk, when route is WALK). */
-    public record PlanRide(String route, String from, String to, double km) {
+    /**
+     * One part of a trip: board `from`, ride `route`, get off at `to` (or walk, when route is WALK).
+     * fromAt / toAt = where those are; a ride can start or end "at the roadside near X" (a jeep
+     * flagged down on its road), which is no stop. Null from an older server.
+     */
+    public record PlanRide(String route, String from, String to, double km, RouteStop fromAt, RouteStop toAt) {
+        public PlanRide(String route, String from, String to, double km) { this(route, from, to, km, null, null); }
         public boolean walk() { return WALK.equals(route); }
+    }
+
+    /** A jeepney route whose road passes near a point: how far, where, and its two ends. */
+    public record Passing(String routeId, String name, int meters, RouteStop at, String firstStop, String lastStop,
+                          boolean oneway) {}
+
+    /** Jeeps passing a point (the Routes map, tapped): routes whose road is within ~150 m, nearest first. */
+    public static List<Passing> passing(double lat, double lng) {
+        List<Passing> out = new ArrayList<>();
+        for (String l : lines(call("GET", "/passing?" + form("lat", String.valueOf(lat), "lng", String.valueOf(lng)), null))) {
+            String[] f = l.split("\\|", -1);
+            String[] ll = f[3].split("~");
+            out.add(new Passing(f[0], f[1], Integer.parseInt(f[2]),
+                    new RouteStop(f[1], Double.parseDouble(ll[0]), Double.parseDouble(ll[1])), f[4], f[5], Boolean.parseBoolean(f[6])));
+        }
+        return out;
     }
 
     /** One suggested trip. legs look like "Ride R1: Philcoa > Tandang Sora (1.90 km)" / "Walk: A > B (0.30 km)"; rides are the same, for the map. */
@@ -184,6 +205,12 @@ public final class Api {
                 "toLat", String.valueOf(toLat), "toLng", String.valueOf(toLng), "toLabel", toLabel), null));
     }
 
+    // "14.65,121.04" -> a named point
+    private static RouteStop point(String name, String latLng) {
+        String[] ll = latLng.split(",");
+        return new RouteStop(name, Double.parseDouble(ll[0]), Double.parseDouble(ll[1]));
+    }
+
     private static List<PlanCard> parsePlans(String body) {
         List<PlanCard> out = new ArrayList<>();
         for (String l : lines(body)) {
@@ -192,7 +219,9 @@ public final class Api {
             List<PlanRide> rides = new ArrayList<>();
             for (String leg : f[5].split(";")) {
                 String[] x = leg.split("~");
-                PlanRide r = new PlanRide(x[0], x[1], x[2], Double.parseDouble(x[3]));
+                PlanRide r = x.length >= 6
+                        ? new PlanRide(x[0], x[1], x[2], Double.parseDouble(x[3]), point(x[1], x[4]), point(x[2], x[5]))
+                        : new PlanRide(x[0], x[1], x[2], Double.parseDouble(x[3]));
                 legs.add((r.walk() ? "Walk: " : "Ride " + x[0] + ": ") + x[1] + " > " + x[2] + " (" + x[3] + " km)");
                 rides.add(r);
             }

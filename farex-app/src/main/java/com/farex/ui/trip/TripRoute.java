@@ -81,6 +81,12 @@ public class TripRoute {
     //   02 Board at Philcoa               Commonwealth–SM Fairview jeepney to Batasan Rd · 6.2 km
     //   03 Transfer at Batasan Rd         ... jeepney to SM City Fairview · 5.9 km
     //   04 Arrive at Pinned destination   Walk 180 m · 1 transfer · 12.5 km in total
+    // A boarding point that is no stop: "the roadside near X", or right at a pinned start
+    static boolean flagged(String place) {
+        TripPlace start = TripState.getStart();
+        return place.startsWith("the roadside near ") || (start != null && start.isPin() && place.equals(start.getName()));
+    }
+
     public static TripRoute fromPlan(Api.PlanCard plan) {
         List<Leg> legs = new ArrayList<>();
         List<Api.PlanRide> rides = plan.rides();
@@ -95,8 +101,10 @@ public class TripRoute {
             }
             String name = TripState.routeName(r.route());
             if (routeIds.isEmpty()) firstJeep = name + " jeepney";
+            // no stop there: the jeep is flagged down on its road (jeepneys stop where you wave)
+            String wave = flagged(r.from()) ? "Wait by the road and flag it down · " : "";
             legs.add(new Leg((routeIds.isEmpty() ? "Board at " : "Transfer at ") + r.from(),
-                    name + " jeepney to " + r.to() + String.format(Locale.ROOT, " · %.1f km", r.km())));
+                    wave + name + " jeepney to " + r.to() + String.format(Locale.ROOT, " · %.1f km", r.km())));
             routeIds.add(r.route());
         }
         String total = transfers(plan.transfers()) + " · " + plan.km() + " km in total";

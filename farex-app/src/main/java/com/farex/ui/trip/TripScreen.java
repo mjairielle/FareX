@@ -436,9 +436,13 @@ public class TripScreen extends StepScreen {
         Label nextDetail = fullHeight(TripUi.wrapped(""));
         Label offRouteLine = fullHeight(CommonUi.smallBold("", Theme.LIME));
         offRouteLine.setWrapText(true);
+        Label riding = fullHeight(TripUi.wrapped(""));
+        riding.setTextFill(javafx.scene.paint.Color.web("#BDBDBD"));
+        riding.setVisible(false);
+        riding.setManaged(false);
         offRouteLine.setVisible(false);
         offRouteLine.setManaged(false);
-        VBox nextStep = CommonUi.panel(TripUi.eyebrow("NEXT"), nextTitle, nextDetail, offRouteLine);
+        VBox nextStep = CommonUi.panel(TripUi.eyebrow("NEXT"), nextTitle, nextDetail, riding, offRouteLine);
         nextStep.setSpacing(6);
 
         Label detour = CommonUi.small("Simulate a detour ›", Theme.LIME);
@@ -468,13 +472,23 @@ public class TripScreen extends StepScreen {
                 detour.setOnMouseClicked(e -> tracker.simulateDetour());
             }
             tracker.start((at, s) -> {
-                if (map[0] != null) map[0].showMe(at, s.offRoute());
+                if (map[0] != null) {
+                    map[0].showRiding(s.arrived() ? null : tracker.jeepAt(s));   // that jeep's whole route, faint
+                    map[0].showMe(at, s.offRoute());
+                }
+                String jeep = s.arrived() ? null : tracker.jeepAt(s);
+                String headed = jeep == null ? null : tracker.headedTo(jeep);
+                riding.setText(jeep == null || headed == null ? ""
+                        : (tracker.progress().legAt(s.doneKm()).walk() ? "Your jeep, " : "You’re on ")
+                          + jeep + ", headed to " + headed + ". Its whole route is the dashed line.");
+                riding.setVisible(!riding.getText().isEmpty());
+                riding.setManaged(riding.isVisible());
                 done.setText(String.format("%.1f of %.1f km", s.doneKm(), s.totalKm()));
                 fill.setMaxWidth(bar.getWidth() * s.fraction());
                 fill.setPrefWidth(bar.getWidth() * s.fraction());
                 left.setText(s.arrived() ? "You’re there" : "About " + s.minutesLeft() + " min left · estimate");
                 nextTitle.setText(checkpointTitle(tracker, s.next()));
-                nextDetail.setText(checkpointDetail(s));
+                nextDetail.setText(checkpointDetail(s, tracker.progress().legAt(s.doneKm()).walk()));
                 offRouteLine.setText(String.format("You’re about %,d m from the route.", Math.round(s.offRouteMeters())));
                 offRouteLine.setVisible(s.offRoute());
                 offRouteLine.setManaged(s.offRoute());
@@ -521,14 +535,16 @@ public class TripScreen extends StepScreen {
         };
     }
 
-    private static String checkpointDetail(farex.shared.plan.TripProgress.Status s) {
+    // walkingNow: on a walk leg (the last one: arriving on foot, nobody to say "para" to)
+    private static String checkpointDetail(farex.shared.plan.TripProgress.Status s, boolean walkingNow) {
         farex.shared.plan.TripProgress.Checkpoint c = s.next();
         String in = s.toNextKm() < 0.05 ? "Now" : String.format("In %.1f km", s.toNextKm());
         return switch (c.kind()) {
             case BOARD, TRANSFER -> in + " · " + TripState.routeName(c.route())
-                    + ". Check the signboard and confirm your stop with the driver.";
+                    + (TripRoute.flagged(c.stop()) ? ". No stop here: wait by the road and wave the jeep down."
+                                                   : ". Check the signboard before you get on.");
             case WALK -> in + " · on foot";
-            case ALIGHT -> in + " · tell the driver “para” before your stop";
+            case ALIGHT -> in + (walkingNow ? " · on foot" : " · tell the driver “para” before your stop");
         };
     }
 
