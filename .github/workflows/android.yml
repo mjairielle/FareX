@@ -23,8 +23,13 @@ jobs:
           curl -sSL -o graalvm.tar.gz https://github.com/gluonhq/graal/releases/download/gluon-23+25.1-dev-2409082136/graalvm-java23-linux-amd64-gluon-23+25.1-dev.tar.gz
           mkdir -p "$HOME/graalvm" && tar -xzf graalvm.tar.gz -C "$HOME/graalvm" --strip-components=1 && rm graalvm.tar.gz
           echo "GRAALVM_HOME=$HOME/graalvm" >> "$GITHUB_ENV"
-          echo "JAVA_HOME=$HOME/graalvm" >> "$GITHUB_ENV"
-          echo "$HOME/graalvm/bin" >> "$GITHUB_PATH"
+
+      # Maven and the Android packaging (Gradle) run on a normal Java 21, like on a laptop;
+      # only the native step uses GRAALVM_HOME
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
 
       - name: Libraries Gluon's native build links against
         run: |
@@ -54,6 +59,14 @@ jobs:
 
       - name: Build the APK
         run: bash build-android.sh
+
+      - name: Show Gluon's logs (only when the build failed)
+        if: failure()
+        run: |
+          for f in farex-app/target/gluonfx/log/*.log farex-app/target/gluonfx/aarch64-android/gvm/log/*.log; do
+            [ -f "$f" ] || continue
+            echo "===== $f"; tail -n 80 "$f"
+          done
 
       - name: Upload the APK
         uses: actions/upload-artifact@v4
