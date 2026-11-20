@@ -1,0 +1,23 @@
+# ----- Secrets and live data, never commit -----
+.env
+data/*
+!data/routes.csv
+!data/stops.csv
+!data/route_km.csv
+!data/route_shapes.csv
+!data/route_names.csv
+!data/stops_km.csv
+
+# ----- Build output -----
+target/
+build-server/
+.gluonfx/
+*.class
+*.jar
+*.log
+
+# ----- Editors -----
+.idea/
+*.iml
+.vscode/
+tempCodeRunnerFile.*

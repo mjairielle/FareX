@@ -1,0 +1,29 @@
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: farex-server
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - PORT=8080
+      - DATA_DIR=/app/data
+      # No default secrets. Put real values in .env (copy .env.example). Compose stops with a message if one is missing.
+      - DEV=${DEV:-0}
+      - FAKE_PAY=${FAKE_PAY:-0}
+      - CARD_KEY=${CARD_KEY:?Set CARD_KEY in .env}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env, 8 or more characters}
+      - PAYMONGO_SECRET=${PAYMONGO_SECRET:-}
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - ./data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O - http://localhost:8080/fares/current || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s

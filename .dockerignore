@@ -1,0 +1,27 @@
+# Secrets and live data never go into the image
+.env
+data/users.csv
+data/cards.csv
+data/ledger.csv
+
+# Git and IDE
+.git
+.gitignore
+.idea
+.vscode
+*.log
+
+# Build outputs
+target/
+**/target/
+build-server/
+
+# Client GUI sources (not needed for server image)
+farex-app/src/
+farex-app/target/
+farex-app/data/
+farex-app/runPom.xml
+
+# Scripts and docs
+*.bat
+flowcharts/
