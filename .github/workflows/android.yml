@@ -57,8 +57,10 @@ jobs:
             echo "No CARTO_API_KEY secret: the APK shows OpenStreetMap tiles"
           fi
 
+      # GitHub's machine has its own Android SDK in ANDROID_SDK_ROOT/ANDROID_HOME; Gluon uses the one it
+      # downloads, and Gradle refuses to build when the two disagree, so hide the machine's for this step
       - name: Build the APK
-        run: bash build-android.sh
+        run: env -u ANDROID_SDK_ROOT -u ANDROID_HOME bash build-android.sh
 
       - name: Show Gluon's logs (only when the build failed)
         if: failure()
