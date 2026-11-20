@@ -1,0 +1,63 @@
+# Builds the FareX Android APK on GitHub's Linux machines (Gluon cannot build Android on Windows).
+#
+# Run it: GitHub -> Actions -> "Android APK" -> Run workflow. About 30 minutes the first time.
+# Get it: open the finished run -> Artifacts -> FareX-apk (a zip holding farex-app.apk).
+#
+# CARTO map key: add it once as a repository secret named CARTO_API_KEY
+# (Settings -> Secrets and variables -> Actions -> New repository secret; needs repo admin).
+# Without it the APK still works and shows OpenStreetMap tiles (see VoyagerTiles.java).
+name: Android APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gluon GraalVM 23 (the one build-android.sh needs)
+        run: |
+          curl -sSL -o graalvm.tar.gz https://github.com/gluonhq/graal/releases/download/gluon-23+25.1-dev-2409082136/graalvm-java23-linux-amd64-gluon-23+25.1-dev.tar.gz
+          mkdir -p "$HOME/graalvm" && tar -xzf graalvm.tar.gz -C "$HOME/graalvm" --strip-components=1 && rm graalvm.tar.gz
+          echo "GRAALVM_HOME=$HOME/graalvm" >> "$GITHUB_ENV"
+          echo "JAVA_HOME=$HOME/graalvm" >> "$GITHUB_ENV"
+          echo "$HOME/graalvm/bin" >> "$GITHUB_PATH"
+
+      - name: Libraries Gluon's native build links against
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q libasound2-dev libavcodec-dev libavformat-dev libavutil-dev libgl-dev \
+            libgtk-3-dev libpango1.0-dev libxtst-dev
+
+      - name: Cache Maven downloads and Gluon's Android SDK/NDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gluon
+          key: farex-android-${{ hashFiles('**/pom.xml') }}
+          restore-keys: farex-android-
+
+      - name: CARTO key (from the repository secret, if set)
+        env:
+          CARTO_API_KEY: ${{ secrets.CARTO_API_KEY }}
+        run: |
+          if [ -n "$CARTO_API_KEY" ]; then
+            printf '%s\n' "$CARTO_API_KEY" > farex-app/src/main/resources/com/farex/ui/common/carto.key
+            echo "CARTO key added: the APK shows CARTO Voyager tiles"
+          else
+            echo "No CARTO_API_KEY secret: the APK shows OpenStreetMap tiles"
+          fi
+
+      - name: Build the APK
+        run: bash build-android.sh
+
+      - name: Upload the APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FareX-apk
+          path: farex-app/target/gluonfx/aarch64-android/gvm/farex-app.apk
+          if-no-files-found: error
