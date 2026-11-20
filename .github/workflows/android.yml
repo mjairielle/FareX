@@ -6,10 +6,17 @@
 # CARTO map key: add it once as a repository secret named CARTO_API_KEY
 # (Settings -> Secrets and variables -> Actions -> New repository secret; needs repo admin).
 # Without it the APK still works and shows OpenStreetMap tiles (see VoyagerTiles.java).
+# No admin? Type the key into the "CARTO key" box when running the workflow instead. Note: in a
+# public repo that box's value can be seen on the run's page; the secret stays hidden.
 name: Android APK
 
 on:
   workflow_dispatch:
+    inputs:
+      carto_key:
+        description: 'CARTO key (optional; used only if the CARTO_API_KEY secret is not set)'
+        required: false
+        default: ''
 
 jobs:
   apk:
@@ -46,10 +53,11 @@ jobs:
           key: farex-android-${{ hashFiles('**/pom.xml') }}
           restore-keys: farex-android-
 
-      - name: CARTO key (from the repository secret, if set)
+      - name: CARTO key (the repository secret, else the key typed when running)
         env:
-          CARTO_API_KEY: ${{ secrets.CARTO_API_KEY }}
+          CARTO_API_KEY: ${{ secrets.CARTO_API_KEY || inputs.carto_key }}
         run: |
+          [ -n "$CARTO_API_KEY" ] && echo "::add-mask::$CARTO_API_KEY"
           if [ -n "$CARTO_API_KEY" ]; then
             printf '%s\n' "$CARTO_API_KEY" > farex-app/src/main/resources/com/farex/ui/common/carto.key
             echo "CARTO key added: the APK shows CARTO Voyager tiles"
