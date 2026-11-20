@@ -18,6 +18,7 @@ import javafx.scene.web.WebView;
 import com.farex.Api;
 import farex.shared.data.RouteShapes;
 import farex.shared.data.RouteStop;
+import farex.shared.plan.TripProgress;
 
 // A real map: OpenStreetMap streets drawn by Leaflet (resources/com/farex/ui/map/leaflet.html)
 // inside a WebView, with FareX routes and a planned trip on top. Same sizes as MapView, so it
@@ -55,6 +56,8 @@ public class LeafletMap extends StackPane {
     private String focusRoute;
     private List<TripLeg> trip = new ArrayList<>();
     private RouteStop pin;                                          // a picked point, or null
+    private RouteShapes.Point me;                                   // tracked position, or null
+    private boolean meOffRoute;
 
     // Map taps reach Java as the page's status text "farex-pick:lat,lng" (see farexTap in the page).
     // Not a Java object handed to JavaScript: getting `window` back from executeScript crashes the
@@ -152,6 +155,42 @@ public class LeafletMap extends StackPane {
             if (stops.size() >= 2) legs.add(new TripLeg(r.route(), stops));
         }
         return legs;
+    }
+
+    // A planned trip as TripProgress legs: each ride along the jeep's road path, each walk as a
+    // straight line. Fetches the network from the server on first use (call off the FX thread).
+    // Empty if a leg cannot be placed (e.g. a stop no route has any more).
+    public static List<TripProgress.Ride> progressLegs(List<Api.PlanRide> rides, Map<String, RouteStop> points) {
+        Network n = network();
+        List<TripProgress.Ride> out = new ArrayList<>();
+        for (Api.PlanRide r : rides) {
+            List<RouteShapes.Point> path;
+            if (r.walk()) {
+                RouteStop a = find(n.routes(), points, r.from()), b = find(n.routes(), points, r.to());
+                if (a == null || b == null) return List.of();
+                path = List.of(point(a), point(b));
+            } else {
+                List<RouteStop> line = n.routes().get(r.route());
+                int a = line == null ? -1 : indexOf(line, r.from()), b = line == null ? -1 : indexOf(line, r.to());
+                if (a < 0 || b < 0 || a == b) return List.of();
+                path = roadPath(n.shapes().getOrDefault(r.route(), Map.of()), line, a, b);
+            }
+            out.add(new TripProgress.Ride(r.route(), r.from(), r.to(), path));
+        }
+        return out;
+    }
+
+    // "You are here" while a trip is tracked: a blue dot (red when off route); the map pans to keep it
+    // in view without re-fitting the whole trip. null hides it.
+    public void showMe(RouteShapes.Point at, boolean offRoute) {
+        me = at;
+        meOffRoute = offRoute;
+        if (ready) run(meScript());
+    }
+
+    private String meScript() {
+        return me == null ? "farexMe(null); true"
+                : String.format(Locale.ROOT, "farexMe(%.6f,%.6f,%b); true", me.lat(), me.lng(), meOffRoute);
     }
 
     // A stop by name on any route, or one of the extra named points
@@ -266,6 +305,10 @@ public class LeafletMap extends StackPane {
     private void redraw() {
         if (!ready) return;
         run("farexDraw(" + json() + "); true");
+        if (me != null) {                // a redraw re-fits to the trip: back to following the dot
+            run("farexMe(null); true");
+            run(meScript());
+        }
     }
 
     // Every script must end in a value. executeScript on a script that evaluates to
@@ -312,7 +355,11 @@ public class LeafletMap extends StackPane {
     // backwards uses the same roads reversed - close enough for a map, though a one-way street
     // would really send the jeep another way. A segment with no road path is a straight line.
     private List<RouteShapes.Point> roadPath(String routeId, List<RouteStop> line, int a, int b) {
-        Map<Integer, List<RouteShapes.Point>> segs = shapes.getOrDefault(routeId, Map.of());
+        return roadPath(shapes.getOrDefault(routeId, Map.of()), line, a, b);
+    }
+
+    private static List<RouteShapes.Point> roadPath(Map<Integer, List<RouteShapes.Point>> segs,
+                                                    List<RouteStop> line, int a, int b) {
         List<RouteShapes.Point> out = new ArrayList<>();
         int step = a <= b ? 1 : -1;
         for (int i = a; i != b; i += step) {

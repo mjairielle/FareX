@@ -400,14 +400,140 @@ public class TripScreen extends StepScreen {
                 }));
     }
 
-    // ----- 15: the (simulated) trip in progress -----
+    // ----- 15: the trip in progress -----
 
     // History is forgotten: from here the back arrow asks "End this trip?"
     private void startTracking() {
+        if (TripState.getRoute().getRides().isEmpty()) {     // offline sample route: nothing to follow
+            restartAt(this::previewTrackingStep);
+            return;
+        }
         restartAt(this::trackingStep);
     }
 
+    // Live: position fixes (phone GPS, or a simulated ride on desktop) move a dot along the route;
+    // progress, next step and time left follow it. Off route -> warning; at the end -> arrived.
     private void trackingStep() {
+        tracking = true;
+        Label status = fullHeight(TripUi.wrapped("Getting your route ready…"));
+
+        LeafletMap[] map = new LeafletMap[1];
+        // Progress bar: a lime fill over a dark track, as wide as the share of the trip done
+        Region fill = new Region();
+        fill.setBackground(Theme.rounded(Theme.LIME, 3));
+        fill.setMaxWidth(0);
+        StackPane bar = new StackPane(fill);
+        bar.setAlignment(Pos.CENTER_LEFT);
+        bar.setMinHeight(6);
+        bar.setMaxHeight(6);
+        bar.setBackground(Theme.rounded(javafx.scene.paint.Color.web("#3A3A3A"), 3));
+        Label done = TripUi.bold("0.0 of " + TripState.getRoute().getStats().split(" · ")[0], 15);
+        Label left = CommonUi.small("", Theme.WHITE);
+        VBox progressCard = CommonUi.panel(done, bar, left);
+        progressCard.setSpacing(6);
+
+        Label nextTitle = fullHeight(TripUi.bold("Starting…", 14));
+        Label nextDetail = fullHeight(TripUi.wrapped(""));
+        Label offRouteLine = fullHeight(CommonUi.smallBold("", Theme.LIME));
+        offRouteLine.setWrapText(true);
+        offRouteLine.setVisible(false);
+        offRouteLine.setManaged(false);
+        VBox nextStep = CommonUi.panel(TripUi.eyebrow("NEXT"), nextTitle, nextDetail, offRouteLine);
+        nextStep.setSpacing(6);
+
+        Label detour = CommonUi.small("Simulate a detour ›", Theme.LIME);
+        detour.setCursor(Cursor.HAND);
+        detour.setVisible(false);
+        detour.setManaged(false);
+
+        body.getChildren().addAll(
+                new VBox(6, CommonUi.title("Your trip is underway"), CommonUi.subtitle(TripState.summary()), status),
+                TripUi.mapCard(130, "You in blue · your route in lime", m -> map[0] = m),
+                progressCard,
+                nextStep,
+                detour,
+                CommonUi.spacer(),
+                CommonUi.limeButton("I’ve arrived", this::finishTrip),
+                CommonUi.link("End trip", TripDialogs::endTrip));
+
+        boolean[] warned = {false};
+        TripTracker.prepare(TripState.getRoute().getRides(), TripUi.pinnedPoints(), tracker -> {
+            status.setText(tracker.simulated()
+                    ? "No GPS on this device: a simulated ride along your route at "
+                            + LocationSource.SimulatedRide.SPEEDUP + "× speed."
+                    : "Live location from your phone’s GPS. Tracking stops when the trip ends.");
+            if (tracker.simulated()) {
+                detour.setVisible(true);
+                detour.setManaged(true);
+                detour.setOnMouseClicked(e -> tracker.simulateDetour());
+            }
+            tracker.start((at, s) -> {
+                if (map[0] != null) map[0].showMe(at, s.offRoute());
+                done.setText(String.format("%.1f of %.1f km", s.doneKm(), s.totalKm()));
+                fill.setMaxWidth(bar.getWidth() * s.fraction());
+                fill.setPrefWidth(bar.getWidth() * s.fraction());
+                left.setText(s.arrived() ? "You’re there" : "About " + s.minutesLeft() + " min left · estimate");
+                nextTitle.setText(checkpointTitle(tracker, s.next()));
+                nextDetail.setText(checkpointDetail(s));
+                offRouteLine.setText(String.format("You’re about %,d m from the route.", Math.round(s.offRouteMeters())));
+                offRouteLine.setVisible(s.offRoute());
+                offRouteLine.setManaged(s.offRoute());
+                if (s.offRoute() && !warned[0]) {                 // once per detour, not on every fix
+                    warned[0] = true;
+                    TripDialogs.offRoute(() -> {                   // replan from the same places
+                        TripTracker.stopCurrent();
+                        restartAt(this::plannerStep);
+                    });
+                } else if (!s.offRoute()) {
+                    warned[0] = false;
+                }
+                if (s.arrived()) finishTrip();
+            });
+        }, problem -> status.setText(problem));
+    }
+
+    // A wrapping label that keeps its full height instead of being cut to "…" when space is tight
+    private static Label fullHeight(Label label) {
+        label.setWrapText(true);
+        label.setMinHeight(Region.USE_PREF_SIZE);
+        return label;
+    }
+
+    private void finishTrip() {
+        TripTracker.stopCurrent();
+        tracking = false;
+        TripDialogs.arrived(() -> {
+            TripState.clear();
+            restartAt(this::plannerStep);
+        });
+    }
+
+    // "Walk to Philcoa" / "Board 102-B at Philcoa" / "Transfer to 111-B at Atherton Street" / "Get off at …"
+    private static String checkpointTitle(TripTracker tracker, farex.shared.plan.TripProgress.Checkpoint c) {
+        return switch (c.kind()) {
+            case WALK -> "Walk to " + c.stop();
+            case BOARD -> "Board " + c.route() + " at " + c.stop();
+            case TRANSFER -> "Transfer to " + c.route() + " at " + c.stop();
+            case ALIGHT -> {
+                List<farex.shared.plan.TripProgress.Ride> legs = tracker.progress().legs();
+                yield (legs.get(legs.size() - 1).walk() ? "Arrive at " : "Get off at ") + c.stop();
+            }
+        };
+    }
+
+    private static String checkpointDetail(farex.shared.plan.TripProgress.Status s) {
+        farex.shared.plan.TripProgress.Checkpoint c = s.next();
+        String in = s.toNextKm() < 0.05 ? "Now" : String.format("In %.1f km", s.toNextKm());
+        return switch (c.kind()) {
+            case BOARD, TRANSFER -> in + " · " + TripState.routeName(c.route())
+                    + ". Check the signboard and confirm your stop with the driver.";
+            case WALK -> in + " · on foot";
+            case ALIGHT -> in + " · tell the driver “para” before your stop";
+        };
+    }
+
+    // Offline sample route (no map data): the old preview, clearly labelled as simulated
+    private void previewTrackingStep() {
         tracking = true;
         TripRoute route = TripState.getRoute();
 

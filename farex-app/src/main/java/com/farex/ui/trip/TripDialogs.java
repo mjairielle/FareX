@@ -128,8 +128,7 @@ public final class TripDialogs {
         new PopupDialog(new CheckRing(70, Theme.DARK), "You’ve arrived!",
                 "Thanks for riding with FareX. Location tracking is now off.")
                 .add(lime(TripState.summary()),
-                        CommonUi.subtitle("Route estimates are not an actual payment or recorded travel time. "
-                                + "This journey is a preview."))
+                        CommonUi.subtitle("Fares here are estimates. You pay when you tap your card on the jeep."))
                 .button("Plan another trip", planAnother)
                 .link("Back to Routes", () -> TripScreen.leaveTo("routes"))
                 .show();
