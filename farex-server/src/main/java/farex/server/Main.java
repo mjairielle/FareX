@@ -278,6 +278,12 @@ public final class Main {
         return out.append(waiting).toString();
     }
 
+    static String backToApp(String title, String text) {
+        return "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
+                + "<title>FareX</title></head><body style=\"font-family:system-ui,sans-serif;background:#111;color:#eee;text-align:center;padding:48px 20px\">"
+                + "<h1 style=\"color:#c6ff3d\">" + title + "</h1><p>" + text + "</p></body></html>";
+    }
+
     static double num(Map<String, String> p, String k) {
         try { return Double.parseDouble(req(p, k)); } catch (NumberFormatException e) { throw new IllegalArgumentException(k + " must be a number"); }
     }
@@ -680,6 +686,9 @@ public final class Main {
         });
 
         route(s, "/admin", "GET", null, (u, p) -> AdminPage.HTML);
+        // Where PayMongo sends the browser after checkout (PUBLIC_URL + /paid or /cancelled)
+        route(s, "/paid", "GET", null, (u, p) -> backToApp("Payment received", "Go back to the FareX app and tap Fetch Load to add it to your card."));
+        route(s, "/cancelled", "GET", null, (u, p) -> backToApp("Payment cancelled", "Nothing was charged. Go back to the FareX app to try again."));
 
         route(s, "/admin/api/users", "GET", "ADMIN", (u, p) -> {
             StringBuilder b = new StringBuilder();
