@@ -15,8 +15,9 @@ import java.util.regex.*;
 
 /** The only class that talks to the server. Screens call this, never HTTP. Money is long centavos. */
 public final class Api {
-    /** Phone must use the laptop IP here, e.g. http://192.168.1.5:8080 . Login screen can change it. */
-    public static String base = System.getProperty("farex.server", "http://localhost:8080");
+    /** Server address. The login screen can change it (e.g. a laptop at http://192.168.1.5:8080). */
+    public static String base = System.getProperty("farex.server",
+            com.gluonhq.attach.util.Platform.isDesktop() ? "http://localhost:8080" : "https://farex-r3w1.onrender.com");   // phones: the Render server
     private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(java.time.Duration.ofSeconds(10)).build();
     private static String token;
 
@@ -27,7 +28,7 @@ public final class Api {
 
     private static String call(String method, String path, String body) {
         try {
-            HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(base + path)).timeout(java.time.Duration.ofSeconds(20))
+            HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(base + path)).timeout(java.time.Duration.ofSeconds(75))   // Render's free server takes up to a minute to wake
                     .method(method, body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(body));
             if (token != null) b.header("Authorization", "Bearer " + token);
             HttpResponse<String> r = HTTP.send(b.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
