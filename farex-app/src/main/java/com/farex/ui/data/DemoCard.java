@@ -47,8 +47,20 @@ public class DemoCard {
         return expiry;
     }
 
+    // Demo cards are "00" + 8 digits ("00 6767 6767"); live cards are just the 8 printed digits ("2727 2727")
     public String getFormattedNumber() {
-        return cardNumber.substring(0, 2) + " " + cardNumber.substring(2, 6) + " " + cardNumber.substring(6);
+        if (cardNumber.length() == 10) {
+            return cardNumber.substring(0, 2) + " " + cardNumber.substring(2, 6) + " " + cardNumber.substring(6);
+        }
+        if (cardNumber.length() == 8) {
+            return cardNumber.substring(0, 4) + " " + cardNumber.substring(4);
+        }
+        return cardNumber;
+    }
+
+    // The 8 digits printed on the card, what the user types: "0067676767" -> "67676767", "27272727" -> "27272727"
+    public String getLast8() {
+        return cardNumber.length() > 8 ? cardNumber.substring(cardNumber.length() - 8) : cardNumber;
     }
 
     // "0067676767" -> "6767"

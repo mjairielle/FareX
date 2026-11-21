@@ -68,7 +68,7 @@ public class LoadCardStep extends VBox {
         numberField.setOnDigitsChanged(digits -> {
             errorLabel.setVisible(false);
             for (CardChoiceTile tile : tiles) {
-                tile.setSelected(tile.getCard().getCardNumber().equals("00" + digits));
+                tile.setSelected(tile.getCard().getLast8().equals(digits));
             }
         });
 
@@ -77,7 +77,7 @@ public class LoadCardStep extends VBox {
         // Coming back from the next step: keep the card that was picked
         DemoCard picked = BuyLoadState.getCard();
         if (picked != null) {
-            numberField.setDigits(picked.getCardNumber().substring(2));
+            numberField.setDigits(picked.getLast8());
         }
         Platform.runLater(numberField::focusField);
     }
@@ -93,8 +93,8 @@ public class LoadCardStep extends VBox {
         List<DemoCard> cards = (account == null) ? new ArrayList<>() : account.getCards();
         for (int i = 0; i < cards.size(); i++) {
             CardChoiceTile tile = new CardChoiceTile(cards.get(i));
-            // "0067676767" -> type "67676767"; the field formats it and the listener selects the tile
-            tile.setOnMouseClicked(e -> numberField.setDigits(tile.getCard().getCardNumber().substring(2)));
+            // "0067676767" (demo) or "67676767" (live) -> type "67676767"; the field formats it and the listener selects the tile
+            tile.setOnMouseClicked(e -> numberField.setDigits(tile.getCard().getLast8()));
             tiles.add(tile);
             grid.add(tile, i % 2, i / 2);   // card 0 -> (0,0), 1 -> (1,0), 2 -> (0,1) ...
         }
@@ -114,7 +114,7 @@ public class LoadCardStep extends VBox {
             return;
         }
         for (CardChoiceTile tile : tiles) {
-            if (tile.getCard().getCardNumber().equals(numberField.getFullNumber())) {
+            if (tile.getCard().getLast8().equals(numberField.getDigits())) {
                 BuyLoadState.setCard(tile.getCard());
                 onDone.run();
                 return;

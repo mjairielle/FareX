@@ -64,7 +64,7 @@ public class AddCardView extends SubScreen {
 
         String fullNumber = numberField.getFullNumber();   // "00" + 8 digits
         for (DemoCard existing : account.getCards()) {
-            if (existing.getCardNumber().equals(fullNumber)) {
+            if (existing.getLast8().equals(numberField.getDigits())) {     // demo "00..." or live 8-digit numbers
                 showError("This card is already added.");
                 return;
             }

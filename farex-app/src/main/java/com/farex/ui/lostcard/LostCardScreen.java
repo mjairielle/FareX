@@ -225,7 +225,8 @@ public class LostCardScreen extends StepScreen {
             // Back from the review: keep the number typed before
             String saved = LostCardState.getNewCardNumber();
             if (!saved.isEmpty()) {
-                numberField.setDigits(saved.substring(2));
+                // demo numbers are "00" + 8 digits, live ones just the 8 digits
+                numberField.setDigits(saved.length() > 8 ? saved.substring(saved.length() - 8) : saved);
             }
             refresh();
 
