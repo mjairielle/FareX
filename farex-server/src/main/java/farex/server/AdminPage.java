@@ -223,6 +223,38 @@ const views = {
       i === 0 ? u[5] : i === 1 ? u[1] : i === 2 ? u[2] : i === 3 ? statusBadge(u[6]) : statusButton(u, 'Retire', 'Vehicles'))));
   }},
 
+  Cards: { sub: 'Every linked card and its balance. Load cash: take the money at the counter, then add it here.', async render(v) {
+    const data = rows(await api('GET', '/admin/api/cards'));
+    const q = el('input', null, { placeholder: 'Search card ID, name or email', value: cardsFilter });
+    const count = el('div', null, { className: 'sub' }), holder = el('div');
+    const load = async (uid, who) => {
+      const amount = prompt('Cash received for card ' + uid + (who ? ' (' + who + ')' : '') + ', in pesos (5 to 5,000):');
+      if (amount === null) return;
+      const c = Math.round(Number(amount.replace(',', '')) * 100);
+      if (!(c >= 500 && c <= 500000)) throw new Error('Enter an amount from 5 to 5,000 pesos.');
+      if (!confirm('Add ' + peso(c) + ' to card ' + uid + '? Only do this after receiving the cash.')) return;
+      const r = JSON.parse(await api('POST', '/admin/api/load', { uid, cents: c }));
+      say('Loaded ' + peso(c) + ' to card ' + uid + '. New balance ' + peso(r.cents) + '.', true);
+      show('Cards');
+    };
+    const draw = () => {
+      cardsFilter = q.value;
+      const term = q.value.trim().toLowerCase();
+      const shown = data.filter(r => !term || (r[0] + ' ' + r[1] + ' ' + r[2]).toLowerCase().includes(term));
+      count.textContent = 'Showing ' + shown.length + ' of ' + data.length + ' cards';
+      holder.textContent = '';
+      holder.appendChild(table([['Card ID'], ['Owner'], ['Balance', 'num'], ['Status'], ['']], shown, (r, i) =>
+        i === 0 ? r[0] : i === 1 ? kids(el('div'), el('div', r[1]), el('div', r[2], { className: 'sub', style: 'margin:0;font-size:12px' }))
+        : i === 2 ? peso(r[3]) : i === 3 ? (r[4] === 'true' ? badge('frozen', 'b-suspended') : badge('active', 'b-active'))
+        : (r[4] === 'true' ? '' : btn('Load cash', () => load(r[0], r[1])))));
+    };
+    q.oninput = draw;
+    v.appendChild(card(null, q, count, holder));
+    draw();
+    const uid = el('input', null, { placeholder: 'Card ID (printed on the card or shown in the app)' });
+    v.appendChild(card('Load a card by its ID', uid, btn('Load cash', () => load(uid.value.trim(), ''))));
+  }},
+
   Routes: { sub: 'Jeepney routes from OpenStreetMap. Click a route to see its stops.', async render(v) {
     const data = rows(await api('GET', '/admin/api/routes'));
     const q = el('input', null, { placeholder: 'Search route, name or stop' });
@@ -278,6 +310,7 @@ const views = {
   }}
 };
 const usersFilter = { q: '', role: '', status: '' };
+let cardsFilter = '';
 
 async function show(name) {
   current = name;

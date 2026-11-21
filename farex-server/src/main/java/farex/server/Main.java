@@ -758,6 +758,25 @@ public final class Main {
             rewards.addPromotion(req(p, "name"), Double.parseDouble(req(p, "multiplier")), from.atStartOfDay().toInstant(ZoneOffset.UTC), to.plusDays(1).atStartOfDay().minusSeconds(1).toInstant(ZoneOffset.UTC));
             return json("ok", "1");
         });
+        // Cards for the admin's Cards page: "uid|owner name|owner email|balance cents|frozen" per line
+        route(s, "/admin/api/cards", "GET", "ADMIN", (u, p) -> {
+            StringBuilder b = new StringBuilder();
+            for (String uid : store.allCards()) {
+                User owner = store.findUser(store.ownerOf(uid)).orElse(null);
+                b.append(String.join("|", clean(uid), owner == null ? "?" : clean(owner.getName()), owner == null ? "" : clean(owner.getEmail()),
+                        String.valueOf(store.balance(uid)), String.valueOf(store.isCardFrozen(uid)))).append('\n');
+            }
+            return b.toString();
+        });
+        // Cash load at the counter: the admin takes the money and adds it to the card (same ledger and limits as an
+        // app load: P5 to P5,000, not on a frozen card). Shows as "Cash at admin" in the rider's history.
+        route(s, "/admin/api/load", "POST", "ADMIN", (u, p) -> {
+            String uid = req(p, "uid").trim();
+            String owner = store.ownerOf(uid);
+            if (owner == null) throw new IllegalArgumentException("No account has this card yet. The rider adds it in the app first.");
+            store.load(uid, owner, cents(p), "Cash at admin");
+            return json("uid", uid, "cents", String.valueOf(store.balance(uid)));
+        });
         route(s, "/admin/summary", "GET", "ADMIN", (u, p) -> json("summary", store.summary()));
         route(s, "/admin/api/stats", "GET", "ADMIN", (u, p) -> stats((int) num(p, "days")));
 

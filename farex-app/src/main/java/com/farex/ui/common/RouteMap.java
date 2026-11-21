@@ -554,9 +554,10 @@ public class RouteMap extends StackPane {
                 return;
             }
             line(g, routePath(id), focused ? LIME : color, focused ? 6 : (many ? 2.5 : 4), hasTrip ? 0.15 : (dim ? 0.3 : 0.85));
-            if (hasTrip && many) return;                            // a trip shown: the rest is faint context, no dots
-            double r = focused ? 6 : (many ? 2.5 : 4);
-            for (RouteStop s : stops) dot(g, s.lat(), s.lng(), r, INK, 1, focused ? LIME : color, dim ? 0.35 : 1);
+            // Stop dots only on the route you picked: on the overview, every stop of every route is
+            // thousands of dots, cluttered and slow to draw on a phone
+            if (!focused) return;
+            for (RouteStop s : stops) dot(g, s.lat(), s.lng(), 6, INK, 1, LIME, 1);
         }
 
         // A polyline, skipping points under 1.5 px apart: zoomed out, the whole network is tens of

@@ -29,3 +29,6 @@ farex-app/pom.xml.desktop
 farex-app/src/main/resources/com/farex/ui/common/carto.key
 
 carto.key
+
+# Generated code-graph output (graphify): local only, not project code
+graphify-out/
