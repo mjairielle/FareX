@@ -218,13 +218,16 @@ public class HomeView extends ScrollPane {
     private Node actionTiles() {
         return new HBox(12,
                 actionTile("icon_view_cards", "View All Cards", "allCards"),
-                actionTile("icon_fetch_load", "Fetch Load", "fetchLoad"));
+                actionTile("icon_fetch_load", "Fetch Load", "fetchLoad"),
+                actionTile("icon_op_qr", "Scan to Pay", "scanPay"));
     }
 
     private Node actionTile(String iconName, String text, String target) {
         Label label = new Label(text);
         label.setTextFill(Theme.WHITE);
         label.setFont(Theme.bold(13));
+        label.setWrapText(true);                                 // three tiles on a narrow phone: "View All / Cards"
+        label.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
 
         VBox tile = new VBox(10, Icons.view(iconName, 42), label);
         tile.setAlignment(Pos.CENTER);

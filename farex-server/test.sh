@@ -68,6 +68,24 @@ ok "$(curl -s -X POST $B/admin/api/user/delete -d id=$CY -H "$(H $MT)" | j ok)" 
 ok "$(code $B/cards -H "$(H $CT)")" 401 "Cy's phone is logged out"
 ok "$(curl -s -X POST $B/login -d "email=cy@m.com&password=password1" | j error)" "Wrong email or password" "Cy can no longer log in"
 ok "$(curl -s -X POST $B/admin/api/user/delete -d id=a1 -H "$(H $MT)" | j error)" "Cannot delete an admin" "admin account cannot be deleted"
+# ----- QR pay: the rider scans Ben's jeep QR; first scan boards, second pays -----
+qr(){ curl -s -X POST $B/qr/pay -d "qr=$1&uid=$2" -H "$(H $AT)"; }
+ok "$(qr FAREX:JEEP:o1 0067676767 | j error)" "This jeepney is not on a shift" "QR refused before the shift starts"
+curl -s -X POST $B/operator/stop -d "stop=0" -H "$(H $OT)" >/dev/null
+ok "$(code -X POST $B/operator/stop -d "stop=0" -H "$(H $AT)")" 403 "only an operator sets the jeep's stop"
+ok "$(qr hello 0067676767 | j error)" "Not a FareX jeepney QR" "random QR refused"
+ok "$(qr FAREX:JEEP:nobody 0067676767 | j error)" "Unknown jeepney QR" "unknown jeep refused"
+ok "$(qr FAREX:JEEP:o1 11112222 | j error)" "Card is not yours" "cannot pay with another's card"
+QI=$(qr FAREX:JEEP:o1 0067676767)
+ok "$(echo $QI | j action)|$(echo $QI | j stop)" "in|$(curl -s $B/stops -H "$(H $AT)" | head -1 | cut -d, -f1)" "first scan boards at the jeep's stop"
+ok "$(curl -s $B/operator/boarded -H "$(H $OT)" | grep -c 0067676767)" 1 "operator sees the rider on board"
+curl -s -X POST $B/operator/stop -d "stop=3" -H "$(H $OT)" >/dev/null
+QO=$(qr FAREX:JEEP:o1 0067676767)
+ok "$(echo $QO | j action)" out "second scan gets off"
+[ "$(echo $QO | j fare)" -gt 0 ] && echo "PASS fare charged by QR: $(echo $QO | j fare) centavos" || { echo "FAIL no QR fare: $QO"; FAIL=1; }
+curl -s -X POST $B/operator/stop -d "stop=-1" -H "$(H $OT)" >/dev/null
+ok "$(qr FAREX:JEEP:o1 0067676767 | j error)" "This jeepney is not on a shift" "QR refused after the shift ends"
+
 # ----- Buy Load: only a payment PayMongo confirmed shows in Fetch Load -----
 PS=$(curl -s -X POST $B/load/start -d "uid=0067676767&cents=20000&method=GCash" -H "$(H $AT)" | j sessionId)
 ok "$(curl -s $B/load/paid -H "$(H $AT)" | grep -c "^$PS,0067676767,20000,GCash$")" 1 "paid load is listed for Fetch Load, with its method"

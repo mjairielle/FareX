@@ -94,6 +94,7 @@ public class FarexApp extends Application {
         Navigator.register("buyLoad", BuyLoadScreen::new);            // from Home, the whole flow
         Navigator.register("allCards", AllCardsView::new);
         Navigator.register("fetchLoad", FetchLoadState::start);           // from Home, the whole flow
+        Navigator.register("scanPay", com.farex.ui.home.ScanPayView::new);       // from Home: pay a jeepney by its QR
         Navigator.register("transactions", () -> {   // the main screen, opened on its Transactions tab
             MainShell shell = new MainShell();
             shell.showTab(2);

@@ -215,6 +215,7 @@ public final class OperatorState {
         shift.end();
         gps.setAutoDriving(false);
         gpsClock.stop();
+        syncStop(-1);   // QR scans are refused until the next shift
     }
 
     // "1h 05m" or "12m"
@@ -349,7 +350,28 @@ public final class OperatorState {
         return String.format(Locale.US, "±%.1fm", accuracyMeters);
     }
 
+    // Live: the server needs the jeep's stop for passengers' QR scans. Sent when it changes (checked every second,
+    // so Next Stop, Auto Drive and Fix GPS are all covered); a failed send is retried on the next tick.
+    private static volatile int sentStop = -2;
+
+    private static void syncStop(int stop) {
+        if (!MockData.isLive() || stop == sentStop) {
+            return;
+        }
+        sentStop = stop;
+        Thread t = new Thread(() -> {
+            try {
+                Api.setJeepStop(stop);
+            } catch (Api.ApiException offline) {
+                sentStop = -2;
+            }
+        }, "farex-jeep-stop");
+        t.setDaemon(true);
+        t.start();
+    }
+
     private static void onGpsTick() {
+        syncStop(gps.getCurrentStopIdx());
         boolean moved = gps.tick();
         if (moved && isAtTerminal()) {
             gps.setAutoDriving(false);

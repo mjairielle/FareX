@@ -153,6 +153,11 @@ public final class MockData {
         return liveUser instanceof Operator o ? o.getVehiclePlate() : null;
     }
 
+    /** What the jeep's QR holds: "FAREX:JEEP:" + the live operator's id ("o1", the sample jeep, in mock mode). */
+    public static String jeepQr() {
+        return "FAREX:JEEP:" + (liveUser instanceof Operator o ? o.getId() : "o1");
+    }
+
     /** Makes the server token act as this role. Returns null when done, else why not. */
     public static String useRole(String role) {
         if (!isLive() || role.equals(currentRole())) {

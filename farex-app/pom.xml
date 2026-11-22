@@ -89,6 +89,18 @@
             <artifactId>position</artifactId>
             <version>${attach.version}</version>
         </dependency>
+        <dependency>
+            <!-- phone camera QR scanner: a passenger scans the jeepney's QR to pay (ui/home/ScanPayView) -->
+            <groupId>com.gluonhq.attach</groupId>
+            <artifactId>barcode-scan</artifactId>
+            <version>${attach.version}</version>
+        </dependency>
+        <dependency>
+            <!-- draws the jeepney's QR in Ready Mode (encoder only, plain Java) -->
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
     </dependencies>
 
     <!-- The NFC reader's Android-side classes (src/android/java). GluonFX only adds Android code found in a jar
@@ -151,6 +163,7 @@
                         <list>position</list>   <!-- phone GPS for trip tracking -->
                         <list>keyboard</list>
                         <list>browser</list>
+                        <list>barcode-scan</list>   <!-- QR pay: camera scanner -->
                     </attachList>
                     <appIdentifier>com.farex.app</appIdentifier>
                     <resourcesList>

@@ -4,6 +4,9 @@
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.NFC"/>
     <uses-feature android:name="android.hardware.nfc" android:required="false"/>
+    <!-- Scan to Pay reads the jeepney QR with the camera (Attach barcode-scan adds CAMERA and its scanner screen) -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
 
     <!-- usesCleartextTraffic: the defense server runs on a laptop as plain http://192.168.x.x:8080 -->
     <!-- NfcBridge: the card reader (src/android/java, built by build-android.sh) -->

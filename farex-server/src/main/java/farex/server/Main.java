@@ -389,13 +389,19 @@ public final class Main {
         if (u.role().equals("PASSENGER") && !u.getId().equals(store.ownerOf(uid))) throw new IllegalArgumentException("Card is not yours");
     }
 
+    static final String JEEP_QR = "FAREX:JEEP:";                     // + operator id: what the jeep's QR holds
+    static final Map<String, Integer> jeepStop = new ConcurrentHashMap<>();   // operator id -> stop the jeep is at, while on shift
+
     static TapDesk desk(User op) { return desks.computeIfAbsent(op.getId(), id -> new TapDesk(store, id)); }
 
     /** Finishing a trip also earns reward points. Trip id is the txn uuid, so a retry cannot earn twice. */
-    static String tapResult(Txn t, TapDesk d) {
+    static String tapResult(Txn t, TapDesk d, String... extra) {
         String[] row = t.toRow();
         long pts = rewards.earn(t.getAccountId(), row[0], Double.parseDouble(row[9]), Instant.now());
-        return json("describe", t.describe(), "balance", String.valueOf(t.getBalanceAfter()), "onBoard", String.valueOf(d.onBoard()), "points", String.valueOf(pts), "fare", String.valueOf(t.getAmount()));
+        List<String> kv = new ArrayList<>(List.of("describe", t.describe(), "balance", String.valueOf(t.getBalanceAfter()), "onBoard", String.valueOf(d.onBoard()),
+                "points", String.valueOf(pts), "fare", String.valueOf(t.getAmount())));
+        kv.addAll(List.of(extra));
+        return json(kv.toArray(new String[0]));
     }
 
     public static void main(String[] a) throws Exception {
@@ -795,6 +801,34 @@ public final class Main {
         });
         route(s, "/tap/out", "POST", "OPERATOR", (u, p) -> tapResult(desk(u).tapOut(req(p, "uid"), Integer.parseInt(req(p, "stop"))), desk(u)));
         route(s, "/tap/missed", "POST", "OPERATOR", (u, p) -> tapResult(desk(u).missedTapOut(req(p, "uid")), desk(u)));
+        // The operator's phone tells where the jeep is (each stop change); -1 = shift over, QR scans are refused
+        route(s, "/operator/stop", "POST", "OPERATOR", (u, p) -> {
+            int stop = Integer.parseInt(req(p, "stop"));
+            if (stop < 0) jeepStop.remove(u.getId());
+            else if (stop >= desk(u).stops().size()) throw new IllegalArgumentException("Invalid stop index");
+            else jeepStop.put(u.getId(), stop);
+            return json("ok", "1");
+        });
+        // QR pay: the passenger scans the jeep's QR ("FAREX:JEEP:<operatorId>") with one of their cards.
+        // First scan boards at the jeep's current stop, the next one gets off there and pays, like a card tap in and out.
+        // The stop comes from the operator's phone, never from the QR, so an old photo of the QR cannot fake a shorter ride.
+        route(s, "/qr/pay", "POST", "PASSENGER", (u, p) -> {
+            String qr = req(p, "qr").trim();
+            if (!qr.startsWith(JEEP_QR)) throw new IllegalArgumentException("Not a FareX jeepney QR");
+            User op = store.findUser(qr.substring(JEEP_QR.length())).filter(x -> x.role().equals("OPERATOR"))
+                    .orElseThrow(() -> new IllegalArgumentException("Unknown jeepney QR"));
+            if (suspended(op.getId())) throw new IllegalStateException("This jeepney cannot take fares right now");
+            Integer stop = jeepStop.get(op.getId());
+            if (stop == null) throw new IllegalStateException("This jeepney is not on a shift");
+            String uid = desk(op).resolveCard(req(p, "uid"));
+            mayUse(u, uid);
+            if (suspended(u.getId())) throw new IllegalStateException("Card owner account is suspended");
+            String plate = op instanceof Operator o ? o.getVehiclePlate() : "";
+            if (desk(op).boardedPassengers().stream().anyMatch(b -> b.cardUid().equals(uid)))
+                return tapResult(desk(op).tapOut(uid, stop), desk(op), "action", "out", "plate", plate, "stop", desk(op).stops().get(stop).name());
+            TapDesk.BoardedInfo info = desk(op).tapIn(uid, stop);
+            return json("action", "in", "plate", plate, "stop", info.stopName(), "uid", info.cardUid(), "balance", String.valueOf(store.balance(uid)));
+        });
         route(s, "/operator/boarded", "GET", "OPERATOR", (u, p) -> {
             StringBuilder b = new StringBuilder();
             for (TapDesk.BoardedInfo info : desk(u).boardedPassengers()) {

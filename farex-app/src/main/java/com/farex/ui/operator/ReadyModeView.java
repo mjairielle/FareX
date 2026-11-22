@@ -23,6 +23,7 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
 import javafx.scene.text.Font;
 
+import com.farex.ui.data.MockData;
 import com.farex.ui.common.CommonUi;
 import com.farex.ui.common.Icons;
 import com.farex.ui.common.CardTaps;
@@ -142,9 +143,9 @@ public class ReadyModeView extends StackPane {
 
         VBox card = OperatorUi.card(
                 TripUi.bold("App users: scan to board", 15),
-                new JeepneyQr(150),
+                new JeepneyQr(170, MockData.jeepQr()),
                 nfc,
-                CommonUi.small("FAREX:JEEPNEY:" + OperatorState.plate(), Theme.GRAY));
+                CommonUi.small(OperatorState.plate() + " · " + MockData.jeepQr(), Theme.GRAY));   // the text: laptops paste it in Scan to Pay
         card.setAlignment(Pos.TOP_CENTER);
         card.setSpacing(10);
         card.setPadding(new Insets(14, 14, 12, 14));

@@ -397,6 +397,15 @@ public final class Api {
     /** Returns {description, newBalanceCents, onBoard, pointsEarned}. */
     public static String[] tapOut(String uid, int stop) { return tapResult(call("POST", "/tap/out", form("uid", uid, "stop", String.valueOf(stop)))); }
 
+    /** Tells the server where the jeep is, so a passenger's QR scan boards or alights there. -1 = shift over. */
+    public static void setJeepStop(int stop) { call("POST", "/operator/stop", form("stop", String.valueOf(stop))); }
+
+    /** QR pay with one of my cards. Returns {action "in" or "out", stop name, plate, fare cents ("" when boarding), balance cents}. */
+    public static String[] qrPay(String qr, String uid) {
+        String r = call("POST", "/qr/pay", form("qr", qr, "uid", uid));
+        return new String[]{field(r, "action", ""), field(r, "stop", ""), field(r, "plate", ""), field(r, "fare", ""), field(r, "balance", "0")};
+    }
+
     public static String[] tapMissed(String uid) { return tapResult(call("POST", "/tap/missed", form("uid", uid))); }
 
     private static String[] tapResult(String r) { return new String[]{field(r, "describe", ""), field(r, "balance", "0"), field(r, "onBoard", "0"), field(r, "points", "0"), field(r, "fare", "0")}; }
