@@ -269,12 +269,15 @@ public class HomeView extends ScrollPane {
         Label unit = new Label("xPress Points");
         unit.setTextFill(Theme.LIME);
         unit.setFont(Theme.bold(12));
-        HBox topLine = new HBox(6, amount, unit);
+        // Flow + wrapping: on a narrow screen "xPress Points" and the sentence go onto the next line, not "25…"
+        javafx.scene.layout.FlowPane topLine = new javafx.scene.layout.FlowPane(6, 0, amount, unit);
         topLine.setAlignment(Pos.BASELINE_LEFT);
+        topLine.setPrefWrapLength(120);
 
         Label sub = new Label("Equivalent to \u20B1" + pointsText + " transit credit");
         sub.setTextFill(Theme.GRAY);
         sub.setFont(Font.font(Theme.FONT, 11));
+        sub.setWrapText(true);
 
         VBox text = new VBox(2, topLine, sub);
         HBox.setHgrow(text, Priority.ALWAYS);

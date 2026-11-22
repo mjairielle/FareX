@@ -2,6 +2,7 @@ package com.farex.ui.auth;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Group;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Pane;
@@ -58,18 +59,26 @@ public class CongratsView extends VBox {
         roads.setPrefSize(300, 90);
         roads.setMinSize(300, 90);
         roads.setMaxSize(300, 90);
+        // drawn for 300 px: scaled down on a narrower screen (the Group takes the scaled size), never up
+        Group scaled = new Group(roads);
+        widthProperty().addListener((o, was, w) -> {
+            double s = Math.min(1, (w.doubleValue() - getInsets().getLeft() - getInsets().getRight()) / 300);
+            roads.setScaleX(s);
+            roads.setScaleY(s);
+        });
         roads.getChildren().addAll(
                 road(10, 30, 90, 0, 130, 80, 290, 35),
                 road(30, 60, 120, 30, 170, 95, 270, 70));
 
         CheckRing icon = new CheckRing(90, Color.TRANSPARENT);
 
-        StackPane art = new StackPane(roads, icon);
+        StackPane art = new StackPane(scaled, icon);
         StackPane.setAlignment(icon, Pos.TOP_CENTER);
-        StackPane.setAlignment(roads, Pos.BOTTOM_CENTER);
+        StackPane.setAlignment(scaled, Pos.BOTTOM_CENTER);
         art.setMinHeight(150);
         art.setPrefHeight(150);
         art.setMaxWidth(300);
+        art.setMinWidth(0);                        // the roads scale down to fit (see the width listener)
         return art;
     }
 

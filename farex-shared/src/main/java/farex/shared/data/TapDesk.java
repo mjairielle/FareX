@@ -75,7 +75,8 @@ public class TapDesk {
         String cardUid = resolveCard(rawUid);
         BoardedInfo info = boarded.get(cardUid);
         if (info == null) throw new IllegalStateException("Card is not tapped in");
-        if (stopIdx <= info.stopIdx()) throw new IllegalStateException("Alight stop must be after board stop");
+        // Same stop (got on and off without riding, or changed their mind): 0 km, so the base fare
+        if (stopIdx < info.stopIdx()) throw new IllegalStateException("Alight stop must not be before board stop");
         return charge(cardUid, Fares.pathKm(stops, info.stopIdx(), stopIdx), ruleOf(cardUid));
     }
 

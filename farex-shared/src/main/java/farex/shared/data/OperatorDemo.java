@@ -41,13 +41,8 @@ public class OperatorDemo {
             System.out.println("Double tap-in successfully prevented: " + e.getMessage());
         }
 
-        // 4. Invalid Alight Stop (cannot alight at or before boarding stop)
-        try {
-            desk.tapOut(cardUid, 0);
-            assert false : "alight at same stop must throw";
-        } catch (IllegalStateException e) {
-            System.out.println("Alight at same stop prevented: " + e.getMessage());
-        }
+        // 4. Alighting at the boarding stop is allowed and pays the base fare (OperatorTest covers it);
+        //    alighting before it is refused.
 
         // 5. Successful Tap Out with Student Discount
         long beforeBal = store.balance(cardUid);

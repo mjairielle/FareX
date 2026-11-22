@@ -63,6 +63,8 @@ public class AccountTypeView extends StackPane {
         // "FareX" partly hidden by the panel and back arrow
         Text outlinedName = new Text("FareX");
         outlinedName.setFont(Theme.bold(112));
+        // A Text never shrinks: at 112 pt it is 326 px wide, wider than a narrow screen. Size it to the screen instead.
+        widthProperty().addListener((o, was, w) -> outlinedName.setFont(Theme.bold(Math.min(112, w.doubleValue() * 0.3))));
         outlinedName.setFill(Color.TRANSPARENT);
         outlinedName.setStroke(Theme.BLACK);
         outlinedName.setStrokeWidth(2);

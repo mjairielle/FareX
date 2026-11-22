@@ -159,4 +159,12 @@ FR=$(curl -s $B/admin/api/fares -H "$(H $MT)" | grep "^2020-01-01|")
 ok "$(curl -s $B/admin/api/fares -H "$(H $MT)" | head -1 | cut -d'|' -f2)" 1500 "published fare is in use"
 ok "$(curl -s -X POST $B/admin/api/fares/delete -d "effective=2020-01-01&published=$(echo $FR | cut -d'|' -f4)" -H "$(H $MT)" | j ok)" 1 "admin deletes a fare table"
 ok "$(curl -s $B/admin/api/fares -H "$(H $MT)" | head -1 | cut -d'|' -f2)" 1400 "back to the built-in fare"
+
+# ----- Getting off where you got on: the base fare (0 km), not an error -----
+curl -s -X POST $B/tap/in -d "uid=0067676767&stop=2" -H "$(H $OT)" >/dev/null
+SS=$(curl -s -X POST $B/tap/out -d "uid=0067676767&stop=2" -H "$(H $OT)")
+[ "$(echo $SS | j fare)" -gt 0 ] 2>/dev/null && echo "PASS same stop pays the base fare: $(echo $SS | j describe)" || { echo "FAIL same stop: $SS"; FAIL=1; }
+curl -s -X POST $B/tap/in -d "uid=0067676767&stop=3" -H "$(H $OT)" >/dev/null
+ok "$(curl -s -X POST $B/tap/out -d "uid=0067676767&stop=1" -H "$(H $OT)" | j error)" "Alight stop must not be before board stop" "getting off before boarding refused"
+curl -s -X POST $B/tap/out -d "uid=0067676767&stop=3" -H "$(H $OT)" >/dev/null
 exit $FAIL

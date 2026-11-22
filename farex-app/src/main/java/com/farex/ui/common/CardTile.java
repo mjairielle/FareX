@@ -1,6 +1,7 @@
 package com.farex.ui.common;
 
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
@@ -26,10 +27,16 @@ import javafx.scene.text.FontWeight;
 
 import com.farex.ui.data.DemoCard;
 
-public class CardTile extends StackPane {
+// The card is drawn at its design size (W x H) and scaled to the width it is given, keeping its shape:
+// a fixed 320 px card left a gap on wide screens and pushed the page off the edge on narrow ones
+// (Android's display size setting changes how many px wide the screen is).
+public class CardTile extends Region {
 
     private static final double W = 320;
     private static final double H = 190;
+    private static final double MAX_W = 520;   // tablets: not a giant card
+
+    private final StackPane face = new StackPane();
     private static final double ARC = 36;
 
     // Text nudges in pixels. A bigger number moves that text further down.
@@ -48,17 +55,36 @@ public class CardTile extends StackPane {
 
     // showBalance = false -> plain card with the FareX logo instead of the balance
     public CardTile(DemoCard card, boolean showBalance) {
-        setMinSize(W, H);
-        setPrefSize(W, H);
-        setMaxSize(W, H);
+        face.setMinSize(W, H);
+        face.setPrefSize(W, H);
+        face.setMaxSize(W, H);
 
         // Keep everything (glows, lines) inside the rounded corners
         Rectangle clip = new Rectangle(W, H);
         clip.setArcWidth(ARC);
         clip.setArcHeight(ARC);
-        setClip(clip);
+        face.setClip(clip);
 
-        getChildren().addAll(backgroundLayer(showBalance), textLayer(card, showBalance));
+        face.getChildren().addAll(backgroundLayer(showBalance), textLayer(card, showBalance));
+        getChildren().add(face);
+        setMaxWidth(MAX_W);
+    }
+
+    // ----- Sizing: any width, height follows (W : H) -----
+
+    @Override public Orientation getContentBias() { return Orientation.HORIZONTAL; }
+    @Override protected double computeMinWidth(double h) { return 200; }
+    @Override protected double computePrefWidth(double h) { return W; }
+    @Override protected double computePrefHeight(double w) { return w < 0 ? H : H * Math.min(w, MAX_W) / W; }
+    @Override protected double computeMinHeight(double w) { return computePrefHeight(w); }
+    @Override protected double computeMaxHeight(double w) { return computePrefHeight(w); }
+
+    @Override
+    protected void layoutChildren() {
+        double s = Math.min(getWidth(), MAX_W) / W;
+        face.resizeRelocate((getWidth() - W) / 2, (getHeight() - H) / 2, W, H);   // scaled around its centre
+        face.setScaleX(s);
+        face.setScaleY(s);
     }
 
     // Background

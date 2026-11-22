@@ -47,9 +47,19 @@ public class OperatorTest {
 
     @Test
     void testInvalidAlightStop() {
-        desk.tapIn(cardUid, 1);
+        desk.tapIn(cardUid, 2);
         IllegalStateException ex = assertThrows(IllegalStateException.class, () -> desk.tapOut(cardUid, 1));
-        assertTrue(ex.getMessage().contains("must be after board stop"));
+        assertTrue(ex.getMessage().contains("must not be before board stop"));
+    }
+
+    @Test
+    void testSameStopPaysBaseFare() {
+        desk.tapIn(cardUid, 1);
+        long before = store.balance(cardUid);
+        Txn txn = desk.tapOut(cardUid, 1);
+        assertEquals(before - store.balance(cardUid), txn.getAmount());
+        farex.shared.user.Passenger ana = (farex.shared.user.Passenger) store.findUser(store.ownerOf(cardUid)).orElseThrow();
+        assertEquals(farex.shared.fare.Fares.fare(0, ana.getFareRule()), txn.getAmount(), "0 km: the base fare, with the rider's discount");
     }
 
     @Test
