@@ -129,8 +129,11 @@ public class ReadyModeView extends StackPane {
         Label title = TripUi.bold("Ready for passengers", 15);
         title.setWrapText(false);
         title.setMinWidth(Region.USE_PREF_SIZE);
-        Label route = CommonUi.small("Philcoa — Fairview", Theme.WHITE);
+        Label route = CommonUi.small(OperatorState.routeName(), Theme.WHITE);
         route.setFont(Font.font(Theme.FONT, 10));
+        route.setWrapText(true);                                  // long names, e.g. "Commonwealth–SM Fairview via Regalado (to SM City Fairview)"
+        route.setTextAlignment(javafx.scene.text.TextAlignment.RIGHT);
+        route.setMaxWidth(190);
         return spread(title, route);
     }
 

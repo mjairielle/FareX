@@ -9,6 +9,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.TextAlignment;
 
 import com.farex.ui.common.CommonUi;
+import com.farex.ui.common.RoutePicker;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.SubScreen;
 import com.farex.ui.common.Theme;
@@ -48,15 +49,17 @@ public class OperatorIntroView extends SubScreen {
         } else {
             TextField plate = new TextField();
             Theme.inputField(plate, "Jeepney plate, e.g. ABC-123");
+            RoutePicker route = new RoutePicker();
             Label error = CommonUi.small("", Theme.ERROR);
             error.setWrapText(true);
             body.getChildren().addAll(
-                    CommonUi.note("This account is for riding only. Add your jeepney to become an operator. "
+                    CommonUi.note("This account is for riding only. Add your jeepney and its route to become an operator. "
                             + "An admin approves it before you can switch."),
-                    plate, error, CommonUi.spacer(),
+                    plate, route, error, CommonUi.spacer(),
                     CommonUi.limeButton("Become an operator", () -> {
                         String why = plate.getText().isBlank() ? "Enter your jeepney plate."
-                                : MockData.addRole("OPERATOR", plate.getText().trim());
+                                : route.hasRoutes() && route.routeId().isEmpty() ? "Choose the route your jeepney runs."
+                                : MockData.addRole("OPERATOR", plate.getText().trim(), route.routeId());
                         if (why != null) {
                             error.setText(why);
                         } else {

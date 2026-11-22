@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Random;
 
+import javafx.application.Platform;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -34,7 +35,8 @@ import com.farex.ui.data.MockData;
 public final class OperatorState {
 
     public static final String PLATE = "ABC-123";
-    public static final String ROUTE_NAME = "Philcoa - Fairview Terminal";
+    // The route the jeep runs: the sample line, or (live) the one this operator chose, which the admin can change
+    private static String routeName = "Philcoa - Fairview Terminal";
     public static final int CAPACITY = 22;
 
     private static boolean operatorMode = false;
@@ -102,6 +104,30 @@ public final class OperatorState {
 
     public static void enter() {
         operatorMode = true;
+        loadRoute();
+    }
+
+    public static String routeName() {
+        return routeName;
+    }
+
+    // Live: the stops of this operator's route from the server (/operator/route), loaded when Operator Mode opens.
+    // Not during a shift, so a running trip keeps its stops; a route the admin changed applies from the next shift.
+    // Offline: the stops already loaded stay.
+    static void loadRoute() {
+        if (!MockData.isLive() || shift.isOnShift()) {
+            return;
+        }
+        try {
+            Api.OperatorRoute r = Api.operatorRoute();
+            if (r.stops().size() >= 2) {
+                gps.setRouteStops(r.stops());
+                gps.setCurrentStopIdx(0);
+                routeName = r.name();
+            }
+        } catch (Api.ApiException offline) {
+            // keep the stops we have
+        }
     }
 
     public static void leave() {
@@ -197,6 +223,7 @@ public final class OperatorState {
 
     // START SHIFT: new totals, jeep back at the first stop
     public static void startShift() {
+        loadRoute();                       // a route the admin changed since Operator Mode opened
         shift.start();
         cardCents = 0;
         appCents = 0;
@@ -272,8 +299,8 @@ public final class OperatorState {
         if (record.isMaxFare()) {
             maxFareCount++;
         }
-        if (MockData.isLive() && !record.isApp()) {
-            record.markSynced();   // the server charged it already: nothing to upload
+        if (MockData.isLive()) {
+            record.markSynced();   // the server charged it already (card tap or a passenger's QR scan): nothing to upload
         } else {
             offlineQueue.enqueue(toRow(record));
         }
@@ -370,8 +397,35 @@ public final class OperatorState {
         t.start();
     }
 
+    // Live: every 5 s on shift, ask the server about passengers who paid by QR (see TapTerminal.mergeServer)
+    private static int ticks;
+    private static volatile boolean polling;
+
+    private static void pollQrRiders() {
+        if (!MockData.isLive() || polling || ++ticks % 5 != 0) {
+            return;
+        }
+        polling = true;
+        Thread t = new Thread(() -> {
+            try {
+                Object[] server = TapTerminal.fetchServer();
+                Platform.runLater(() -> {
+                    polling = false;
+                    if (shift.isOnShift() && TapTerminal.mergeServer(server) && gpsListener != null) {
+                        gpsListener.run();
+                    }
+                });
+            } catch (Api.ApiException offline) {
+                polling = false;
+            }
+        }, "farex-qr-riders");
+        t.setDaemon(true);
+        t.start();
+    }
+
     private static void onGpsTick() {
         syncStop(gps.getCurrentStopIdx());
+        pollQrRiders();
         boolean moved = gps.tick();
         if (moved && isAtTerminal()) {
             gps.setAutoDriving(false);

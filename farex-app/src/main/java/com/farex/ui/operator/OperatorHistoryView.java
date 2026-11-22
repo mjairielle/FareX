@@ -80,7 +80,7 @@ public class OperatorHistoryView extends ScrollPane {
                 OperatorUi.money(OperatorState.collectedCents(), 34),
                 TripUi.bold("Shift Fares & Earnings", 16),
                 CommonUi.small("Fare transactions collected on vehicle " + OperatorState.plate(), Theme.WHITE),
-                CommonUi.small("Route: Philcoa - Fairview", Theme.WHITE));
+                CommonUi.small("Route: " + OperatorState.routeName(), Theme.WHITE));
         card.setSpacing(4);
         card.setPadding(new Insets(16, 14, 16, 14));
         return card;

@@ -4,6 +4,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
 import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.control.Label;
@@ -48,8 +49,26 @@ public class ScanPayView extends SubScreen {
 
         Optional<BarcodeScanService> scanner = BarcodeScanService.create();
         if (scanner.isPresent()) {
+            // asyncScan + the result property: the blocking scan() only works on the UI thread (it runs a nested
+            // event loop), and called from another thread it returned nothing while the camera was still open.
+            // asyncScan clears the result first, so scanning the same jeep again (to get off) still fires.
+            ChangeListener<String> onCode = (obs, old, code) -> {
+                if (code != null && !code.isBlank()) {
+                    pay(code);
+                }
+            };
+            scanner.get().resultProperty().addListener(onCode);
+            sceneProperty().addListener((obs, was, now) -> {
+                if (now == null) {
+                    scanner.get().resultProperty().removeListener(onCode);   // left the screen: no stray payments
+                }
+            });
             body.getChildren().addAll(status, CommonUi.spacer(),
-                    CommonUi.limeButton("Scan QR", () -> scan(scanner.get())));
+                    CommonUi.limeButton("Scan QR", () -> {
+                        if (!busy) {
+                            scanner.get().asyncScan("Scan the jeepney QR", "Point the camera at the QR on the operator's phone", "");
+                        }
+                    }));
         } else {
             TextField pasted = new TextField();
             Theme.inputField(pasted, "FAREX:JEEP:...");
@@ -76,19 +95,6 @@ public class ScanPayView extends SubScreen {
         cardPanel.getChildren().setAll(CommonUi.panel(
                 CommonUi.row("Pay with", change),
                 CommonUi.row("xPress " + CommonUi.masked(card), CommonUi.peso(card.getBalance()))));
-    }
-
-    // The camera blocks until a code is read or the rider backs out, so off the UI thread
-    private void scan(BarcodeScanService scanner) {
-        if (busy) {
-            return;
-        }
-        Thread t = new Thread(() -> {
-            Optional<String> code = scanner.scan("Scan the jeepney QR", "Point the camera at the QR on the operator's phone", "");
-            Platform.runLater(() -> code.ifPresent(this::pay));
-        }, "farex-qr-scan");
-        t.setDaemon(true);
-        t.start();
     }
 
     private void pay(String qr) {

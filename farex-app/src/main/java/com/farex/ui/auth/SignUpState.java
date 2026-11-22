@@ -4,6 +4,7 @@ import javafx.scene.control.TextField;
 
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.PopupDialog;
+import com.farex.ui.common.RoutePicker;
 import com.farex.ui.common.Theme;
 import com.farex.ui.common.WarningDialog;
 import com.farex.ui.data.MockData;
@@ -36,20 +37,36 @@ public final class SignUpState {
         }
         TextField plate = new TextField();
         Theme.inputField(plate, "e.g. ABC-123");
-        new PopupDialog("Jeepney plate", "Which jeepney do you drive? An admin approves new operators before the first login.")
-                .add(plate)
-                .button("Create Account", () -> send("OPERATOR", plate.getText().trim()))
+        RoutePicker route = new RoutePicker();
+        new PopupDialog("Jeepney plate and route", "Which jeepney do you drive, and on which route? "
+                + "An admin approves new operators before the first login.")
+                .add(plate, route)
+                .button("Create Account", () -> {
+                    if (route.hasRoutes() && route.routeId().isEmpty()) {
+                        failed("Choose the route your jeepney runs.");
+                    } else {
+                        send("OPERATOR", plate.getText().trim(), route.routeId());
+                    }
+                })
                 .show();
     }
 
     private static void send(String serverRole, String plate) {
-        String error = MockData.registerOnServer(serverRole.isEmpty() ? "PASSENGER" : serverRole, plate);
+        send(serverRole, plate, "");
+    }
+
+    private static void send(String serverRole, String plate, String route) {
+        String error = MockData.registerOnServer(serverRole.isEmpty() ? "PASSENGER" : serverRole, plate, route);
         if (error == null) {
             Navigator.go("congrats");
         } else {
-            new PopupDialog(WarningDialog.warningIcon(), "Couldn't create account", error)
-                    .button("OK", () -> { })
-                    .show();
+            failed(error);
         }
+    }
+
+    private static void failed(String why) {
+        new PopupDialog(WarningDialog.warningIcon(), "Couldn't create account", why)
+                .button("OK", () -> { })
+                .show();
     }
 }

@@ -124,7 +124,7 @@ function editor(title, fields, save) {
   box.classList.add('editor'); box.style.borderColor = 'var(--lime)';
   fields.forEach(([label, key, value, kind]) => {
     let i;
-    if (Array.isArray(kind)) { i = el('select'); kind.forEach(o => i.appendChild(el('option', o))); }
+    if (Array.isArray(kind)) { i = el('select'); kind.forEach(o => i.appendChild(Array.isArray(o) ? el('option', o[1], { value: o[0] }) : el('option', o))); }
     else if (kind === 'area') i = el('textarea', null, { rows: 8 });
     else i = el('input', null, { type: kind || 'text' });
     i.value = value === undefined || value === null ? '' : value;
@@ -165,15 +165,24 @@ async function routeEditor(id) {
   });
 }
 
+// Every route as [id, "id · name"] for a route drop-down; "" first = no route (the operator runs the default stops)
+let routeNames = null;
+async function routeOptions() {
+  if (!routeNames) routeNames = rows(await api('GET', '/admin/api/routes')).map(r => [r[0], r[2] && r[2] !== r[0] ? r[0] + ' · ' + r[2] : r[0]]);
+  return [['', 'No route (default stops)'], ...routeNames];
+}
+const routeLabel = id => !id ? 'Default stops' : ((routeNames || []).find(r => r[0] === id) || [id, id])[1];
+
 // Add or edit an account. u = a row of /admin/api/users, or null for a new account.
-function userEditor(u, role) {
+async function userEditor(u, role) {
+  const routes = await routeOptions();
   if (!u) return editor(role === 'OPERATOR' ? 'Add a vehicle (operator account)' : 'Add an account', [
       ['Name', 'name'], ['Email', 'email'], ['Password (8+ characters)', 'password', '', 'password'],
       ['Role', 'role', role || 'PASSENGER', ['PASSENGER', 'OPERATOR']], ['Discount (passengers)', 'type', 'REGULAR', ['REGULAR', 'STUDENT', 'SENIOR', 'PWD']],
-      ['Plate (operators)', 'plate']],
+      ['Plate (operators)', 'plate'], ['Route (operators)', 'route', '', routes]],
     async f => { await api('POST', '/admin/api/user/add', f); return 'Added ' + f.name + '. They can log in now.'; });
   const fields = [['Name', 'name', u[1]], ['Email', 'email', u[2]], ['Phone (09xxxxxxxxx, blank = none)', 'phone', u[7]]];
-  if (u[3] === 'OPERATOR') fields.push(['Plate', 'plate', u[5]]);
+  if (u[3] === 'OPERATOR') fields.push(['Plate', 'plate', u[5]], ['Route', 'route', u[8] || '', routes]);
   fields.push(['New password (blank keeps it)', 'password', '', 'password']);
   editor('Edit ' + u[1], fields, async f => {
     await api('POST', '/admin/api/user/edit', Object.assign({ id: u[0] }, f));
@@ -240,7 +249,7 @@ const views = {
       card('Trips per day', legend(trips), barChart(labels, trips, n => String(n), true))));
 
     const attention = waiting.length
-      ? table([['Operator'], ['Email'], ['Plate'], ['', 'num']], waiting, (r, i) => i === 0 ? r[2] : i === 1 ? r[3] : i === 2 ? r[4]
+      ? table([['Operator'], ['Email'], ['Plate'], ['Route'], ['', 'num']], waiting, (r, i) => i === 0 ? r[2] : i === 1 ? r[3] : i === 2 ? r[4] : i === 3 ? (r[5] || 'Default stops')
           : btn('Approve', async () => { await api('POST', '/admin/api/user/status', { id: r[1], action: 'reinstate' }); say('Approved ' + r[2], true); show('Dashboard'); }))
       : el('div', 'No operators waiting. All clear.', { className: 'empty' });
     const blocked = K.suspended > 0 ? btn('See ' + K.suspended + ' blocked accounts', () => { usersFilter.status = 'suspended'; show('Users'); }, 'dark') : null;
@@ -296,11 +305,13 @@ const views = {
 
   Vehicles: { sub: 'One operator account per jeepney. Retire stops only the jeep; Delete removes it, and the owner can still ride as a passenger.', async render(v) {
     const data = rows(await api('GET', '/admin/api/users')).filter(r => r[3] === 'OPERATOR');
+    const routes = await routeOptions();
     v.appendChild(kids(el('div', null, { className: 'bar' }), btn('Add a vehicle', () => userEditor(null, 'OPERATOR'))));
-    v.appendChild(card(null, table([['Plate'], ['Operator'], ['Email'], ['Status'], ['']], data, (u, i) =>
-      i === 0 ? u[5] : i === 1 ? u[1] : i === 2 ? u[2] : i === 3 ? statusBadge(u[6])
-      : actions(btn('Edit', () => editor('Edit vehicle ' + u[5], [['Plate', 'plate', u[5]]], async f => {
-            await api('POST', '/admin/api/user/edit', { id: u[0], plate: f.plate }); return 'Plate changed to ' + f.plate + '.'; }), 'dark'),
+    v.appendChild(card(null, table([['Plate'], ['Operator'], ['Email'], ['Route'], ['Status'], ['']], data, (u, i) =>
+      i === 0 ? u[5] : i === 1 ? u[1] : i === 2 ? u[2] : i === 3 ? routeLabel(u[8]) : i === 4 ? statusBadge(u[6])
+      : actions(btn('Edit', () => editor('Edit vehicle ' + u[5], [['Plate', 'plate', u[5]], ['Route', 'route', u[8] || '', routes]], async f => {
+            await api('POST', '/admin/api/user/edit', { id: u[0], plate: f.plate, route: f.route });
+            return u[5] + ' now drives ' + routeLabel(f.route) + '.'; }), 'dark'),
           statusButton(u, 'Retire', 'Vehicles'),
           remove('Delete jeepney ' + u[5] + ' of ' + u[1] + '? If this is their only role, the whole account is deleted.',
             () => api('POST', '/admin/api/vehicle/delete', { id: u[0] }), 'Deleted jeepney ' + u[5] + '.')))));

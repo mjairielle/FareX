@@ -120,6 +120,23 @@ public class StoreTest {
     }
 
     @Test
+    void operatorKeepsTheRouteTheyChose() {
+        farex.shared.user.User op = store.register("Cy", "cy@mail.com", "password1", "OPERATOR", "", "CY-1", "311");
+        assertEquals("311", store.routeOf(op.getId()));
+        assertEquals("", store.routeOf("o1"), "older operators have none");
+        store.setPhone(op.getId(), "09171234567");
+        assertEquals("311", store.routeOf(op.getId()), "a phone change keeps the route");
+        store.setRoute(op.getId(), "310-A");
+        assertEquals("310-A", store.routeOf(op.getId()));
+        store.setRoute("o1", "311");                                   // a 7-column row grows to hold it
+        assertEquals("311", store.routeOf("o1"));
+        assertEquals("ABC-123", ((farex.shared.user.Operator) store.findUser("o1").get()).getVehiclePlate());
+        assertThrows(IllegalArgumentException.class, () -> store.setRoute("p1", "311"), "passengers have no route");
+        farex.shared.user.User rider = store.register("Di", "di@mail.com", "password1", "PASSENGER", "REGULAR", "", "311");
+        assertEquals("", store.routeOf(rider.getId()), "a passenger never stores one");
+    }
+
+    @Test
     void adminEditsRoutesFaresAndPromotions() {
         RouteBook.saveRoute(tempDir, "B1", "Lawton to SM Fairview", true,
                 java.util.List.of(new String[]{"Lawton", "14.5931", "120.9801"}, new String[]{"SM City Fairview", "14.7349", "121.0566"}));

@@ -78,8 +78,13 @@ public final class Api {
 
     /** otp = the pass from verifyOtp for this email (purpose SIGNUP). */
     public static void register(String name, String email, String pw, String role, String type, String plate, String phone, String otp) {
+        register(name, email, pw, role, type, plate, "", phone, otp);
+    }
+
+    /** route = the route id an operator drives (from routeChoices), "" for a passenger. */
+    public static void register(String name, String email, String pw, String role, String type, String plate, String route, String phone, String otp) {
         call("POST", "/register", form("name", name, "email", email, "password", pw, "role", role, "passengerType", type,
-                "plate", plate, "phone", phone, "otp", otp));
+                "plate", plate, "route", route, "phone", phone, "otp", otp));
     }
 
     /** Emails a 6-digit code. purpose SIGNUP (the given email) or LOST (the logged-in account's email). */
@@ -106,8 +111,32 @@ public final class Api {
     public static User switchRole(String role) { return user(call("POST", "/role/switch", form("role", role))); }
 
     /** Adds a role to the logged-in account. Returns "pending" (operator, admin approves) or "active". */
-    public static String addRole(String role, String plate) {
-        return field(call("POST", "/role/add", form("role", role, "plate", plate)), "status", "");
+    public static String addRole(String role, String plate) { return addRole(role, plate, ""); }
+
+    public static String addRole(String role, String plate, String route) {
+        return field(call("POST", "/role/add", form("role", role, "plate", plate, "route", route)), "status", "");
+    }
+
+    /** Routes an operator can drive, {id, "display name"}, for the route drop-down. No login needed (sign-up). */
+    public static List<String[]> routeChoices() {
+        List<String[]> out = new ArrayList<>();
+        for (RouteDetail r : routes()) out.add(new String[]{r.id(), r.name()});
+        out.sort((a, b) -> a[1].compareToIgnoreCase(b[1]));
+        return out;
+    }
+
+    /** The route this operator drives: its name, and its stops in riding order. */
+    public record OperatorRoute(String id, String name, List<StopCoord> stops) {}
+
+    public static OperatorRoute operatorRoute() {
+        List<String> raw = lines(call("GET", "/operator/route", null));
+        String[] head = raw.get(0).substring(1).split("\\|", -1);
+        List<StopCoord> stops = new ArrayList<>();
+        for (int i = 1; i < raw.size(); i++) {
+            String[] p = raw.get(i).split(",");
+            stops.add(new StopCoord(i - 1, p[0], Double.parseDouble(p[1]), Double.parseDouble(p[2])));
+        }
+        return new OperatorRoute(head[0], head.length > 1 ? head[1] : head[0], stops);
     }
 
     /** Child class chosen by role, same as the local Store did. */
@@ -408,7 +437,8 @@ public final class Api {
 
     public static String[] tapMissed(String uid) { return tapResult(call("POST", "/tap/missed", form("uid", uid))); }
 
-    private static String[] tapResult(String r) { return new String[]{field(r, "describe", ""), field(r, "balance", "0"), field(r, "onBoard", "0"), field(r, "points", "0"), field(r, "fare", "0")}; }
+    // {describe, balanceCents, onBoard, points, fareCents, ledger row id ("" from an older server)}
+    private static String[] tapResult(String r) { return new String[]{field(r, "describe", ""), field(r, "balance", "0"), field(r, "onBoard", "0"), field(r, "points", "0"), field(r, "fare", "0"), field(r, "id", "")}; }
 
     public static List<BoardedPassenger> operatorBoarded() {
         List<BoardedPassenger> out = new ArrayList<>();

@@ -109,6 +109,7 @@ public final class TapTerminal {
     // ----- Tapping -----
 
     static TapResult tap(TapRider rider) {
+        localTaps++;
         return isOnBoard(rider) ? tapOut(rider) : tapIn(rider);
     }
 
@@ -245,10 +246,75 @@ public final class TapTerminal {
         return MockData.isLive() && !rider.isApp();
     }
 
-    // Server tap result {describe, balanceCents, onBoard, points, fareCents}: card shows the new balance, returns the fare
+    // Server tap result {describe, balanceCents, onBoard, points, fareCents, id}: card shows the new balance, returns the fare
     private static long paidOnServer(TapRider rider, String[] result) {
         rider.getCard().setBalance(Long.parseLong(result[1]) / 100.0);
+        seenFares.add(result[5]);                 // recorded here already: the server sync must not add it again
         return Long.parseLong(result[4]);
+    }
+
+    // ----- QR riders (live) -----
+    // A passenger's phone scans the jeep QR and the server boards or charges them, so this phone learns of it
+    // only by asking: OperatorState polls fetchServer() off the UI thread, then mergeServer() on it.
+
+    // Server fares (ledger row ids) already shown in this shift, so each is added once
+    private static final Set<String> seenFares = new java.util.HashSet<>();
+    private static boolean faresPrimed;
+    // Taps made on this phone; a server reply fetched before one of them is out of date
+    private static volatile int localTaps;
+
+    // Network only: {riders the server has on board, this operator's fares, taps made here so far}
+    static Object[] fetchServer() {
+        int taps = localTaps;
+        return new Object[] {Api.operatorBoarded(), Api.operatorHistory(), taps};
+    }
+
+    // UI thread. QR boardings appear on board; riders who scanned off leave and their fare is added to the shift.
+    // Returns true when something changed (Ready Mode then redraws).
+    @SuppressWarnings("unchecked")
+    static boolean mergeServer(Object[] server) {
+        List<Api.BoardedPassenger> onServer = (List<Api.BoardedPassenger>) server[0];
+        List<farex.shared.txn.Txn> fares = (List<farex.shared.txn.Txn>) server[1];
+        if ((int) server[2] != localTaps) {
+            return false;                         // a tap here since the fetch: wait for the next, fresher reply
+        }
+        boolean changed = false;
+        Map<String, String> boardedAt = new java.util.HashMap<>();   // who left: where they got on, for their record
+        Set<String> ids = new java.util.HashSet<>();
+        for (Api.BoardedPassenger p : onServer) {
+            ids.add(p.uid());
+            if (!boarded.containsKey(p.uid())) {
+                TapRider rider = new TapRider(new DemoCard(p.uid(), p.name(), 0, "--/--"), "REGULAR");
+                boarded.put(p.uid(), new Boarding(rider, p.stopIdx(), p.stopName()));
+                OperatorState.addBoarded();
+                changed = true;
+            }
+        }
+        for (String uid : new ArrayList<>(boarded.keySet())) {
+            if (!ids.contains(uid)) {
+                boardedAt.put(uid, boarded.remove(uid).stopName());
+                changed = true;
+            }
+        }
+        if (!faresPrimed) {                        // fares from before this phone started watching: not this shift's news
+            fares.forEach(t -> seenFares.add(t.toRow()[0]));
+            faresPrimed = true;
+            return changed;
+        }
+        String here = OperatorState.getGps().getCurrentStop().name();
+        for (int i = fares.size() - 1; i >= 0; i--) {          // oldest first, so the newest ends on top
+            String[] r = fares.get(i).toRow();            // uuid,type,acc,card,amount,before,after,time,operator,km
+            if (!"FARE_PAYMENT".equals(r[1]) || !seenFares.add(r[0])) {
+                continue;
+            }
+            long cents = Long.parseLong(r[4]);
+            double km = Double.parseDouble(r[9]);
+            OperatorState.addFare(new ShiftRecord(true, "QR **** " + r[3].substring(Math.max(0, r[3].length() - 4)),
+                    boardedAt.getOrDefault(r[3], "QR scan"), here, km, cents, Fares.fare(km, new RegularFare()),
+                    Long.parseLong(r[6]) / 100.0, false, false));
+            changed = true;
+        }
+        return changed;
     }
 
     // Distance along the stops via Fares.pathKm: road km when the server's distances are loaded

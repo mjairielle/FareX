@@ -144,7 +144,7 @@ public class OperatorDashboardView extends StackPane {
         editRow.setAlignment(Pos.CENTER_RIGHT);
 
         Label stops = CommonUi.smallBold(OperatorState.stopCount() + " stops", Theme.LIME);
-        VBox route = new VBox(2, CommonUi.smallBold(OperatorState.ROUTE_NAME, Theme.WHITE), stops);
+        VBox route = new VBox(2, CommonUi.smallBold(OperatorState.routeName(), Theme.WHITE), stops);
         route.setAlignment(Pos.CENTER_RIGHT);
 
         VBox card = OperatorUi.card(

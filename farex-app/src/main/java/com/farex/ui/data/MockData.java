@@ -174,11 +174,15 @@ public final class MockData {
 
     /** Adds a role to the logged-in account (operator needs a plate and admin approval). Null when done, else why not. */
     public static String addRole(String role, String plate) {
+        return addRole(role, plate, "");
+    }
+
+    public static String addRole(String role, String plate, String route) {
         if (!isLive()) {
             return null;
         }
         try {
-            boolean waits = "pending".equals(Api.addRole(role, plate));
+            boolean waits = "pending".equals(Api.addRole(role, plate, route));
             roles = add(roles, role);
             if (waits) {
                 pending = add(pending, role);
@@ -341,10 +345,15 @@ public final class MockData {
      * details page's name and phone. Returns null on success, else the error.
      */
     public static String registerOnServer(String role, String plate) {
+        return registerOnServer(role, plate, "");
+    }
+
+    /** route: the route id an operator drives, "" for a passenger. */
+    public static String registerOnServer(String role, String plate, String route) {
         String email = pendingContact.trim();
         String name = pendingName.isBlank() ? email.split("@")[0] : pendingName;
         try {
-            Api.register(name, email, pendingPassword, role, "REGULAR", plate, pendingPhone, pendingOtp);
+            Api.register(name, email, pendingPassword, role, "REGULAR", plate, route, pendingPhone, pendingOtp);
             return null;
         } catch (Api.ApiException e) {
             if (DEV && e.getMessage().startsWith("Cannot reach")) {

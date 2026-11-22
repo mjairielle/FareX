@@ -86,6 +86,23 @@ ok "$(echo $QO | j action)" out "second scan gets off"
 curl -s -X POST $B/operator/stop -d "stop=-1" -H "$(H $OT)" >/dev/null
 ok "$(qr FAREX:JEEP:o1 0067676767 | j error)" "This jeepney is not on a shift" "QR refused after the shift ends"
 
+# ----- Operator routes: each jeep runs the route its operator chose; the admin can change it -----
+ok "$(curl -s -X POST $B/admin/api/user/add -d "name=Eve&email=eve@m.com&password=password1&role=OPERATOR&plate=EVE-1&route=NOPE" -H "$(H $MT)" | j error)" "Unknown route NOPE" "unknown route refused"
+EVE=$(curl -s -X POST $B/admin/api/user/add -d "name=Eve&email=eve@m.com&password=password1&role=OPERATOR&plate=EVE-1&route=311" -H "$(H $MT)" | j id)
+ET=$(curl -s -X POST $B/login -d "email=eve@m.com&password=password1" | j token)
+ok "$(curl -s $B/operator/route -H "$(H $ET)" | head -1 | cut -d'|' -f1)" "#311" "operator gets the route they chose"
+ok "$(curl -s $B/operator/route -H "$(H $ET)" | sed -n 2p | cut -d, -f1)" "$(grep '^311,0,' data/routes.csv | cut -d, -f3)" "its first stop is that route's first stop"
+ok "$(curl -s $B/admin/api/users -H "$(H $MT)" | grep "^$EVE|" | cut -d'|' -f9)" 311 "admin sees the route"
+curl -s -X POST $B/operator/stop -d "stop=0" -H "$(H $ET)" >/dev/null
+QE=$(qr "FAREX:JEEP:$EVE" 0067676767)
+ok "$(echo $QE | j stop)" "$(grep '^311,0,' data/routes.csv | cut -d, -f3)" "QR boards at a stop of the operator's route"
+curl -s -X POST $B/operator/stop -d "stop=5" -H "$(H $ET)" >/dev/null
+qr "FAREX:JEEP:$EVE" 0067676767 >/dev/null
+ok "$(curl -s -X POST $B/admin/api/user/edit -d "id=$EVE&route=310-A" -H "$(H $MT)" | j ok)" 1 "admin changes the route"
+ok "$(curl -s $B/operator/route -H "$(H $ET)" | head -1 | cut -d'|' -f1)" "#310-A" "operator now runs the new route"
+ok "$(qr "FAREX:JEEP:$EVE" 0067676767 | j error)" "This jeepney is not on a shift" "QR waits for the jeep's stop on the new route"
+ok "$(curl -s $B/operator/route -H "$(H $OT)" | head -1)" "#|Default route" "an operator with no route runs the default stops"
+
 # ----- Buy Load: only a payment PayMongo confirmed shows in Fetch Load -----
 PS=$(curl -s -X POST $B/load/start -d "uid=0067676767&cents=20000&method=GCash" -H "$(H $AT)" | j sessionId)
 ok "$(curl -s $B/load/paid -H "$(H $AT)" | grep -c "^$PS,0067676767,20000,GCash$")" 1 "paid load is listed for Fetch Load, with its method"
@@ -104,7 +121,7 @@ DAN=$(curl -s -X POST $B/admin/api/user/add -d "name=Dan&email=dan@m.com&passwor
 ok "$(curl -s -X POST $B/login -d "email=dan@m.com&password=password1" | j role)" OPERATOR "admin-added operator logs in at once (no approval wait)"
 ok "$(curl -s -X POST $B/admin/api/user/edit -d "id=$DAN&name=Daniel&plate=abc 123" -H "$(H $MT)" | j error)" "Plate abc 123 is already registered to another operator" "edit keeps one plate per jeep"
 ok "$(curl -s -X POST $B/admin/api/user/edit -d "id=$DAN&name=Daniel&email=daniel@m.com&plate=DAN-2&phone=09171234567" -H "$(H $MT)" | j ok)" 1 "admin edits name, email, plate, phone"
-ok "$(curl -s $B/admin/api/users -H "$(H $MT)" | grep -c "^$DAN|Daniel|daniel@m.com|OPERATOR||DAN-2|active|09171234567$")" 1 "edits saved"
+ok "$(curl -s $B/admin/api/users -H "$(H $MT)" | grep -c "^$DAN|Daniel|daniel@m.com|OPERATOR||DAN-2|active|09171234567|")" 1 "edits saved"
 ok "$(curl -s -X POST $B/admin/api/vehicle/delete -d "id=$DAN" -H "$(H $MT)" | j ok)" 1 "admin deletes a vehicle"
 ok "$(curl -s -X POST $B/login -d "email=daniel@m.com&password=password1" | j error)" "Wrong email or password" "its only role gone: account gone"
 ok "$(curl -s -X POST $B/admin/api/card/add -d "uid=ABCD1234&email=ana@mail.com" -H "$(H $MT)" | j uid)" ABCD1234 "admin links a card to a passenger"

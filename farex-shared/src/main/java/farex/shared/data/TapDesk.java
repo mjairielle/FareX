@@ -16,9 +16,14 @@ public class TapDesk {
     private final Map<String, BoardedInfo> boarded = new LinkedHashMap<>();
 
     public TapDesk(Store store, String operatorId) {
+        this(store, operatorId, store.stops());
+    }
+
+    /** stops = the route this operator drives, in riding order (the default line when they chose none). */
+    public TapDesk(Store store, String operatorId, List<RouteStop> stops) {
         this.store = store;
         this.operatorId = operatorId;
-        this.stops = store.stops();
+        this.stops = stops;
         for (String[] r : store.activeBoardings().values()) {       // pick up riders still on board after a restart
             int idx = Integer.parseInt(r[2]);
             if (r[1].equals(operatorId) && idx >= 0 && idx < stops.size())

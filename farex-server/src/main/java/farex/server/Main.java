@@ -299,7 +299,8 @@ public final class Main {
             if (r[4].equals("PASSENGER")) passengers++;
             if (r[4].equals("OPERATOR")) operators++;
             String st = status(r[0]);
-            if (st.equals("PENDING")) waiting.append(String.join("|", "P", clean(r[0]), clean(r[1]), clean(r[2]), clean(r[6]))).append('\n');
+            if (st.equals("PENDING")) waiting.append(String.join("|", "P", clean(r[0]), clean(r[1]), clean(r[2]), clean(r[6]),
+                    r.length > 8 && !r[8].isEmpty() ? clean(book.name(r[8])) : "")).append('\n');
             else if (st.equals("SUSPEND") || st.equals("RETIRE")) suspendedN++;
         }
 
@@ -374,6 +375,7 @@ public final class Main {
         loadRoadKm();
         planner = new TripPlanner(book, shapes);
         routesReply = shapesReply = roadKmReply = null;
+        desks.clear();                                     // operators on an edited or deleted route get its new stops
     }
 
     static double num(Map<String, String> p, String k) {
@@ -392,14 +394,28 @@ public final class Main {
     static final String JEEP_QR = "FAREX:JEEP:";                     // + operator id: what the jeep's QR holds
     static final Map<String, Integer> jeepStop = new ConcurrentHashMap<>();   // operator id -> stop the jeep is at, while on shift
 
-    static TapDesk desk(User op) { return desks.computeIfAbsent(op.getId(), id -> new TapDesk(store, id)); }
+    static TapDesk desk(User op) { return desks.computeIfAbsent(op.getId(), id -> new TapDesk(store, id, routeStopsOf(id))); }
+
+    // The stops an operator's jeep runs: the route they chose, or the default line (none chosen, or that route was deleted)
+    static List<RouteStop> routeStopsOf(String operatorId) {
+        List<RouteStop> r = book.routes().get(store.routeOf(operatorId));
+        return r != null && r.size() >= 2 ? r : store.stops();
+    }
+
+    // An operator's route from a form: "" (none) or a route id that exists. Passengers have none.
+    static String routeParam(String role, Map<String, String> p) {
+        String r = p.getOrDefault("route", "").trim();
+        if (!role.equals("OPERATOR")) return "";
+        if (!r.isEmpty() && !book.routes().containsKey(r)) throw new IllegalArgumentException("Unknown route " + r);
+        return r;
+    }
 
     /** Finishing a trip also earns reward points. Trip id is the txn uuid, so a retry cannot earn twice. */
     static String tapResult(Txn t, TapDesk d, String... extra) {
         String[] row = t.toRow();
         long pts = rewards.earn(t.getAccountId(), row[0], Double.parseDouble(row[9]), Instant.now());
         List<String> kv = new ArrayList<>(List.of("describe", t.describe(), "balance", String.valueOf(t.getBalanceAfter()), "onBoard", String.valueOf(d.onBoard()),
-                "points", String.valueOf(pts), "fare", String.valueOf(t.getAmount())));
+                "points", String.valueOf(pts), "fare", String.valueOf(t.getAmount()), "id", row[0]));
         kv.addAll(List.of(extra));
         return json(kv.toArray(new String[0]));
     }
@@ -493,7 +509,7 @@ public final class Main {
             String phone = p.getOrDefault("phone", "").trim();
             if (!phone.isEmpty() && !phone.matches("09\\d{9}")) throw new IllegalArgumentException("Phone must be 11 digits starting with 09");
             checkPass(p, "SIGNUP", req(p, "email"), false);                  // proves the email is theirs
-            User n = store.register(req(p, "name"), req(p, "email"), req(p, "password"), role, type, p.getOrDefault("plate", ""));
+            User n = store.register(req(p, "name"), req(p, "email"), req(p, "password"), role, type, p.getOrDefault("plate", ""), routeParam(role, p));
             checkPass(p, "SIGNUP", req(p, "email"), true);
             if (!phone.isEmpty()) store.setPhone(n.getId(), phone);
             // An operator can write fare rows, so admin must approve first. Admin page Reinstate lets them in.
@@ -539,7 +555,7 @@ public final class Main {
         // A passenger becomes an operator too (admin approves first), or an operator becomes a passenger (no approval).
         route(s, "/role/add", "POST", "ANY", (u, p) -> {
             String role = req(p, "role").toUpperCase();
-            User n = store.addRole(u.getId(), role, p.getOrDefault("plate", ""));
+            User n = store.addRole(u.getId(), role, p.getOrDefault("plate", ""), routeParam(role, p));
             if (role.equals("OPERATOR")) Csv.append(dir.resolve("suspended.csv"), SUSPENDED_H, n.getId(), "PENDING", Instant.now().toString());
             return json("status", role.equals("OPERATOR") ? "pending" : "active");
         });
@@ -801,6 +817,14 @@ public final class Main {
         });
         route(s, "/tap/out", "POST", "OPERATOR", (u, p) -> tapResult(desk(u).tapOut(req(p, "uid"), Integer.parseInt(req(p, "stop"))), desk(u)));
         route(s, "/tap/missed", "POST", "OPERATOR", (u, p) -> tapResult(desk(u).missedTapOut(req(p, "uid")), desk(u)));
+        // The route this operator's jeep runs: "#routeId|name" then "stop,lat,lng" per stop in riding order.
+        // routeId "" = no route chosen: the default line.
+        route(s, "/operator/route", "GET", "OPERATOR", (u, p) -> {
+            String id = book.routes().containsKey(store.routeOf(u.getId())) ? store.routeOf(u.getId()) : "";
+            StringBuilder b = new StringBuilder("#").append(clean(id)).append('|').append(id.isEmpty() ? "Default route" : clean(book.name(id))).append('\n');
+            for (RouteStop x : desk(u).stops()) b.append(clean(x.name())).append(',').append(x.lat()).append(',').append(x.lng()).append('\n');
+            return b.toString();
+        });
         // The operator's phone tells where the jeep is (each stop change); -1 = shift over, QR scans are refused
         route(s, "/operator/stop", "POST", "OPERATOR", (u, p) -> {
             int stop = Integer.parseInt(req(p, "stop"));
@@ -819,7 +843,7 @@ public final class Main {
                     .orElseThrow(() -> new IllegalArgumentException("Unknown jeepney QR"));
             if (suspended(op.getId())) throw new IllegalStateException("This jeepney cannot take fares right now");
             Integer stop = jeepStop.get(op.getId());
-            if (stop == null) throw new IllegalStateException("This jeepney is not on a shift");
+            if (stop == null || stop >= desk(op).stops().size()) throw new IllegalStateException("This jeepney is not on a shift");
             String uid = desk(op).resolveCard(req(p, "uid"));
             mayUse(u, uid);
             if (suspended(u.getId())) throw new IllegalStateException("Card owner account is suspended");
@@ -862,7 +886,8 @@ public final class Main {
             StringBuilder b = new StringBuilder();
             for (String[] r : Csv.read(dir.resolve("users.csv"), 7))
                 b.append(String.join("|", clean(r[0]), clean(r[1]), clean(r[2]), r[4], clean(r[5]), clean(r[6]),
-                        status(r[0]).equals("PENDING") ? "pending" : suspended(r[0]) ? "suspended" : "active", r.length > 7 ? clean(r[7]) : "")).append('\n');
+                        status(r[0]).equals("PENDING") ? "pending" : suspended(r[0]) ? "suspended" : "active", r.length > 7 ? clean(r[7]) : "",
+                        r.length > 8 ? clean(r[8]) : "")).append('\n');
             return b.toString();
         });
         route(s, "/admin/api/user/type", "POST", "ADMIN", (u, p) -> {
@@ -1005,7 +1030,7 @@ public final class Main {
             String role = req(p, "role");
             if (!role.equals("PASSENGER") && !role.equals("OPERATOR")) throw new IllegalArgumentException("Bad role");
             User n = store.register(req(p, "name"), req(p, "email"), req(p, "password"), role,
-                    p.getOrDefault("type", "REGULAR"), p.getOrDefault("plate", ""));
+                    p.getOrDefault("type", "REGULAR"), p.getOrDefault("plate", ""), routeParam(role, p));
             return json("id", n.getId());
         });
         // Edits an account. Blank fields keep their value; name, email, phone and password cover every role of the email.
@@ -1017,6 +1042,11 @@ public final class Main {
             String pw = p.getOrDefault("password", "");
             if (!pw.isEmpty() && pw.length() < 8) throw new IllegalArgumentException("Password needs 8 or more characters");
             if (!plate.isEmpty()) store.setPlate(id, plate);
+            if (p.containsKey("route") && t.role().equals("OPERATOR")) {
+                store.setRoute(id, routeParam("OPERATOR", p));
+                desks.remove(id);                          // the jeep runs the new route's stops from its next tap
+                jeepStop.remove(id);                       // its phone sends the stop again on the new route
+            }
             if (!email.isEmpty()) store.setEmail(id, email);
             if (!name.isEmpty()) store.updateUserName(id, name);
             if (p.containsKey("phone")) store.setPhone(id, p.get("phone"));

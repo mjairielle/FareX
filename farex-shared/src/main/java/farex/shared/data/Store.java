@@ -10,7 +10,8 @@ import java.util.*;
 
 /** All CSV reads and writes. Files are append only. Balance is the last ledger row of a card. */
 public class Store {
-    private static final String H_USERS = "id,name,email,passwordHash,role,passengerType,vehiclePlate,phone";   // phone is optional (older rows have 7 columns)
+    // phone and route are optional (older rows have 7 or 8 columns); route = the jeepney route id an operator drives
+    private static final String H_USERS = "id,name,email,passwordHash,role,passengerType,vehiclePlate,phone,route";
     private static final String H_CARDS = "uid,ownerId";
     private static final String H_LEDGER = "uuid,type,accountId,cardUid,amount,balanceBefore,balanceAfter,time,extra1,extra2";
     private static final String H_STOPS = "seq,name,lat,lng";
@@ -91,6 +92,12 @@ public class Store {
 
     public User register(String name, String email, String password, String role,
                          String passengerType, String plate) {
+        return register(name, email, password, role, passengerType, plate, "");
+    }
+
+    /** route: the route id an operator drives ("" = none chosen; the server checks it exists). */
+    public User register(String name, String email, String password, String role,
+                         String passengerType, String plate, String route) {
         name = Csv.clean(name).trim();
         email = email.trim().toLowerCase();
         if (name.isEmpty() || email.isEmpty()) throw new IllegalArgumentException("Name and email are required");
@@ -106,24 +113,29 @@ public class Store {
                 throw new IllegalArgumentException("This email already has a FareX account. Use the same password to add the " + role.toLowerCase() + " role.");
             name = same.get(0)[1];
         }
-        return appendRole(name, email, hashPassword(password), role, passengerType, plate);
+        return appendRole(name, email, hashPassword(password), role, passengerType, plate, route);
     }
 
     /** Logged-in user adds the other role to their account, e.g. a passenger becomes an operator too. */
     public User addRole(String userId, String role, String plate) {
+        return addRole(userId, role, plate, "");
+    }
+
+    public User addRole(String userId, String role, String plate, String route) {
         if (!role.equals("PASSENGER") && !role.equals("OPERATOR")) throw new IllegalArgumentException("Bad role");
         if (role.equals("OPERATOR") && plate.isBlank()) throw new IllegalArgumentException("Vehicle plate is required");
         String[] me = Optional.ofNullable(userRow(userId)).orElseThrow(() -> new IllegalArgumentException("No such user"));
         if (me[4].equals("ADMIN")) throw new IllegalArgumentException("Admins cannot add roles");
         for (User u : siblings(userId)) if (u.role().equals(role)) throw new IllegalArgumentException("Account already has the " + role.toLowerCase() + " role");
-        return appendRole(me[1], me[2], me[3], role, "REGULAR", plate);
+        return appendRole(me[1], me[2], me[3], role, "REGULAR", plate, route);
     }
 
-    private synchronized User appendRole(String name, String email, String hash, String role, String passengerType, String plate) {
+    private synchronized User appendRole(String name, String email, String hash, String role, String passengerType, String plate, String route) {
         if (role.equals("OPERATOR") && plateTaken(plate)) throw new IllegalArgumentException("Plate " + plate.trim() + " is already registered to another operator");
         String id = UUID.randomUUID().toString().substring(0, 8);
         String type = role.equals("PASSENGER") ? passengerType : "";
-        Csv.append(users, H_USERS, id, name, email, hash, role, type, Csv.clean(plate).trim());
+        Csv.append(users, H_USERS, id, name, email, hash, role, type, Csv.clean(plate).trim(), "",
+                role.equals("OPERATOR") ? Csv.clean(route).trim() : "");
         userRows = null;
         return findUser(id).get();
     }
@@ -264,6 +276,29 @@ public class Store {
         if (userRows().stream().anyMatch(r -> r[2].equals(mail))) throw new IllegalArgumentException("Email already registered");
         List<String[]> rows = Csv.read(users);
         for (String[] r : rows) if (r.length >= 7 && r[2].equals(old)) r[2] = mail;
+        writeUsers(rows);
+    }
+
+    /** The route id an operator drives, "" when none was chosen (they run the default stops). */
+    public String routeOf(String id) {
+        String[] r = userRow(id);
+        return r != null && r.length > 8 ? r[8] : "";
+    }
+
+    /** Admin changes the route an operator drives ("" = none). The server checks the route exists. */
+    public synchronized void setRoute(String id, String route) {
+        String[] me = userRow(id);
+        if (me == null || !me[4].equals("OPERATOR")) throw new IllegalArgumentException("No such operator");
+        List<String[]> rows = Csv.read(users);
+        for (int i = 0; i < rows.size(); i++) {
+            String[] r = rows.get(i);
+            if (r.length >= 7 && r[0].equals(id)) {
+                String[] longer = Arrays.copyOf(r, Math.max(9, r.length));
+                if (longer[7] == null) longer[7] = "";
+                longer[8] = Csv.clean(route).trim();
+                rows.set(i, longer);
+            }
+        }
         writeUsers(rows);
     }
 
