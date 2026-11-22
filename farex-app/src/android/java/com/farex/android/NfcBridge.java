@@ -39,7 +39,8 @@ public class NfcBridge extends Application implements Application.ActivityLifecy
     public void onCreate() {
         super.onCreate();
         registerActivityLifecycleCallbacks(this);
-        Thread t = new Thread(this::serve, "farex-nfc");
+        // no lambda or this::serve: compiled against android.jar, which lacks LambdaMetafactory
+        Thread t = new Thread(new Runnable() { @Override public void run() { serve(); } }, "farex-nfc");
         t.setDaemon(true);
         t.start();
     }
