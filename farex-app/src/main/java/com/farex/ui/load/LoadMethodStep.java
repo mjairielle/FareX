@@ -16,6 +16,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
+import com.farex.ui.common.CommonUi;
 import com.farex.ui.common.Icons;
 import com.farex.ui.common.Theme;
 
@@ -39,28 +40,42 @@ public class LoadMethodStep extends VBox {
         caption.setFont(Theme.bold(13));
 
         VBox rows = new VBox(20,
-                methodRow("GCash", null, "icon_gcash", "#012CB7"),
-                methodRow("MariBank", null, "icon_maribank", "#EA5F00"),
-                methodRow("BPI", null, "icon_bpi", "#A42A25"),
+                methodRow("GCash", "Mobile number", "icon_gcash", "#012CB7"),
+                methodRow("MariBank", "Bank account", "icon_maribank", "#EA5F00"),
+                methodRow("BPI", "Bank account", "icon_bpi", "#A42A25"),
                 methodRow("Others", "Debit/Credit Card/e-Wallet", "icon_others", "#FFFFFF"));
 
-        getChildren().addAll(caption, rows);
+        getChildren().addAll(caption, rows, CommonUi.note("You approve every payment on PayMongo's secure page, "
+                + "in your GCash, bank or card app. FareX never sees your PIN or password."));
     }
 
-    // One row: logo, name (and an optional line under it), chevron
+    // The chosen method as a small logo + name, for the steps after this one: "[logo] GCash"
+    static HBox badge(String name) {
+        String icon = switch (name) {
+            case "GCash" -> "icon_gcash";
+            case "MariBank" -> "icon_maribank";
+            case "BPI" -> "icon_bpi";
+            default -> "icon_others";
+        };
+        Label label = new Label("Others".equals(name) ? "Card / e-Wallet" : name);
+        label.setTextFill(Theme.WHITE);
+        label.setFont(Theme.bold(16));
+        HBox badge = new HBox(12, Icons.view(icon, 28), label);
+        badge.setAlignment(Pos.CENTER_LEFT);
+        return badge;
+    }
+
+    // One row: logo, name with a line under it, chevron
     private HBox methodRow(String name, String subtitle, String iconName, String nameColor) {
         Label nameLabel = new Label(name);
         nameLabel.setTextFill(Color.web(nameColor));
-        nameLabel.setFont(Theme.bold(subtitle == null ? 20 : 18));
+        nameLabel.setFont(Theme.bold(18));
 
-        VBox text = new VBox(-2, nameLabel);
+        Label sub = new Label(subtitle);
+        sub.setTextFill(Theme.GRAY);
+        sub.setFont(Font.font(Theme.FONT, 10));
+        VBox text = new VBox(-2, nameLabel, sub);
         text.setAlignment(Pos.CENTER_LEFT);
-        if (subtitle != null) {
-            Label sub = new Label(subtitle);
-            sub.setTextFill(Theme.WHITE);
-            sub.setFont(Font.font(Theme.FONT, 10));
-            text.getChildren().add(sub);
-        }
 
         Region gap = new Region();
         HBox.setHgrow(gap, Priority.ALWAYS);
