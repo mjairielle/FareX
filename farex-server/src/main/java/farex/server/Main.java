@@ -396,10 +396,40 @@ public final class Main {
 
     static TapDesk desk(User op) { return desks.computeIfAbsent(op.getId(), id -> new TapDesk(store, id, routeStopsOf(id))); }
 
-    // The stops an operator's jeep runs: the route they chose, or the default line (none chosen, or that route was deleted)
+    // Operators whose jeep runs its route the other way now (turned around at the terminal). Shared routes are fine:
+    // any number of jeeps can run the same route, in either direction. shortcut: in memory, a server restart starts them forward again.
+    static final Set<String> turned = ConcurrentHashMap.newKeySet();
+
+    // The stops an operator's jeep runs: the route they chose, or the default line (none chosen, or that route was deleted).
+    // Turned around: a one-way route's "-A"/"-B" twin (its own road back), else the same stops reversed.
     static List<RouteStop> routeStopsOf(String operatorId) {
+        String twin = twinOf(operatorId);
+        if (twin != null) return book.routes().get(twin);
         List<RouteStop> r = book.routes().get(store.routeOf(operatorId));
-        return r != null && r.size() >= 2 ? r : store.stops();
+        List<RouteStop> line = r != null && r.size() >= 2 ? r : store.stops();
+        if (!turned.contains(operatorId)) return line;
+        List<RouteStop> back = new ArrayList<>(line);
+        Collections.reverse(back);
+        return back;
+    }
+
+    // "111-A" <-> "111-B" when this operator is turned around and the twin exists, else null
+    static String twinOf(String operatorId) {
+        String id = store.routeOf(operatorId);
+        if (!turned.contains(operatorId) || !(id.endsWith("-A") || id.endsWith("-B"))) return null;
+        String twin = id.substring(0, id.length() - 1) + (id.endsWith("-A") ? "B" : "A");
+        List<RouteStop> r = book.routes().get(twin);
+        return r != null && r.size() >= 2 ? twin : null;
+    }
+
+    // "#routeId|name|turned" then "stop,lat,lng" per stop in riding order
+    static String operatorRoute(User u) {
+        String twin = twinOf(u.getId());
+        String id = twin != null ? twin : book.routes().containsKey(store.routeOf(u.getId())) ? store.routeOf(u.getId()) : "";
+        StringBuilder b = new StringBuilder("#").append(clean(id)).append('|').append(id.isEmpty() ? "Default route" : clean(book.name(id)))
+                .append('|').append(turned.contains(u.getId())).append('\n');
+        for (RouteStop x : desk(u).stops()) b.append(clean(x.name())).append(',').append(x.lat()).append(',').append(x.lng()).append('\n');
+        return b.toString();
     }
 
     // An operator's route from a form: "" (none) or a route id that exists. Passengers have none.
@@ -819,11 +849,15 @@ public final class Main {
         route(s, "/tap/missed", "POST", "OPERATOR", (u, p) -> tapResult(desk(u).missedTapOut(req(p, "uid")), desk(u)));
         // The route this operator's jeep runs: "#routeId|name" then "stop,lat,lng" per stop in riding order.
         // routeId "" = no route chosen: the default line.
-        route(s, "/operator/route", "GET", "OPERATOR", (u, p) -> {
-            String id = book.routes().containsKey(store.routeOf(u.getId())) ? store.routeOf(u.getId()) : "";
-            StringBuilder b = new StringBuilder("#").append(clean(id)).append('|').append(id.isEmpty() ? "Default route" : clean(book.name(id))).append('\n');
-            for (RouteStop x : desk(u).stops()) b.append(clean(x.name())).append(',').append(x.lat()).append(',').append(x.lng()).append('\n');
-            return b.toString();
+        route(s, "/operator/route", "GET", "OPERATOR", (u, p) -> operatorRoute(u));
+        // The jeep turns around (at a terminal, or to start the shift from the other end): the route runs the other way.
+        // Riders still aboard would pay for stops of the old direction, so they tap out (or pay the max fare) first.
+        route(s, "/operator/turn", "POST", "OPERATOR", (u, p) -> {
+            if (desk(u).onBoard() > 0) throw new IllegalStateException("Riders are still on board. Tap them out first.");
+            if (!turned.remove(u.getId())) turned.add(u.getId());
+            desks.remove(u.getId());
+            jeepStop.remove(u.getId());                        // the phone sends its stop again on the new direction
+            return operatorRoute(u);
         });
         // The operator's phone tells where the jeep is (each stop change); -1 = shift over, QR scans are refused
         route(s, "/operator/stop", "POST", "OPERATOR", (u, p) -> {
@@ -1045,6 +1079,7 @@ public final class Main {
             if (p.containsKey("route") && t.role().equals("OPERATOR")) {
                 store.setRoute(id, routeParam("OPERATOR", p));
                 desks.remove(id);                          // the jeep runs the new route's stops from its next tap
+                turned.remove(id);                         // a new route starts forward
                 jeepStop.remove(id);                       // its phone sends the stop again on the new route
             }
             if (!email.isEmpty()) store.setEmail(id, email);

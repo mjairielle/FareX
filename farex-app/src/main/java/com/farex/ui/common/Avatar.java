@@ -1,7 +1,6 @@
 package com.farex.ui.common;
 
 import javafx.scene.effect.DropShadow;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
@@ -24,6 +23,7 @@ public class Avatar extends StackPane {
         ring.setStroke(Theme.LIME);
         ring.setStrokeWidth(2.5);
         ring.setEffect(new DropShadow(18, Color.rgb(202, 254, 6, 0.35)));
+        ring.setCache(true);                       // the glow drawn once, not on every frame
 
         String photo = (account == null) ? null : account.getPhotoUrl();
         if (photo != null) {
@@ -38,7 +38,7 @@ public class Avatar extends StackPane {
 
     // The chosen picture, cut to a circle
     private ImageView photo(String url, double size) {
-        ImageView view = new ImageView(new Image(url, size * 2, size * 2, true, true));
+        ImageView view = new ImageView(Icons.image(url, size * 2, size * 2));
         view.setFitWidth(size);
         view.setFitHeight(size);
         view.setPreserveRatio(false);

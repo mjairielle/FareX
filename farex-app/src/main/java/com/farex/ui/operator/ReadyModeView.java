@@ -22,6 +22,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Polygon;
 import javafx.scene.text.Font;
+import javafx.scene.text.TextAlignment;
 
 import com.farex.ui.data.MockData;
 import com.farex.ui.common.CommonUi;
@@ -56,11 +57,21 @@ public class ReadyModeView extends StackPane {
     // ----- No shift yet -----
 
     private void buildNotStarted() {
+        Label route = TripUi.wrapped(OperatorState.routeName() + "\nStarting at " + firstStop()
+                + ", heading to " + OperatorState.headedTo());
+        route.setTextAlignment(TextAlignment.CENTER);
+        // Jeeps on the same route run it both ways: start from the other end when that is where this one waits
+        Label turn = CommonUi.smallBold("Start from " + OperatorState.headedTo() + " instead", Theme.LIME);
+        turn.setWrapText(true);
+        turn.setTextAlignment(TextAlignment.CENTER);
+        turn.setCursor(Cursor.HAND);
+        turn.setOnMouseClicked(e -> turnAround());
         VBox message = new VBox(8,
                 TripUi.bold("Your shift hasn't started", 18),
-                CommonUi.small("Start a shift to accept xPress Cards and app QR taps.", Theme.WHITE));
+                CommonUi.small("Start a shift to accept xPress Cards and app QR taps.", Theme.WHITE),
+                route, turn);
         message.setAlignment(Pos.CENTER);
-        message.setPadding(new Insets(0, 0, 90, 0));
+        message.setPadding(new Insets(0, 18, 90, 18));
 
         Button start = OperatorUi.startShiftButton(() -> {
             OperatorState.startShift();
@@ -123,18 +134,26 @@ public class ReadyModeView extends StackPane {
         return spread(status, plate);
     }
 
-    // ----- "Ready for passengers ....... Philcoa — Fairview" -----
+    // ----- "Ready for passengers" / "Philcoa – Fairview · to Fairview Terminal" -----
 
+    // Stacked, every line wrapping: a long route name must never make the screen wider than the phone
     private Node titleRow() {
-        Label title = TripUi.bold("Ready for passengers", 15);
-        title.setWrapText(false);
-        title.setMinWidth(Region.USE_PREF_SIZE);
-        Label route = CommonUi.small(OperatorState.routeName(), Theme.WHITE);
+        Label route = TripUi.wrapped(OperatorState.routeName() + " · to " + OperatorState.headedTo());
         route.setFont(Font.font(Theme.FONT, 10));
-        route.setWrapText(true);                                  // long names, e.g. "Commonwealth–SM Fairview via Regalado (to SM City Fairview)"
-        route.setTextAlignment(javafx.scene.text.TextAlignment.RIGHT);
-        route.setMaxWidth(190);
-        return spread(title, route);
+        return new VBox(2, TripUi.bold("Ready for passengers", 15), route);
+    }
+
+    private String firstStop() {
+        return OperatorState.getGps().getRouteStops().get(0).name();
+    }
+
+    // Live, the server turns the route too; it refuses while riders are aboard
+    private void turnAround() {
+        String why = OperatorState.turnAround();
+        if (why != null) {
+            new PopupDialog(WarningDialog.warningIcon(), "Couldn't turn around", why).button("OK", () -> { }).show();
+        }
+        showTab.accept(1);                                        // redraw with the new direction
     }
 
     // ----- QR card -----
@@ -203,14 +222,11 @@ public class ReadyModeView extends StackPane {
         Label caption = CommonUi.small("CURRENT JEEPNEY STOP (GPS DETECTED):", Color.web("#BDBDBD"));
         caption.setFont(Theme.bold(9));
 
-        Label stopName = TripUi.bold((stop.index() + 1) + ". " + stop.name(), 16);
+        Label stopName = TripUi.bold((stop.index() + 1) + ". " + stop.name(), 16);   // wraps: long stop names
         stopName.setTextFill(Theme.LIME);
-        stopName.setWrapText(false);
-        stopName.setMinWidth(Region.USE_PREF_SIZE);
         Label coords = CommonUi.small(String.format(Locale.US, "%.4f° N, %.4f° E", stop.lat(), stop.lng()),
                 Theme.WHITE);
         coords.setFont(Font.font(Theme.FONT, 8));
-        coords.setMinWidth(Region.USE_PREF_SIZE);
 
         // Auto Drive: tap to switch ACTIVE / OFF
         Label autoDrive = CommonUi.small("Auto Drive Route: " + (auto ? "ACTIVE" : "OFF"), Theme.WHITE);
@@ -221,20 +237,22 @@ public class ReadyModeView extends StackPane {
             OperatorState.toggleAutoDrive();
             refreshLive();
         });
-        String nextText = (next == null) ? "End of route" : "Next: " + next.name();
+        Label nextStop = CommonUi.smallBold((next == null) ? "End of route" : "Next: " + next.name(), Theme.LIME);
+        nextStop.setWrapText(true);
 
         VBox.setMargin(caption, new Insets(4, 0, 0, 0));
         return new Node[] {
             spread(tracker, accuracy),
             OperatorUi.divider(),
             caption,
-            spread(stopName, coords),
+            new VBox(2, stopName, coords),
             stopButtons(gps),
-            spread(autoDrive, CommonUi.smallBold(nextText, Theme.LIME)),
+            nextStop,
+            autoDrive,
         };
     }
 
-    // "‹ Prev"   "Next Stop ›"   "Fix GPS"  (at the terminal the middle one is "New trip")
+    // "‹ Prev"   "Next Stop ›"   "Fix GPS"  (at the terminal the middle one is "Trip back": the jeep turns around)
     private Node stopButtons(GpsSimulator gps) {
         Button prev = OperatorUi.outlineButton("‹ Prev", () -> {
             OperatorState.previousStop();
@@ -243,14 +261,20 @@ public class ReadyModeView extends StackPane {
         prev.setDisable(!gps.hasPrevStop());
 
         boolean atEnd = OperatorState.isAtTerminal();
-        Button next = CommonUi.limeButton(atEnd ? "New trip" : "Next Stop ›", () -> {
+        Button next = CommonUi.limeButton(atEnd ? "Trip back" : "Next Stop ›", () -> {
             if (OperatorState.isAtTerminal()) {
                 TapTerminal.chargeMaxFares();     // still on board when leaving the terminal
-                OperatorState.startNewTrip();
+                String why = OperatorState.startNewTrip();   // turns around: the trip back
+                if (why != null) {
+                    new PopupDialog(WarningDialog.warningIcon(), "Couldn't start the trip back", why)
+                            .button("OK", () -> { }).show();
+                    return;
+                }
+                showTab.accept(1);                // the title shows the new direction
             } else {
                 OperatorState.nextStop();
+                refreshLive();
             }
-            refreshLive();
             showMaxFareIfAny();
         });
         next.setFont(Theme.bold(15));

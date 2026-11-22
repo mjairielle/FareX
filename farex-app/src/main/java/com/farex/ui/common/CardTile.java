@@ -185,6 +185,7 @@ public class CardTile extends StackPane {
     private Node logoBadge() {
         Circle ring = new Circle(LOGO_RING / 2, Color.web("#111111"));
         ring.setEffect(new DropShadow(18, Color.rgb(202, 254, 6, 0.25)));
+        ring.setCache(true);                       // the glow drawn once, not on every frame
 
         StackPane badge = new StackPane(ring, Assets.logo(LOGO_SIZE, LOGO_SIZE / 2));
         badge.setMaxSize(LOGO_RING, LOGO_RING);

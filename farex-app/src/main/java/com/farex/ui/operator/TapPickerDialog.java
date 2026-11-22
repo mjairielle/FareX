@@ -77,7 +77,11 @@ public class TapPickerDialog extends StackPane {
         right.setMinWidth(VBox.USE_PREF_SIZE);
         right.setAlignment(Pos.CENTER_RIGHT);
         if (boardedAt != null) {
-            right.getChildren().add(CommonUi.small("from " + boardedAt, Theme.GRAY));
+            Label from = CommonUi.small("from " + boardedAt, Theme.GRAY);   // a long stop name wraps, never widens the row
+            from.setWrapText(true);
+            from.setMaxWidth(110);
+            from.setTextAlignment(javafx.scene.text.TextAlignment.RIGHT);
+            right.getChildren().add(from);
         }
 
         HBox row = new HBox(8, left, right);

@@ -37,7 +37,7 @@ public class PopupDialog extends StackPane {
 
     // Form look: no icon, left-aligned
     public PopupDialog(String title, String text) {
-        // Dim layer over the blurred screen; it also stops clicks reaching the screen below
+        // Dim layer over the screen; it also stops clicks reaching the screen below
         setBackground(Theme.solid(Color.rgb(0, 0, 0, 0.45)));
 
         VBox top = new VBox(8, TripUi.bold(title, 19), CommonUi.subtitle(text));

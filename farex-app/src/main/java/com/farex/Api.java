@@ -128,8 +128,13 @@ public final class Api {
     /** The route this operator drives: its name, and its stops in riding order. */
     public record OperatorRoute(String id, String name, List<StopCoord> stops) {}
 
-    public static OperatorRoute operatorRoute() {
-        List<String> raw = lines(call("GET", "/operator/route", null));
+    public static OperatorRoute operatorRoute() { return operatorRoute(call("GET", "/operator/route", null)); }
+
+    /** The jeep turns around: its route now runs the other way (refused while riders are on board). */
+    public static OperatorRoute turnRoute() { return operatorRoute(call("POST", "/operator/turn", "")); }
+
+    private static OperatorRoute operatorRoute(String reply) {
+        List<String> raw = lines(reply);
         String[] head = raw.get(0).substring(1).split("\\|", -1);
         List<StopCoord> stops = new ArrayList<>();
         for (int i = 1; i < raw.size(); i++) {

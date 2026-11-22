@@ -101,7 +101,17 @@ qr "FAREX:JEEP:$EVE" 0067676767 >/dev/null
 ok "$(curl -s -X POST $B/admin/api/user/edit -d "id=$EVE&route=310-A" -H "$(H $MT)" | j ok)" 1 "admin changes the route"
 ok "$(curl -s $B/operator/route -H "$(H $ET)" | head -1 | cut -d'|' -f1)" "#310-A" "operator now runs the new route"
 ok "$(qr "FAREX:JEEP:$EVE" 0067676767 | j error)" "This jeepney is not on a shift" "QR waits for the jeep's stop on the new route"
-ok "$(curl -s $B/operator/route -H "$(H $OT)" | head -1)" "#|Default route" "an operator with no route runs the default stops"
+ok "$(curl -s $B/operator/route -H "$(H $OT)" | head -1)" "#|Default route|false" "an operator with no route runs the default stops"
+turn() { curl -s -X POST $B/operator/turn -H "$(H $1)"; }
+ok "$(turn $ET | head -1)" "#310-B|$(grep '^310-B,' data/route_names.csv | cut -d, -f2)|true" "turning around a one-way route runs its twin back"
+ok "$(turn $ET | head -1 | cut -d'|' -f1)" "#310-A" "turning again runs it forward"
+ok "$(turn $OT | sed -n 2p | cut -d, -f1)" "$(tail -1 data/stops.csv | cut -d, -f2)" "a two-way line turned around starts at its last stop"
+turn $OT >/dev/null
+curl -s -X POST $B/operator/stop -d "stop=0" -H "$(H $ET)" >/dev/null
+qr "FAREX:JEEP:$EVE" 0067676767 >/dev/null
+ok "$(turn $ET | j error)" "Riders are still on board. Tap them out first." "no turning around with riders aboard"
+curl -s -X POST $B/operator/stop -d "stop=2" -H "$(H $ET)" >/dev/null
+qr "FAREX:JEEP:$EVE" 0067676767 >/dev/null
 
 # ----- Buy Load: only a payment PayMongo confirmed shows in Fetch Load -----
 PS=$(curl -s -X POST $B/load/start -d "uid=0067676767&cents=20000&method=GCash" -H "$(H $AT)" | j sessionId)

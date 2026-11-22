@@ -214,18 +214,26 @@ public final class MockData {
     // paid = loads PayMongo confirmed and not fetched yet, {sessionId, uid, cents, method}; null = server too old to say
     private record Snapshot(List<String[]> cards, List<Txn> history, long points, List<String[]> paid) {}
 
+    // The four downloads run side by side: one after another they took four round trips to the server
     private static Snapshot fetch() {
+        var history = java.util.concurrent.CompletableFuture.supplyAsync(Api::history);
+        var points = java.util.concurrent.CompletableFuture.supplyAsync(() -> Api.rewards().points());
+        var paidLoads = java.util.concurrent.CompletableFuture.supplyAsync(() -> {
+            try {
+                return Api.paidLoads();
+            } catch (Api.ApiException olderServer) {
+                return null;                                        // keep the pending loads already shown
+            }
+        });
         List<String[]> cards = Api.myCards();                       // {uid, cents, "frozen" or ""}
         for (String[] c : cards) {
             if (c[1].isEmpty()) c[1] = String.valueOf(Api.balance(c[0]));   // older server: no balance in /cards
         }
-        List<String[]> paid;
         try {
-            paid = Api.paidLoads();
-        } catch (Api.ApiException olderServer) {
-            paid = null;                                            // keep the pending loads already shown
+            return new Snapshot(cards, history.join(), points.join(), paidLoads.join());
+        } catch (java.util.concurrent.CompletionException e) {
+            throw e.getCause() instanceof Api.ApiException a ? a : e;   // callers catch ApiException (offline)
         }
-        return new Snapshot(cards, Api.history(), Api.rewards().points(), paid);
     }
 
     /**

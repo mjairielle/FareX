@@ -28,7 +28,7 @@ import javafx.scene.text.TextFlow;
 public class WarningDialog extends StackPane {
 
     public WarningDialog() {
-        // Dim layer over the blurred screen; it also stops clicks reaching the screen below
+        // Dim layer over the screen; it also stops clicks reaching the screen below
         setBackground(Theme.solid(Color.rgb(0, 0, 0, 0.45)));
 
         Label title = new Label("Warning");

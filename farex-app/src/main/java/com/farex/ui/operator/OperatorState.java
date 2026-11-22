@@ -111,6 +111,37 @@ public final class OperatorState {
         return routeName;
     }
 
+    // "Fairview Terminal": where the jeep is headed in this direction (the route's last stop)
+    public static String headedTo() {
+        List<Api.StopCoord> stops = gps.getRouteStops();
+        return stops.get(stops.size() - 1).name();
+    }
+
+    // The jeep turns around: the route runs the other way (Philcoa > Fairview becomes Fairview > Philcoa), back at
+    // its first stop. Any number of jeeps may run the same route either way. Live: the server turns too, as it prices
+    // taps by stop, and refuses while riders are aboard. null = done, else why not.
+    public static String turnAround() {
+        if (MockData.isLive()) {
+            try {
+                Api.OperatorRoute r = Api.turnRoute();
+                gps.setRouteStops(r.stops());
+                routeName = r.name();
+            } catch (Api.ApiException e) {
+                return e.getMessage();
+            }
+        } else {
+            List<Api.StopCoord> now = gps.getRouteStops(), back = new ArrayList<>();
+            for (int i = now.size() - 1; i >= 0; i--) {
+                back.add(new Api.StopCoord(back.size(), now.get(i).name(), now.get(i).lat(), now.get(i).lng()));
+            }
+            gps.setRouteStops(back);
+        }
+        gps.setCurrentStopIdx(0);
+        gps.setAutoDriving(false);
+        sentStop = -2;                     // the server forgot the jeep's stop on turning: send it again
+        return null;
+    }
+
     // Live: the stops of this operator's route from the server (/operator/route), loaded when Operator Mode opens.
     // Not during a shift, so a running trip keeps its stops; a route the admin changed applies from the next shift.
     // Offline: the stops already loaded stay.
@@ -350,10 +381,9 @@ public final class OperatorState {
         gps.rewindStop();
     }
 
-    // At the terminal the jeep turns around: back to Philcoa for a new trip
-    public static void startNewTrip() {
-        gps.setCurrentStopIdx(0);
-        gps.setAutoDriving(false);
+    // At the terminal the jeep turns around for a new trip: Fairview back to Philcoa. null = done, else why not
+    public static String startNewTrip() {
+        return turnAround();
     }
 
     public static boolean isAtTerminal() {

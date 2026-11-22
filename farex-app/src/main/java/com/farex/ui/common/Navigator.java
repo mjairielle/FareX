@@ -7,7 +7,6 @@ import java.util.function.Supplier;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Parent;
-import javafx.scene.effect.GaussianBlur;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.StackPane;
@@ -37,10 +36,10 @@ public final class Navigator {
         overlay = null;
     }
 
-    // Puts a dialog on top of the current screen and blurs the screen behind it
+    // Puts a dialog on top of the current screen; the dialog's own dim layer covers the screen behind it.
+    // No blur: blurring the whole screen made every pop-up slow to open on the phone.
     public static void showOverlay(Node dialog) {
         closeOverlay();
-        container.getChildren().get(0).setEffect(new GaussianBlur(14));
         overlay = dialog;
         container.getChildren().add(dialog);
     }
@@ -50,7 +49,6 @@ public final class Navigator {
             container.getChildren().remove(overlay);
             overlay = null;
         }
-        container.getChildren().get(0).setEffect(null);
     }
 
     private static Parent comingSoon(String name) {

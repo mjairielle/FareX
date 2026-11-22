@@ -378,18 +378,12 @@ public class RouteMap extends StackPane {
     // ----- Drawing -----
 
     private static final Color LIME = Color.web("#CAFE06"), INK = Color.web("#111111");
-    private static final Color[] COLORS = {Color.web("#3B82F6"), Color.web("#F97316"), Color.web("#A855F7"), Color.web("#14B8A6"),
-            Color.web("#EF4444"), Color.web("#EAB308"), Color.web("#EC4899"), Color.web("#22C55E")};
     private static final double PAD = 36;                           // px kept clear around a fit
 
     // Something to show changed: zoom to it (or back to the passenger's dot while tracking) and repaint
     private void redraw() {
         List<RouteShapes.Point> f = new ArrayList<>();
-        boolean many = routes.size() > 20;
-        if (trip.isEmpty()) {
-            for (Map.Entry<String, List<RouteStop>> r : routes.entrySet())
-                if (r.getKey().equals(focusRoute) || (focusRoute == null && !many)) f.addAll(routePath(r.getKey()));
-        }
+        if (trip.isEmpty() && routes.containsKey(focusRoute)) f.addAll(routePath(focusRoute));
         for (TripLeg leg : trip) f.addAll(legLine(leg));
         if (pin != null && trip.isEmpty() && f.isEmpty()) f.add(point(pin));   // a focused route keeps its own fit
         fit = f;
@@ -487,16 +481,20 @@ public class RouteMap extends StackPane {
             g.clearRect(0, 0, w, h);
             g.setLineCap(StrokeLineCap.ROUND);
             g.setLineJoin(StrokeLineJoin.ROUND);
-            boolean hasTrip = !trip.isEmpty(), many = routes.size() > 20;
+            boolean hasTrip = !trip.isEmpty();
 
-            // The network; the focused route last so it sits on top
-            int i = 0, focusedIndex = -1;
-            for (String id : routes.keySet()) {
-                if (id.equals(focusRoute) && !hasTrip) focusedIndex = i;
-                else route(g, id, i, hasTrip, many);
-                i++;
+            // No network of every route (that was noise, and slow to draw): only the route you picked
+            // (a jeep passing you), or while riding the whole route of your jeep. A planned trip draws its rides below.
+            if (!hasTrip && routes.containsKey(focusRoute)) {
+                line(g, routePath(focusRoute), LIME, 6, 0.85);
+                for (RouteStop s : routes.get(focusRoute)) dot(g, s.lat(), s.lng(), 6, INK, 1, LIME, 1);
             }
-            if (focusedIndex >= 0) route(g, focusRoute, focusedIndex, false, many);
+            if (hasTrip && routes.containsKey(ridingRoute)) {        // the jeep you are on: its whole route, faint
+                List<RouteStop> stops = routes.get(ridingRoute);
+                line(g, routePath(ridingRoute), LIME, 4, 0.55, 8, 8);
+                RouteStop last = stops.get(stops.size() - 1);
+                dot(g, last.lat(), last.lng(), 5, INK, 2, LIME, 0.8);
+            }
 
             if (hasTrip) {
                 int rides = 0;
@@ -540,24 +538,6 @@ public class RouteMap extends StackPane {
             String credit = VoyagerTiles.CREDIT;
             g.fillText(credit, w - width(credit, g.getFont()) - 6, h - bottomInset - 2);
             g.setGlobalAlpha(1);
-        }
-
-        private void route(GraphicsContext g, String id, int index, boolean hasTrip, boolean many) {
-            boolean focused = !hasTrip && id.equals(focusRoute);
-            boolean dim = hasTrip || (focusRoute != null && !focused);
-            Color color = COLORS[index % COLORS.length];
-            List<RouteStop> stops = routes.get(id);
-            if (hasTrip && id.equals(ridingRoute)) {               // the jeep you are on: its whole route, faint
-                line(g, routePath(id), LIME, 4, 0.55, 8, 8);
-                RouteStop last = stops.get(stops.size() - 1);
-                dot(g, last.lat(), last.lng(), 5, INK, 2, LIME, 0.8);
-                return;
-            }
-            line(g, routePath(id), focused ? LIME : color, focused ? 6 : (many ? 2.5 : 4), hasTrip ? 0.15 : (dim ? 0.3 : 0.85));
-            // Stop dots only on the route you picked: on the overview, every stop of every route is
-            // thousands of dots, cluttered and slow to draw on a phone
-            if (!focused) return;
-            for (RouteStop s : stops) dot(g, s.lat(), s.lng(), 6, INK, 1, LIME, 1);
         }
 
         // A polyline, skipping points under 1.5 px apart: zoomed out, the whole network is tens of

@@ -166,6 +166,7 @@ public class HomeView extends ScrollPane {
         // Round logo with a lime glow (glow is on the wrapper because a clip would cut it off)
         StackPane logo = new StackPane(Assets.logo(76, 38));
         logo.setEffect(new DropShadow(24, Color.rgb(202, 254, 6, 0.45)));
+        logo.setCache(true);                       // the glow drawn once, not on every frame
 
         Label message = new Label("Add your xPress card to start loading, earning points, "
                 + "and tracking your transit activity.");

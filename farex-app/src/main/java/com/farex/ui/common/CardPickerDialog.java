@@ -44,7 +44,7 @@ public class CardPickerDialog extends StackPane {
 
     public CardPickerDialog(DemoCard selected, Consumer<DemoCard> onPick, Function<DemoCard, Label> statusOf) {
         this.statusOf = statusOf;
-        // Dim layer over the blurred screen; it also stops clicks reaching the screen below
+        // Dim layer over the screen; it also stops clicks reaching the screen below
         setBackground(Theme.solid(Color.rgb(0, 0, 0, 0.45)));
 
         Label title = new Label("Choose a card");

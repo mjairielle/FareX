@@ -25,7 +25,7 @@ public class TapResultDialog extends javafx.scene.layout.StackPane {
 
     public TapResultDialog(TapResult r, Runnable tryAgain) {
         this.tryAgain = tryAgain;
-        // Dim layer over the blurred screen; it also stops clicks reaching the screen below
+        // Dim layer over the screen; it also stops clicks reaching the screen below
         setBackground(Theme.solid(Color.rgb(0, 0, 0, 0.45)));
 
         VBox box = new VBox(10);

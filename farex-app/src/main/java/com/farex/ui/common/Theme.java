@@ -93,6 +93,7 @@ public final class Theme {
         DropShadow glow = new DropShadow(18, Color.rgb(202, 254, 6, 0.55));
         glow.setSpread(0.1);
         button.setEffect(glow);
+        button.setCache(true);                     // the glow drawn once, not on every frame (scrolling, animations)
 
         paintButton(button, "#CAFE06", "#D8FF3A", "#A9D400", 12, "black");
     }

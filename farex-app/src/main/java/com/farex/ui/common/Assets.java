@@ -4,7 +4,6 @@ import java.net.URL;
 
 import javafx.scene.Node;
 import javafx.scene.control.Label;
-import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.shape.Rectangle;
 
@@ -22,7 +21,7 @@ public final class Assets {
             return fallback;
         }
 
-        ImageView view = new ImageView(new Image(url.toExternalForm()));
+        ImageView view = new ImageView(Icons.image(url.toExternalForm(), 0, 0));
         view.setFitWidth(size);
         view.setFitHeight(size);
         view.setPreserveRatio(true);
