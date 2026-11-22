@@ -61,7 +61,9 @@ public final class CardTaps {
             try {
                 text = "Balance: " + CommonUi.peso(Api.balance(uid) / 100.0);
             } catch (Api.ApiException e) {
-                text = e.getMessage();
+                text = "Card is not yours".equals(e.getMessage())   // the server's words for "not linked to you"
+                        ? "This card is not linked to your account. To link it, open Add Card and tap the card there."
+                        : e.getMessage();
             }
             String shown = text;
             Platform.runLater(() -> new PopupDialog("Card " + uid, shown).button("OK", () -> { }).show());

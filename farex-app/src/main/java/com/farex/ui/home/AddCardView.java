@@ -10,6 +10,7 @@ import javafx.scene.text.Font;
 
 import com.farex.ui.common.CardNumberField;
 import com.farex.ui.common.CardTaps;
+import com.farex.ui.common.CommonUi;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.SubScreen;
 import com.farex.ui.common.Theme;
@@ -47,7 +48,9 @@ public class AddCardView extends SubScreen {
         saveButton.setOnAction(e -> saveCard(numberField));
         numberField.setOnEnter(saveButton::fire);
 
-        body.getChildren().addAll(caption, numberField, errorLabel, spacer, saveButton);
+        body.getChildren().addAll(caption, numberField, errorLabel,
+                CommonUi.note("Or just tap your card on the back of the phone: it is added by its chip ID."),
+                spacer, saveButton);
         Platform.runLater(numberField::focusField);
         // On a phone, tapping the card links it by its chip UID: no typing
         CardTaps.claim(this, uid -> link(uid, uid));

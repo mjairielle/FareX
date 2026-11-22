@@ -328,6 +328,16 @@ public class Store {
         return new ArrayList<>(cardList);
     }
 
+    /**
+     * Admin: the card belongs to nobody again, so anyone can add it. Its ledger rows and balance stay with the card.
+     * cards.csv gets shorter, so the cards cache (TailFile) rereads it on the next lookup.
+     */
+    public synchronized void unlinkCard(String uid) {
+        List<String[]> rows = Csv.read(cards);
+        if (!rows.removeIf(r -> r[0].equals(uid))) throw new IllegalArgumentException("Card " + uid + " is not linked to any account");
+        Csv.rewrite(cards, H_CARDS, rows);
+    }
+
     /** Every card of the owner, frozen ones too. */
     public synchronized List<String> allCardsOf(String ownerId) {
         syncCards();

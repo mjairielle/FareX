@@ -237,6 +237,13 @@ const views = {
       say('Loaded ' + peso(c) + ' to card ' + uid + '. New balance ' + peso(r.cents) + '.', true);
       show('Cards');
     };
+    // The card stops belonging to anyone; its money stays on the card and goes with it to whoever adds it next
+    const unlink = async (uid, who, cents) => {
+      if (!confirm('Unlink card ' + uid + ' from ' + who + '? Its balance (' + peso(cents) + ') stays on the card, for whoever adds it next.')) return;
+      await api('POST', '/admin/api/card/unlink', { uid });
+      say('Card ' + uid + ' unlinked. Anyone can add it in the app now.', true);
+      show('Cards');
+    };
     const draw = () => {
       cardsFilter = q.value;
       const term = q.value.trim().toLowerCase();
@@ -246,7 +253,7 @@ const views = {
       holder.appendChild(table([['Card ID'], ['Owner'], ['Balance', 'num'], ['Status'], ['']], shown, (r, i) =>
         i === 0 ? r[0] : i === 1 ? kids(el('div'), el('div', r[1]), el('div', r[2], { className: 'sub', style: 'margin:0;font-size:12px' }))
         : i === 2 ? peso(r[3]) : i === 3 ? (r[4] === 'true' ? badge('frozen', 'b-suspended') : badge('active', 'b-active'))
-        : (r[4] === 'true' ? '' : btn('Load cash', () => load(r[0], r[1])))));
+        : kids(el('div'), r[4] === 'true' ? null : btn('Load cash', () => load(r[0], r[1])), btn('Unlink', () => unlink(r[0], r[1], r[3]), 'warn'))));
     };
     q.oninput = draw;
     v.appendChild(card(null, q, count, holder));

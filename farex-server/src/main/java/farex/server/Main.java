@@ -873,6 +873,11 @@ public final class Main {
             store.load(uid, owner, cents(p), "Cash at admin");
             return json("uid", uid, "cents", String.valueOf(store.balance(uid)));
         });
+        // The card belongs to nobody again, so someone else can add it (a card linked to the wrong account)
+        route(s, "/admin/api/card/unlink", "POST", "ADMIN", (u, p) -> {
+            store.unlinkCard(req(p, "uid").trim());
+            return json("ok", "1");
+        });
         route(s, "/admin/summary", "GET", "ADMIN", (u, p) -> json("summary", store.summary()));
         route(s, "/admin/api/stats", "GET", "ADMIN", (u, p) -> stats((int) num(p, "days")));
 

@@ -10,6 +10,8 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
 import com.farex.ui.common.CardTile;
+import com.farex.ui.common.CommonUi;
+import com.farex.ui.common.Navigator;
 import com.farex.ui.common.SubScreen;
 import com.farex.ui.common.Theme;
 import com.farex.ui.data.DemoAccount;
@@ -45,6 +47,11 @@ public class AllCardsView extends SubScreen {
                 list.getChildren().add(new CardTile(cards.get(i), false));
             }
         }
+
+        // The only way to Add Card once an account has a card (Home offers it only while it has none)
+        javafx.scene.Node add = CommonUi.limeButton("Add a card", () -> Navigator.go("addCard"));
+        VBox.setMargin(add, new Insets(8, 0, 0, 0));
+        list.getChildren().add(add);
 
         ScrollPane scroll = new ScrollPane(list);
         scroll.setFitToWidth(true);

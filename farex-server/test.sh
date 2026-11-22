@@ -54,4 +54,9 @@ ok "$(curl -s $B/history -H "$(H $AT)" | grep -c FARE_PAYMENT)" 1 "history has t
 ok "$(curl -s $B/stops -H "$(H $AT)" | wc -l)" 6 "6 stops"
 ok "$(code $B/admin/summary -H "$(H $AT)")" 403 "passenger blocked from admin"
 ok "$(curl -s $B/admin/summary -H "$(H $MT)" | grep -c Users)" 1 "admin summary"
+ok "$(code -X POST $B/admin/api/card/unlink -d uid=$C -H "$(H $AT)")" 403 "only admin can unlink a card"
+ok "$(curl -s -X POST $B/admin/api/card/unlink -d uid=$C -H "$(H $MT)" | j ok)" 1 "admin unlinks Ana's card"
+ok "$(curl -s -X POST $B/cards/add -d uid=$C -H "$(H $CT)" | j uid)" $C "another rider adds the unlinked card"
+ok "$(curl -s $B/balance?uid=$C -H "$(H $CT)" | j cents)" 10000 "the money stays on the card"
+ok "$(curl -s $B/balance?uid=$C -H "$(H $AT)" | j error)" "Card is not yours" "old owner no longer sees it"
 exit $FAIL

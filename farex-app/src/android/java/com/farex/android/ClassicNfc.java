@@ -4,13 +4,14 @@ import android.nfc.Tag;
 import android.nfc.tech.MifareClassic;
 
 /**
- * UNTESTED on a phone. Android side of the card: payload lives in sector 1, block 4.
+ * Android side of the card: payload lives in sector 1, block 2 of that sector (block 6 of the card).
  * NfcBridge hands it the Tag from reader mode.
  * shortcut: factory default key A, the card sector trailer is never written. Switch to our own keys before real cards.
  */
 public final class ClassicNfc {
     private static final int SECTOR = 1;
-    private static final int BLOCK = 4;
+    // sector 1 = blocks 4..7 on the whole card; the payload is the sector's block 2, so block 6 (4 is the sector's 0)
+    private static final int BLOCK = 6;
 
     private ClassicNfc() {}
 

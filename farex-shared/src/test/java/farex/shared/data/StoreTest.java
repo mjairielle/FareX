@@ -63,6 +63,22 @@ public class StoreTest {
     }
 
     @Test
+    void unlinkedCardCanBeAddedByAnotherAccountWithItsBalance() {
+        String card = store.addCard("5389CB02", "p1");
+        store.load(card, "p1", 10000, "Test");
+        long before = store.balance(card);
+        IllegalArgumentException taken = assertThrows(IllegalArgumentException.class, () -> store.addCard(card, "o1"));
+        assertEquals("Card is already linked to an account", taken.getMessage());
+        store.unlinkCard(card);
+        assertNull(store.ownerOf(card));
+        assertFalse(store.cardsOf("p1").contains(card));
+        store.addCard(card, "o1");
+        assertEquals("o1", store.ownerOf(card), "another account adds it after the unlink");
+        assertEquals(before, store.balance(card), "the money stays on the card");
+        assertThrows(IllegalArgumentException.class, () -> store.unlinkCard("DEADBEEF"), "unknown card");
+    }
+
+    @Test
     void testInitialBalanceAndLoading() {
         assertEquals(50000, store.balance("0067676767"), "Seed balance of Ana's card");
         store.load("0067676767", "p1", 10000, "GCash");
