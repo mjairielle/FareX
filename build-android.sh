@@ -21,5 +21,20 @@ cd farex-app
 cp pom.xml pom.xml.desktop
 trap 'mv pom.xml.desktop pom.xml' EXIT
 sed -i 's#<version>1.0.29</version>#<version>1.0.25</version>#' pom.xml
-mvn -Dgluonfx.target=android gluonfx:build gluonfx:package
+mvn -Dgluonfx.target=android gluonfx:build
+
+# NFC card reader, Android side (src/android/java). GluonFX does not compile that folder: it only takes Android
+# classes from a jar under META-INF/substrate/dalvik/precompiled/classes, so build that jar here. Needs any
+# Android SDK's android.jar: ANDROID_JAR, else the SDK Gluon downloaded.
+ANDROID_JAR="${ANDROID_JAR:-$(ls ~/.gluon/substrate/Android/platforms/android-*/android.jar 2>/dev/null | sort -V | tail -1)}"
+[ -f "$ANDROID_JAR" ] || { echo "No android.jar found. Set ANDROID_JAR to <android sdk>/platforms/android-XX/android.jar"; exit 1; }
+NFC=target/nfc-dalvik
+rm -rf "$NFC" && mkdir -p "$NFC/META-INF/substrate/dalvik/precompiled/classes"
+javac -Xlint:-options -source 8 -target 8 -bootclasspath "$ANDROID_JAR" \
+  -d "$NFC/META-INF/substrate/dalvik/precompiled/classes" src/android/java/com/farex/android/*.java
+jar cf target/farex-nfc-dalvik.jar -C "$NFC" META-INF
+mvn -q install:install-file -Dfile=target/farex-nfc-dalvik.jar -DgroupId=com.farex -DartifactId=farex-nfc-dalvik \
+  -Dversion=1.0-SNAPSHOT -Dpackaging=jar
+# the pom's android-nfc profile turns on now that target/farex-nfc-dalvik.jar exists, and packages it into the APK
+mvn -Dgluonfx.target=android gluonfx:package
 echo "APK: $(pwd)/target/gluonfx/aarch64-android/gvm/farex-app.apk"

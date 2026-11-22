@@ -2,13 +2,15 @@ package farex.server;
 
 import java.net.URI;
 import java.net.http.*;
+import java.time.Duration;
 import java.util.Base64;
 import java.util.UUID;
 import java.util.regex.*;
 
 /** PayMongo checkout. FAKE_PAY=1 skips the network for local demos. */
 final class Pay {
-    private static final HttpClient HTTP = HttpClient.newHttpClient();
+    private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
+    private static final Duration WAIT = Duration.ofSeconds(20);      // a hanging PayMongo must not hang the request forever
     static final boolean FAKE = "1".equals(Env.get("FAKE_PAY"));
 
     private static String auth() {
@@ -30,7 +32,7 @@ final class Pay {
                 + ",\"currency\":\"PHP\",\"name\":\"FareX card load\",\"quantity\":1}],"
                 + "\"payment_method_types\":[\"gcash\",\"paymaya\",\"card\"],"
                 + "\"success_url\":\"" + back + "/paid\",\"cancel_url\":\"" + back + "/cancelled\"}}}";
-        HttpResponse<String> r = HTTP.send(HttpRequest.newBuilder(URI.create("https://api.paymongo.com/v1/checkout_sessions"))
+        HttpResponse<String> r = HTTP.send(HttpRequest.newBuilder(URI.create("https://api.paymongo.com/v1/checkout_sessions")).timeout(WAIT)
                 .header("Authorization", auth()).header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(body)).build(), HttpResponse.BodyHandlers.ofString());
         String id = find(r.body(), "\"id\"\\s*:\\s*\"(cs_[^\"]+)\"");
@@ -41,7 +43,7 @@ final class Pay {
 
     static boolean paid(String sessionId) throws Exception {
         if (FAKE) return sessionId.startsWith("fake-");
-        HttpResponse<String> r = HTTP.send(HttpRequest.newBuilder(URI.create("https://api.paymongo.com/v1/checkout_sessions/" + sessionId))
+        HttpResponse<String> r = HTTP.send(HttpRequest.newBuilder(URI.create("https://api.paymongo.com/v1/checkout_sessions/" + sessionId)).timeout(WAIT)
                 .header("Authorization", auth()).GET().build(), HttpResponse.BodyHandlers.ofString());
         return r.body().matches("(?s).*\"status\"\\s*:\\s*\"(succeeded|paid)\".*");
     }

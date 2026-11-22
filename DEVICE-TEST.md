@@ -5,6 +5,8 @@ NFC and GPS in the app are simulated (`SimCardIO`, `GpsSimulator`). Nothing belo
 ## Must pass on an Android phone
 1. App reaches the server over HTTPS. Plain http is blocked by Android 9 and newer.
 2. Tap a real card: the app reads the chip UID (8 or 14 hex characters) and sends it to `/tap/in`.
+   Fetch Load with a paid top-up: hold the MIFARE Classic card, balance goes up, then `/card/verify` on the card says CURRENT.
+   Phones without an NXP NFC chip often cannot read MIFARE Classic at all: the fetch then fails. The reason is in `adb logcat` ("Card read failed").
 3. Operator phone with screen off for 10 minutes still reads taps. Battery saver on.
 4. GPS stop detection with a real jeepney ride, in rain, under a flyover. Check for false stops.
 5. Airplane mode mid tap: the app shows a clear error, nothing is charged, retry works.

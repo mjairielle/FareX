@@ -19,6 +19,7 @@ import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
@@ -53,12 +54,19 @@ public class HomeView extends ScrollPane {
     private final boolean hasCard;
 
     public HomeView(IntConsumer showTab) {
+        this(showTab, true);
+    }
+
+    // Shows the last known data at once; the fresh balance arrives in the background and redraws Home
+    private HomeView(IntConsumer showTab, boolean refresh) {
         this.showTab = showTab;
 
-        try {
-            MockData.refresh();   // shortcut: blocks the UI thread for the round trips, move to a background task if it lags on mobile data
-        } catch (com.farex.Api.ApiException e) {
-            // offline: show the last known balance
+        if (refresh) {
+            MockData.refreshInBackground(() -> {
+                if (getParent() instanceof Pane parent) {   // still on screen
+                    parent.getChildren().setAll(new HomeView(showTab, false));
+                }
+            });
         }
         DemoAccount account = MockData.getCurrentAccount();
         DemoCard card = (account == null) ? null : account.getPrimaryCard();

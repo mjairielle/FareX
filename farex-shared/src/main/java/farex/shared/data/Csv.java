@@ -14,6 +14,15 @@ public final class Csv {
         return s.replace(',', ' ').replace('\r', ' ').replace('\n', ' ');
     }
 
+    /** Size and last change time: equal stamps mean the file did not change since it was read. */
+    public static Object stamp(Path file) {
+        try {
+            return Files.exists(file) ? List.of(Files.size(file), Files.getLastModifiedTime(file)) : "missing";
+        } catch (IOException e) {
+            return new Object();                               // never equal: read the file again
+        }
+    }
+
     public static List<String[]> read(Path file) {
         List<String[]> rows = new ArrayList<>();
         try {

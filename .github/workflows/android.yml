@@ -11,6 +11,9 @@
 name: Android APK
 
 on:
+  # Run workflow needs this file on main; until then a push to nick builds the APK
+  push:
+    branches: [nick]
   workflow_dispatch:
     inputs:
       carto_key:
@@ -69,7 +72,12 @@ jobs:
       # GitHub's machine has its own Android SDK in ANDROID_SDK_ROOT/ANDROID_HOME; Gluon uses the one it
       # downloads, and Gradle refuses to build when the two disagree, so hide the machine's for this step
       - name: Build the APK
-        run: env -u ANDROID_SDK_ROOT -u ANDROID_HOME bash build-android.sh
+        # ANDROID_JAR: build-android.sh compiles the NFC reader against the machine's android.jar
+        shell: bash
+        run: |
+          set -o pipefail
+          export ANDROID_JAR="$(ls "$ANDROID_HOME"/platforms/android-*/android.jar | sort -V | tail -1)"
+          env -u ANDROID_SDK_ROOT -u ANDROID_HOME bash build-android.sh 2>&1 | tee build.log
 
       - name: Show Gluon's logs (only when the build failed)
         if: failure()
@@ -78,6 +86,12 @@ jobs:
             [ -f "$f" ] || continue
             echo "===== $f"; tail -n 80 "$f"
           done
+          # Also as an error note: notes show on the run page and in the API without signing in, logs do not
+          if [ -f build.log ]; then
+            msg=$( (grep -E "ERROR|error:|FAILURE|Exception|No android" build.log | head -n 25; echo "----- last lines"; tail -n 25 build.log) \
+                   | cut -c1-300 | sed 's/%/%25/g' | awk '{printf "%s%%0A", $0}')
+            echo "::error title=Build output::$msg"
+          fi
 
       - name: Upload the APK
         uses: actions/upload-artifact@v4

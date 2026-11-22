@@ -60,7 +60,8 @@ public final class TapTerminal {
         if (MockData.isLive()) {
             try {
                 for (String[] c : Api.allCards()) {
-                    list.add(liveRider(c[0], c.length > 2 ? c[2] : "?", c.length > 1 ? c[1] : "REGULAR"));
+                    list.add(liveRider(c[0], c.length > 2 ? c[2] : "?", c.length > 1 ? c[1] : "REGULAR",
+                            c.length > 3 ? Long.parseLong(c[3]) : Api.balance(c[0])));   // older server: ask per card
                 }
             } catch (Api.ApiException e) {
                 // server down: no cards to pick; app riders need the server too
@@ -75,12 +76,12 @@ public final class TapTerminal {
     }
 
     // A server card with its owner's discount type (Student, Senior, PWD or Regular)
-    private static TapRider liveRider(String uid, String owner, String passengerType) {
+    private static TapRider liveRider(String uid, String owner, String passengerType, long cents) {
         Boarding onBoard = boarded.get(uid);
         if (onBoard != null) {
             return onBoard.rider();
         }
-        return new TapRider(new DemoCard(uid, owner, Api.balance(uid) / 100.0, "--/--"), passengerType);
+        return new TapRider(new DemoCard(uid, owner, cents / 100.0, "--/--"), passengerType);
     }
 
     private static TapRider riderFor(DemoCard card) {

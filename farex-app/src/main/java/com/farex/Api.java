@@ -11,7 +11,6 @@ import java.net.URLEncoder;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.regex.*;
 
 /** The only class that talks to the server. Screens call this, never HTTP. Money is long centavos. */
 public final class Api {
@@ -31,18 +30,33 @@ public final class Api {
             HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(base + path)).timeout(java.time.Duration.ofSeconds(75))   // a server that was asleep can take up to a minute to wake
                     .method(method, body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(body));
             if (token != null) b.header("Authorization", "Bearer " + token);
-            HttpResponse<String> r = HTTP.send(b.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+            b.header("Accept-Encoding", "gzip");            // the map data is ~4x smaller zipped; HttpClient does not unzip itself
+            HttpResponse<byte[]> r = HTTP.send(b.build(), HttpResponse.BodyHandlers.ofByteArray());
+            byte[] raw = r.body();
+            if (r.headers().firstValue("Content-Encoding").orElse("").equalsIgnoreCase("gzip"))
+                raw = new java.util.zip.GZIPInputStream(new java.io.ByteArrayInputStream(raw)).readAllBytes();
+            String reply = new String(raw, StandardCharsets.UTF_8);
             // 404 = this server has no such route: it is an older build than the app
             if (r.statusCode() == 404) throw new ApiException("The server is out of date. Close it and start run-server.bat again.");
-            if (r.statusCode() >= 400) throw new ApiException(field(r.body(), "error", "Server error " + r.statusCode()));
-            return r.body();
+            if (r.statusCode() >= 400) throw new ApiException(field(reply, "error", "Server error " + r.statusCode()));
+            return reply;
         } catch (ApiException e) { throw e;
         } catch (Exception e) { throw new ApiException("Cannot reach server at " + base); }
     }
 
+    /** "k":"value" from the server's flat JSON. The server escapes only \ and ". */
     static String field(String json, String k, String dflt) {
-        Matcher m = Pattern.compile("\"" + k + "\":\"((?:[^\"\\\\]|\\\\.)*)\"").matcher(json);
-        return m.find() ? m.group(1).replace("\\\"", "\"").replace("\\\\", "\\") : dflt;
+        String key = "\"" + k + "\":\"";
+        int i = json.indexOf(key);
+        if (i < 0) return dflt;
+        StringBuilder v = new StringBuilder();
+        for (i += key.length(); i < json.length(); i++) {
+            char c = json.charAt(i);
+            if (c == '"') return v.toString();
+            if (c == '\\' && i + 1 < json.length()) c = json.charAt(++i);
+            v.append(c);
+        }
+        return dflt;                                        // no closing quote: not a value
     }
 
     private static String form(String... kv) {
@@ -108,8 +122,9 @@ public final class Api {
 
     private static List<String> csv(String s) { return s.isEmpty() ? List.of() : List.of(s.split(",")); }
 
+    /** phone null = leave the saved phone as it is ("" clears it). */
     public static void updateProfile(String name, String phone) {
-        call("POST", "/profile/update", form("name", name, "phone", phone));
+        call("POST", "/profile/update", phone == null ? form("name", name) : form("name", name, "phone", phone));
     }
 
     /** Deletes the whole account (both roles); the card balance is written off. */
@@ -126,7 +141,23 @@ public final class Api {
 
     // ---------- cards and money ----------
 
-    public static List<String> cardsOf() { return lines(call("GET", "/cards", null)); }
+    /** "uid" or "uid,frozen" per card (frozen = reported lost, money not moved yet). */
+    public static List<String> cardsOf() {
+        List<String> out = new ArrayList<>();
+        for (String[] c : myCards()) out.add(c[2].isEmpty() ? c[0] : c[0] + ",frozen");
+        return out;
+    }
+
+    /** My cards as {uid, cents, "frozen" or ""}. cents is "" from an older server that does not send it. */
+    public static List<String[]> myCards() {
+        List<String[]> out = new ArrayList<>();
+        for (String l : lines(call("GET", "/cards", null))) {
+            String[] f = l.split(",");
+            boolean frozen = f[f.length - 1].equals("frozen");
+            out.add(new String[]{f[0], f.length > 1 && !f[1].equals("frozen") ? f[1] : "", frozen ? "frozen" : ""});
+        }
+        return out;
+    }
 
     public static void addCard(String tagUid) { call("POST", "/cards/add", form("uid", tagUid)); }
 
@@ -138,10 +169,10 @@ public final class Api {
         return new String[]{field(r, "newUid", ""), field(r, "cents", "0")};
     }
 
-    /** Operator only. Each item: {uid, passengerType, ownerName}. */
+    /** Operator only. Each item: {uid, passengerType, ownerName, cents}; cents is missing from an older server. */
     public static List<String[]> allCards() {
         List<String[]> out = new ArrayList<>();
-        for (String l : lines(call("GET", "/cards/all", null))) out.add(l.split(",", 3));
+        for (String l : lines(call("GET", "/cards/all", null))) out.add(l.split(",", 4));
         return out;
     }
 

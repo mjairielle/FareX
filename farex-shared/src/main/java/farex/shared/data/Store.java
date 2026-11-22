@@ -40,6 +40,12 @@ public class Store {
     private final Set<String> frozenSet = new HashSet<>();
     private final Map<String, String[]> lastBoard = new HashMap<>();
 
+    // users.csv parsed once; parsed again after Store writes it or when the file changes on disk (hand edit).
+    // The rows are shared, never change one: writers read the file fresh.
+    private List<String[]> userRows;
+    private Map<String, String[]> userById;
+    private Object usersStamp;
+
     /** Demo data and the demo admin password. Tests and local runs use this. */
     public Store(Path dir) { this(dir, "admin123", true); }
 
@@ -60,6 +66,29 @@ public class Store {
 
     // ---------- users ----------
 
+    private synchronized List<String[]> userRows() {
+        Object stamp = Csv.stamp(users);
+        if (userRows == null || !stamp.equals(usersStamp)) {
+            List<String[]> rows = Csv.read(users, 7);
+            Map<String, String[]> byId = new HashMap<>();
+            for (String[] r : rows) byId.putIfAbsent(r[0], r);
+            userRows = Collections.unmodifiableList(rows);
+            userById = byId;
+            usersStamp = stamp;
+        }
+        return userRows;
+    }
+
+    private synchronized String[] userRow(String id) {
+        userRows();
+        return userById.get(id);
+    }
+
+    private synchronized void writeUsers(List<String[]> rows) {
+        Csv.rewrite(users, H_USERS, rows);
+        userRows = null;
+    }
+
     public User register(String name, String email, String password, String role,
                          String passengerType, String plate) {
         name = Csv.clean(name).trim();
@@ -70,7 +99,7 @@ public class Store {
         if (role.equals("OPERATOR") && plate.isBlank()) throw new IllegalArgumentException("Vehicle plate is required");
         // One email may hold a passenger row and an operator row, sharing name and password
         final String mail = email;
-        List<String[]> same = Csv.read(users, 7).stream().filter(r -> r[2].equals(mail)).toList();
+        List<String[]> same = userRows().stream().filter(r -> r[2].equals(mail)).toList();
         for (String[] r : same) if (r[4].equals(role) || r[4].equals("ADMIN")) throw new IllegalArgumentException("Email already registered");
         if (!same.isEmpty()) {
             if (!checkPassword(password, same.get(0)[3]))
@@ -84,34 +113,37 @@ public class Store {
     public User addRole(String userId, String role, String plate) {
         if (!role.equals("PASSENGER") && !role.equals("OPERATOR")) throw new IllegalArgumentException("Bad role");
         if (role.equals("OPERATOR") && plate.isBlank()) throw new IllegalArgumentException("Vehicle plate is required");
-        String[] me = Csv.read(users, 7).stream().filter(r -> r[0].equals(userId)).findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("No such user"));
+        String[] me = Optional.ofNullable(userRow(userId)).orElseThrow(() -> new IllegalArgumentException("No such user"));
         if (me[4].equals("ADMIN")) throw new IllegalArgumentException("Admins cannot add roles");
         for (User u : siblings(userId)) if (u.role().equals(role)) throw new IllegalArgumentException("Account already has the " + role.toLowerCase() + " role");
         return appendRole(me[1], me[2], me[3], role, "REGULAR", plate);
     }
 
-    private User appendRole(String name, String email, String hash, String role, String passengerType, String plate) {
+    private synchronized User appendRole(String name, String email, String hash, String role, String passengerType, String plate) {
         String id = UUID.randomUUID().toString().substring(0, 8);
         String type = role.equals("PASSENGER") ? passengerType : "";
         Csv.append(users, H_USERS, id, name, email, hash, role, type, Csv.clean(plate).trim());
+        userRows = null;
         return findUser(id).get();
     }
 
     /** Every role row of the same email, this one included. */
     public List<User> siblings(String userId) {
         String email = findUser(userId).map(User::getEmail).orElse(null);
-        return Csv.read(users, 7).stream().filter(r -> r[2].equals(email)).map(Store::userFromRow).toList();
+        return userRows().stream().filter(r -> r[2].equals(email)).map(Store::userFromRow).toList();
     }
 
     public Optional<User> login(String loginId, String password) {
         return loginAll(loginId, password).stream().findFirst();
     }
 
-    /** Every role of the account (passenger and/or operator), or empty when the login is wrong. */
+    /**
+     * Every role of the account (passenger and/or operator), or empty when the login is wrong.
+     * Not synchronized on purpose: the server runs the slow password hash outside its lock, so taps go on meanwhile.
+     */
     public List<User> loginAll(String loginId, String password) {
         String clean = loginId.trim().toLowerCase();
-        for (String[] r : Csv.read(users, 7)) {
+        for (String[] r : userRows()) {
             boolean match = r[2].trim().toLowerCase().equals(clean)
                     || r[1].trim().toLowerCase().equals(clean)
                     || r[0].trim().toLowerCase().equals(clean);
@@ -126,11 +158,12 @@ public class Store {
     }
 
     public Optional<User> findUser(String id) {
-        return Csv.read(users, 7).stream().filter(r -> r[0].equals(id)).map(Store::userFromRow).findFirst();
+        return Optional.ofNullable(userRow(id)).map(Store::userFromRow);
     }
 
     private String emailOf(String id) {
-        return Csv.read(users, 7).stream().filter(r -> r[0].equals(id)).map(r -> r[2]).findFirst().orElse("\u0000");
+        String[] r = userRow(id);
+        return r == null ? "\u0000" : r[2];
     }
 
     private static User userFromRow(String[] r) {
@@ -146,26 +179,26 @@ public class Store {
      * Admin fixes a passenger's discount type. The one place a file is rewritten, because users are a table and not a ledger.
      * Type must be REGULAR, STUDENT, SENIOR or PWD.
      */
-    public void setPassengerType(String id, String type) {
+    public synchronized void setPassengerType(String id, String type) {
         if (!List.of("REGULAR", "STUDENT", "SENIOR", "PWD").contains(type)) throw new IllegalArgumentException("Bad passenger type");
         List<String[]> rows = Csv.read(users);
         boolean hit = false;
         for (String[] r : rows) if (r.length >= 7 && r[0].equals(id) && r[4].equals("PASSENGER")) { r[5] = type; hit = true; }
         if (!hit) throw new IllegalArgumentException("No such passenger");
-        Csv.rewrite(users, H_USERS, rows);
+        writeUsers(rows);
     }
 
-    public void updateUserName(String id, String newName) {
+    public synchronized void updateUserName(String id, String newName) {
         newName = Csv.clean(newName).trim();
         if (newName.isBlank()) throw new IllegalArgumentException("Name cannot be empty");
         String email = emailOf(id);
         List<String[]> rows = Csv.read(users);
         for (String[] r : rows) if (r.length >= 7 && r[2].equals(email)) r[1] = newName;
-        Csv.rewrite(users, H_USERS, rows);
+        writeUsers(rows);
     }
 
     /** Phone belongs to the account, so every role row of the email gets it. "" clears it. */
-    public void setPhone(String id, String phone) {
+    public synchronized void setPhone(String id, String phone) {
         phone = phone.trim();
         if (!phone.isEmpty() && !phone.matches("09\\d{9}")) throw new IllegalArgumentException("Phone must be 11 digits starting with 09");
         String email = emailOf(id);
@@ -178,12 +211,12 @@ public class Store {
                 rows.set(i, longer);
             }
         }
-        Csv.rewrite(users, H_USERS, rows);
+        writeUsers(rows);
     }
 
     public String phoneOf(String id) {
         String email = emailOf(id);
-        return Csv.read(users, 7).stream().filter(r -> r[2].equals(email) && r.length > 7 && !r[7].isBlank())
+        return userRows().stream().filter(r -> r[2].equals(email) && r.length > 7 && !r[7].isBlank())
                 .map(r -> r[7]).findFirst().orElse("");
     }
 
@@ -191,7 +224,7 @@ public class Store {
      * Closes the account for good: every role row of the email is removed, each card's balance is
      * written off in the ledger (kept for audit) and the card is frozen so nobody can ride on it.
      */
-    public void deleteAccount(String id) {
+    public synchronized void deleteAccount(String id) {
         List<User> roles = siblings(id);
         if (roles.isEmpty()) throw new IllegalArgumentException("No such user");
         if (roles.stream().anyMatch(u -> u.role().equals("ADMIN"))) throw new IllegalArgumentException("Cannot delete an admin");
@@ -207,7 +240,7 @@ public class Store {
         String email = roles.get(0).getEmail();
         List<String[]> rows = Csv.read(users);
         rows.removeIf(r -> r.length >= 7 && r[2].equals(email));
-        Csv.rewrite(users, H_USERS, rows);
+        writeUsers(rows);
     }
 
     public void setPassword(String id, String password) {
@@ -215,16 +248,16 @@ public class Store {
         setPasswordHash(id, hashPassword(password));
     }
 
-    private void setPasswordHash(String id, String hash) {
+    private synchronized void setPasswordHash(String id, String hash) {
         String email = emailOf(id);
         List<String[]> rows = Csv.read(users);
         for (String[] r : rows) if (r.length >= 7 && r[2].equals(email)) r[3] = hash;
-        Csv.rewrite(users, H_USERS, rows);
+        writeUsers(rows);
     }
 
     /** True while any account still uses a demo password. The server refuses to run public like that. */
     public boolean hasDefaultLogins() {
-        for (String[] r : Csv.read(users, 7)) {              // only the seeded ids, checking every user would be slow
+        for (String[] r : userRows()) {                      // only the seeded ids, checking every user would be slow
             if (r[0].equals("a1") && checkPassword("admin123", r[3])) return true;
             if ((r[0].equals("p1") || r[0].equals("o1")) && checkPassword("1234", r[3])) return true;
         }
@@ -233,7 +266,7 @@ public class Store {
 
     public List<String[]> allVehicles() {
         List<String[]> out = new ArrayList<>();
-        for (String[] r : Csv.read(users, 7)) {
+        for (String[] r : userRows()) {
             if ("OPERATOR".equals(r[4])) out.add(new String[]{r[6], r[1], r[0]});
         }
         return out;
@@ -293,6 +326,12 @@ public class Store {
     public synchronized List<String> allCards() {
         syncCards();
         return new ArrayList<>(cardList);
+    }
+
+    /** Every card of the owner, frozen ones too. */
+    public synchronized List<String> allCardsOf(String ownerId) {
+        syncCards();
+        return new ArrayList<>(ownerCards.getOrDefault(ownerId, List.of()));
     }
 
     public synchronized String ownerOf(String uid) {
@@ -449,11 +488,25 @@ public class Store {
 
     /** card uid to its latest BOARD row {uid, operatorId, stopIdx, time, event}. ALIGHT and stale rows do not count. */
     public synchronized Map<String, String[]> activeBoardings() {
-        for (String[] r : boardTail.poll(5, lastBoard::clear)) lastBoard.put(r[0], r);
-        Instant cutoff = Instant.now().minusSeconds(BOARD_TTL_SECONDS);
+        syncBoard();
         Map<String, String[]> out = new LinkedHashMap<>(lastBoard);
-        out.values().removeIf(r -> !r[4].equals("BOARD") || Instant.parse(r[3]).isBefore(cutoff));
+        out.values().removeIf(r -> !onBoard(r));
         return out;
+    }
+
+    /** Same as activeBoardings().containsKey(uid), without copying every card that ever rode: one per tap in. */
+    public synchronized boolean isOnBoard(String uid) {
+        syncBoard();
+        String[] r = lastBoard.get(uid);
+        return r != null && onBoard(r);
+    }
+
+    private void syncBoard() {
+        for (String[] r : boardTail.poll(5, lastBoard::clear)) lastBoard.put(r[0], r);
+    }
+
+    private static boolean onBoard(String[] row) {
+        return row[4].equals("BOARD") && !Instant.parse(row[3]).isBefore(Instant.now().minusSeconds(BOARD_TTL_SECONDS));
     }
 
     // ---------- passwords ----------

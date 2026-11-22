@@ -29,6 +29,39 @@ public class StoreTest {
         assertTrue(store.login("ana@mail.com", "wrongpass").isEmpty(), "Login with wrong password should fail");
     }
 
+    // users.csv is cached in memory: every write, and an edit made outside Store, must still show at once
+    @Test
+    void userCacheSeesEveryChange() {
+        assertEquals("STUDENT", ((farex.shared.user.Passenger) store.findUser("p1").get()).getPassengerType());
+        store.setPassengerType("p1", "SENIOR");
+        assertEquals("SENIOR", ((farex.shared.user.Passenger) store.findUser("p1").get()).getPassengerType());
+        store.updateUserName("p1", "Ana Cruz");
+        assertEquals("Ana Cruz", store.findUser("p1").get().getName());
+        store.setPhone("p1", "09171234567");
+        assertEquals("09171234567", store.phoneOf("p1"));
+        farex.shared.user.User op = store.addRole("p1", "OPERATOR", "XYZ-1");
+        assertEquals(2, store.siblings("p1").size(), "new role row seen");
+        assertEquals("XYZ-1", ((farex.shared.user.Operator) store.findUser(op.getId()).get()).getVehiclePlate());
+        Csv.append(tempDir.resolve("users.csv"), "", "x9", "Hand Edit", "hand@mail.com", "h", "PASSENGER", "REGULAR", "");
+        assertTrue(store.findUser("x9").isPresent(), "row added by hand to the file is seen");
+        store.deleteAccount("p1");
+        assertTrue(store.findUser("p1").isEmpty() && store.findUser(op.getId()).isEmpty(), "deleted rows are gone");
+    }
+
+    @Test
+    void onBoardAndAllCardsOf() {
+        String card = "0067676767";
+        assertFalse(store.isOnBoard(card));
+        store.logBoarding(card, "o1", 0, "BOARD");
+        assertTrue(store.isOnBoard(card));
+        assertEquals(store.activeBoardings().containsKey(card), store.isOnBoard(card));
+        store.logBoarding(card, "o1", 2, "ALIGHT");
+        assertFalse(store.isOnBoard(card));
+        store.freezeCard(card);
+        assertTrue(store.cardsOf("p1").isEmpty(), "frozen card is not active");
+        assertEquals(java.util.List.of(card), store.allCardsOf("p1"), "but is still one of the owner's cards");
+    }
+
     @Test
     void testInitialBalanceAndLoading() {
         assertEquals(50000, store.balance("0067676767"), "Seed balance of Ana's card");

@@ -91,6 +91,24 @@
         </dependency>
     </dependencies>
 
+    <!-- The NFC reader's Android-side classes (src/android/java). GluonFX only adds Android code found in a jar
+         under META-INF/substrate/dalvik/precompiled/classes, so build-android.sh builds and installs that jar. -->
+    <profiles>
+        <profile>
+            <id>android-nfc</id>
+            <activation>
+                <file><exists>${basedir}/target/farex-nfc-dalvik.jar</exists></file>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.farex</groupId>
+                    <artifactId>farex-nfc-dalvik</artifactId>
+                    <version>1.0-SNAPSHOT</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
+
     <repositories>
         <repository>
             <id>Gluon</id>

@@ -8,6 +8,8 @@ import farex.shared.plan.TripPlanner;
 import farex.shared.reward.Rewards;
 import farex.shared.txn.Txn;
 import farex.shared.user.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
@@ -15,14 +17,30 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.zip.GZIPOutputStream;
 
 /**
  * HTTP door to the shared Store. No business logic here, Store and TapDesk own it.
- * shortcut: default single-thread executor serializes requests, so Store needs no locks. Upgrade past a demo.
+ * Requests run on a small thread pool, but only one at a time holds LOCK and touches the shared state, so Store
+ * needs no locks of its own. The slow parts run outside it: reading the body, sending the reply, PayMongo and
+ * password checks (outsideLock), so one slow phone or payment no longer holds up every tap.
  */
 public final class Main {
+    static final ReentrantLock LOCK = new ReentrantLock();
+
+    /** Runs slow work that touches no shared state (network, password hashing) with LOCK released. */
+    static <T> T outsideLock(Callable<T> slow) throws Exception {
+        LOCK.unlock();
+        try { return slow.call(); } finally { LOCK.lock(); }
+    }
+
     static Store store;
     static Path dir;
     static TripPlanner planner;
@@ -52,6 +70,12 @@ public final class Main {
         long[] f = fails.get(key);
         if (f == null || now - f[1] >= LOCK_MS) fails.put(key, new long[]{1, now}); else f[0]++;
         if (fails.size() > 10000) fails.values().removeIf(x -> now - x[1] >= LOCK_MS);
+    }
+
+    // A password check runs outside the lock, so its try is counted before (fail) and taken back when it was right
+    static void unfail(String key) {
+        long[] f = fails.get(key);
+        if (f != null && f[0] > 0) f[0]--;
     }
     static final Map<String, TapDesk> desks = new HashMap<>();
 
@@ -127,16 +151,26 @@ public final class Main {
                     p.put("_ip", ex.getRemoteAddress().getAddress().getHostAddress());   // set here so a client cannot fake it
                     String h = ex.getRequestHeaders().getFirst("Authorization");
                     p.put("_token", h != null && h.startsWith("Bearer ") ? h.substring(7) : "");
-                    User u = h != null && h.startsWith("Bearer ") ? tokenUser(h.substring(7)) : null;
-                    if (role != null && u == null) { code = 401; out = json("error", "Please log in again"); }
-                    else if (role != null && !role.equals("ANY") && !role.equals(u.role())) { code = 403; out = json("error", "Not allowed for your account"); }
-                    else if (u != null && suspended(u.getId())) { code = 403; out = json("error", "Account suspended"); }
-                    else { Fares.load(dir); out = act.run(u, p); }
+                    LOCK.lock();
+                    try {
+                        User u = h != null && h.startsWith("Bearer ") ? tokenUser(h.substring(7)) : null;
+                        if (role != null && u == null) { code = 401; out = json("error", "Please log in again"); }
+                        else if (role != null && !role.equals("ANY") && !role.equals(u.role())) { code = 403; out = json("error", "Not allowed for your account"); }
+                        else if (u != null && suspended(u.getId())) { code = 403; out = json("error", "Account suspended"); }
+                        else { fares(); out = act.run(u, p); }
+                    } finally {
+                        LOCK.unlock();
+                    }
                 }
             } catch (IllegalArgumentException | IllegalStateException e) { code = 400; out = json("error", String.valueOf(e.getMessage()));
-            } catch (Exception e) { code = 500; out = json("error", String.valueOf(e.getMessage())); }
+            } catch (Throwable e) { code = 500; out = json("error", String.valueOf(e.getMessage())); }   // an Error too: the phone must get an answer
             byte[] b = out.getBytes(StandardCharsets.UTF_8);
             ex.getResponseHeaders().set("Content-Type", out.startsWith("{") ? "application/json" : out.startsWith("<!") ? "text/html; charset=utf-8" : "text/plain; charset=utf-8");
+            String accept = ex.getRequestHeaders().getFirst("Accept-Encoding");
+            if (b.length > 1024 && accept != null && accept.contains("gzip")) {
+                b = gzip(path, out);
+                ex.getResponseHeaders().set("Content-Encoding", "gzip");
+            }
             ex.sendResponseHeaders(code, b.length);
             try (OutputStream os = ex.getResponseBody()) { os.write(b); }
         });
@@ -147,10 +181,32 @@ public final class Main {
      * PENDING (new operator role waiting for approval), REINSTATE. "" = never listed.
      */
     static String status(String id) {
-        String s = "";
-        for (String[] r : Csv.read(dir.resolve("suspended.csv"), 2)) if (r[0].equals(id)) s = r[1];
-        return s;
+        for (String[] r : suspendedTail.poll(2, lastStatus::clear)) lastStatus.put(r[0], r[1]);
+        return lastStatus.getOrDefault(id, "");
     }
+    static TailFile suspendedTail;                                    // suspended.csv is append only: read new rows only
+    static final Map<String, String> lastStatus = new HashMap<>();
+
+    // The fare table is read again only when fares.csv changes, or a new day may start a published table
+    static Object faresStamp;
+    static void fares() {
+        Object now = List.of(Csv.stamp(dir.resolve("fares.csv")), LocalDate.now(ZoneOffset.UTC));
+        if (!now.equals(faresStamp)) { Fares.load(dir); faresStamp = now; }
+    }
+
+    // Big replies are sent gzipped (about 4x smaller). Cached replies are the same String each time, zipped once.
+    static final Map<String, Object[]> ZIPPED = new ConcurrentHashMap<>();
+    static byte[] gzip(String path, String out) throws IOException {
+        Object[] c = ZIPPED.get(path);
+        if (c != null && c[0] == out) return (byte[]) c[1];
+        ByteArrayOutputStream b = new ByteArrayOutputStream();
+        try (GZIPOutputStream z = new GZIPOutputStream(b)) { z.write(out.getBytes(StandardCharsets.UTF_8)); }
+        ZIPPED.put(path, new Object[]{out, b.toByteArray()});
+        return b.toByteArray();
+    }
+
+    // Built once, cleared when the admin adds a route: ~2 MB of text the map downloads on every app start
+    static String routesReply, shapesReply, roadKmReply;
 
     static boolean suspended(String id) {
         return List.of("SUSPEND", "RETIRE", "PENDING").contains(status(id));
@@ -195,12 +251,45 @@ public final class Main {
      *   P|id|name|email|plate                    operators waiting for approval
      * Lost-card transfers, write-offs and reward credits are not counted as money in or out.
      */
+    // Dashboard totals, updated from the ledger's new rows only, so the 30 s auto refresh never rereads the whole ledger
+    static final ZoneId MANILA = ZoneId.of("Asia/Manila");
+    static TailFile statsTail;
+    static final Map<LocalDate, long[]> statsDay = new HashMap<>();              // Manila day -> {loadCents, loads, fareCents, trips}
+    static final Map<LocalDate, Map<String, long[]>> statsOp = new HashMap<>();   // Manila day -> operator id -> {cents, trips}
+    static final ArrayDeque<String[]> statsRecent = new ArrayDeque<>();           // newest 15 load and fare rows, newest first
+    static long loadAll, fareAll;
+
+    static void syncStats() {
+        for (String[] r : statsTail.poll(8, () -> { statsDay.clear(); statsOp.clear(); statsRecent.clear(); loadAll = fareAll = 0; })) {
+            try {
+                String extra = r.length > 8 ? r[8] : "";
+                boolean load = r[1].equals("CARD_LOAD") && !extra.equals("Replacement Transfer") && !extra.equals("Rewards");
+                boolean fare = r[1].equals("FARE_PAYMENT") && !extra.equals("LOST_REPLACEMENT") && !extra.equals("ACCOUNT_DELETED");
+                if (!load && !fare) continue;
+                long cents = Long.parseLong(r[4]);
+                LocalDate day = Instant.parse(r[7]).atZone(MANILA).toLocalDate();
+                long[] d = statsDay.computeIfAbsent(day, k -> new long[4]);
+                if (load) { loadAll += cents; d[0] += cents; d[1]++; }
+                else {
+                    fareAll += cents;
+                    d[2] += cents;
+                    d[3]++;
+                    long[] op = statsOp.computeIfAbsent(day, k -> new HashMap<>())
+                            .computeIfAbsent(extra, k -> new long[2]);
+                    op[0] += cents;
+                    op[1]++;
+                }
+                statsRecent.addFirst(r);
+                if (statsRecent.size() > 15) statsRecent.removeLast();
+            } catch (RuntimeException badRow) {
+                // a damaged ledger row is skipped here, as everywhere else
+            }
+        }
+    }
+
     static String stats(int days) {
         days = Math.max(1, Math.min(90, days));
-        java.time.ZoneId manila = java.time.ZoneId.of("Asia/Manila");
-        LocalDate first = LocalDate.now(manila).minusDays(days - 1);
-        Map<String, String> last = new HashMap<>();
-        for (String[] r : Csv.read(dir.resolve("suspended.csv"), 2)) last.put(r[0], r[1]);
+        LocalDate first = LocalDate.now(MANILA).minusDays(days - 1);
 
         Map<String, String[]> users = new HashMap<>();
         int passengers = 0, operators = 0, suspendedN = 0;
@@ -209,43 +298,32 @@ public final class Main {
             users.put(r[0], r);
             if (r[4].equals("PASSENGER")) passengers++;
             if (r[4].equals("OPERATOR")) operators++;
-            String st = last.getOrDefault(r[0], "");
+            String st = status(r[0]);
             if (st.equals("PENDING")) waiting.append(String.join("|", "P", clean(r[0]), clean(r[1]), clean(r[2]), clean(r[6]))).append('\n');
             else if (st.equals("SUSPEND") || st.equals("RETIRE")) suspendedN++;
         }
 
+        syncStats();
         long[] loadDay = new long[days], fareDay = new long[days];
         int[] tripDay = new int[days];
-        long loadAll = 0, fareAll = 0;
         int loads = 0;
         Map<String, long[]> byOperator = new HashMap<>();             // operator id -> {cents, trips}
-        Deque<String> recent = new ArrayDeque<>();
-        for (String[] r : Csv.read(dir.resolve("ledger.csv"), 8)) {
-            try {
-                String extra = r.length > 8 ? r[8] : "";
-                boolean load = r[1].equals("CARD_LOAD") && !extra.equals("Replacement Transfer") && !extra.equals("Rewards");
-                boolean fare = r[1].equals("FARE_PAYMENT") && !extra.equals("LOST_REPLACEMENT") && !extra.equals("ACCOUNT_DELETED");
-                if (!load && !fare) continue;
-                long cents = Long.parseLong(r[4]);
-                int i = (int) java.time.temporal.ChronoUnit.DAYS.between(first, Instant.parse(r[7]).atZone(manila).toLocalDate());
-                if (load) loadAll += cents; else fareAll += cents;
-                if (i >= 0 && i < days) {
-                    if (load) { loadDay[i] += cents; loads++; }
-                    else {
-                        fareDay[i] += cents;
-                        tripDay[i]++;
-                        long[] op = byOperator.computeIfAbsent(extra, k -> new long[2]);
-                        op[0] += cents;
-                        op[1]++;
-                    }
-                }
-                String who = users.containsKey(r[2]) ? users.get(r[2])[1] : "(deleted account)";
-                recent.addFirst(String.join("|", "A", r[7], load ? "Load" : "Fare", clean(who), clean(r[3]), r[4],
-                        load ? clean(extra) : (r.length > 9 ? clean(r[9]) + " km" : "")));
-                if (recent.size() > 15) recent.removeLast();
-            } catch (RuntimeException badRow) {
-                // a damaged ledger row is skipped here, as everywhere else
-            }
+        for (int i = 0; i < days; i++) {
+            long[] d = statsDay.get(first.plusDays(i));
+            if (d != null) { loadDay[i] = d[0]; loads += (int) d[1]; fareDay[i] = d[2]; tripDay[i] = (int) d[3]; }
+            statsOp.getOrDefault(first.plusDays(i), Map.of()).forEach((op, v) -> {
+                long[] sum = byOperator.computeIfAbsent(op, k -> new long[2]);
+                sum[0] += v[0];
+                sum[1] += v[1];
+            });
+        }
+        List<String> recent = new ArrayList<>();
+        for (String[] r : statsRecent) {
+            boolean load = r[1].equals("CARD_LOAD");
+            String extra = r.length > 8 ? r[8] : "";
+            String who = users.containsKey(r[2]) ? users.get(r[2])[1] : "(deleted account)";
+            recent.add(String.join("|", "A", r[7], load ? "Load" : "Fare", clean(who), clean(r[3]), r[4],
+                    load ? clean(extra) : (r.length > 9 ? clean(r[9]) + " km" : "")));
         }
         long loadP = 0, fareP = 0;
         int trips = 0;
@@ -254,7 +332,7 @@ public final class Main {
         long earned = 0, redeemed = 0;
         for (String[] r : Csv.read(dir.resolve("rewards.csv"), 5)) {
             try {
-                if (Instant.parse(r[1]).atZone(manila).toLocalDate().isBefore(first)) continue;
+                if (Instant.parse(r[1]).atZone(MANILA).toLocalDate().isBefore(first)) continue;
                 long pts = Long.parseLong(r[4]);
                 if (r[3].equals("EARN")) earned += pts;
                 if (r[3].equals("REDEEM")) redeemed -= pts;
@@ -308,6 +386,8 @@ public final class Main {
 
     public static void main(String[] a) throws Exception {
         dir = Path.of(Env.get("DATA_DIR", "data"));
+        suspendedTail = new TailFile(dir.resolve("suspended.csv"));
+        statsTail = new TailFile(dir.resolve("ledger.csv"));
         boolean dev = "1".equals(Env.get("DEV", "0"));
         String adminPw = Env.get("ADMIN_PASSWORD", dev ? "admin123" : null);
         if (!dev && Pay.FAKE) throw new IllegalStateException("FAKE_PAY gives free money, it needs DEV=1");
@@ -336,6 +416,7 @@ public final class Main {
         } catch (java.net.BindException e) {
             throw new IllegalStateException("Port " + port + " is busy: another FareX server is still running. Close it first.");
         }
+        s.setExecutor(Executors.newFixedThreadPool(8));
 
         // Sends a 6-digit code to the email. SIGNUP: the email typed at sign-up; LOST: the logged-in account's email.
         // Without SMTP settings the code is printed in this server window instead (laptop demo).
@@ -403,9 +484,12 @@ public final class Main {
             long now = System.currentTimeMillis();
             String who = req(p, "email").trim().toLowerCase() + "|" + p.get("_ip"), anyone = "*|" + p.get("_ip");
             if (locked(who, 5, now) || locked(anyone, 30, now)) throw new IllegalStateException("Too many tries. Wait 15 minutes");
-            List<User> all = store.loginAll(req(p, "email"), req(p, "password"));
-            if (all.isEmpty()) { fail(who, now); fail(anyone, now); throw new IllegalArgumentException("Wrong email or password"); }
+            fail(who, now);
+            fail(anyone, now);
+            List<User> all = outsideLock(() -> store.loginAll(req(p, "email"), req(p, "password")));   // ~0.2 s of hashing
+            if (all.isEmpty()) throw new IllegalArgumentException("Wrong email or password");
             fails.remove(who);
+            unfail(anyone);
             // roles = every role of the account, pending = those not usable yet. The token starts on the first usable one.
             List<String> roles = new ArrayList<>(), pending = new ArrayList<>();
             User n = null;
@@ -452,15 +536,19 @@ public final class Main {
             long now = System.currentTimeMillis();
             String key = "pw|" + u.getId();
             if (locked(key, 5, now)) throw new IllegalStateException("Too many tries. Wait 15 minutes");
-            if (store.loginAll(u.getEmail(), req(p, "current")).isEmpty()) { fail(key, now); throw new IllegalArgumentException("Your current password is not correct."); }
+            fail(key, now);
+            if (outsideLock(() -> store.loginAll(u.getEmail(), req(p, "current"))).isEmpty()) throw new IllegalArgumentException("Your current password is not correct.");
+            unfail(key);
             store.setPassword(u.getId(), req(p, "password"));
             return json("ok", "1");
         });
-        // Active cards, then frozen ones that still hold money (",frozen"), so a lost-card transfer can be finished later
+        // "uid,cents" per active card, then "uid,cents,frozen" for frozen ones that still hold money, so a lost-card
+        // transfer can be finished later. The balance comes along so the app needs no /balance call per card.
         route(s, "/cards", "GET", "PASSENGER", (u, p) -> {
-            List<String> out = new ArrayList<>(store.cardsOf(u.getId()));
-            for (String uid : store.allCards())
-                if (u.getId().equals(store.ownerOf(uid)) && store.isCardFrozen(uid) && store.balance(uid) > 0) out.add(uid + ",frozen");
+            List<String> out = new ArrayList<>();
+            for (String uid : store.cardsOf(u.getId())) out.add(uid + "," + store.balance(uid));
+            for (String uid : store.allCardsOf(u.getId()))
+                if (store.isCardFrozen(uid) && store.balance(uid) > 0) out.add(uid + "," + store.balance(uid) + ",frozen");
             return String.join("\n", out);
         });
         // Deletes the whole account (every role); the card balance is written off. Needs the password.
@@ -468,7 +556,9 @@ public final class Main {
             long now = System.currentTimeMillis();
             String key = "pw|" + u.getId();
             if (locked(key, 5, now)) throw new IllegalStateException("Too many tries. Wait 15 minutes");
-            if (store.loginAll(u.getEmail(), req(p, "password")).isEmpty()) { fail(key, now); throw new IllegalArgumentException("Your password is not correct."); }
+            fail(key, now);
+            if (outsideLock(() -> store.loginAll(u.getEmail(), req(p, "password"))).isEmpty()) throw new IllegalArgumentException("Your password is not correct.");
+            unfail(key);
             store.deleteAccount(u.getId());
             tokens.values().removeIf(x -> x.getEmail().equals(u.getEmail()));
             return json("ok", "1");
@@ -490,6 +580,7 @@ public final class Main {
         });
         // "routeId|stop~lat~lng;stop~lat~lng;...|display name" per line (older apps read the first two fields)
         route(s, "/routes", "GET", null, (u, p) -> {
+            if (routesReply != null) return routesReply;
             StringBuilder b = new StringBuilder();
             book.routes().forEach((id, stops) -> {
                 b.append(clean(id)).append('|');
@@ -497,10 +588,11 @@ public final class Main {
                 for (RouteStop st : stops) stopStrs.add(st.name() + "~" + st.lat() + "~" + st.lng());
                 b.append(String.join(";", stopStrs)).append('|').append(clean(book.name(id))).append('\n');
             });
-            return b.toString();
+            return routesReply = b.toString();
         });
         // Road path per segment (stop i -> i+1): "routeId|segment|lat~lng;lat~lng;..." per line
         route(s, "/route-shapes", "GET", null, (u, p) -> {
+            if (shapesReply != null) return shapesReply;
             StringBuilder b = new StringBuilder();
             shapes.all().forEach((id, segs) -> segs.forEach((seg, pts) -> {
                 b.append(clean(id)).append('|').append(seg).append('|');
@@ -510,14 +602,15 @@ public final class Main {
                 }
                 b.append('\n');
             }));
-            return b.toString();
+            return shapesReply = b.toString();
         });
         // Road km between consecutive stops, so the app's fare tables match what is charged:
         // "fromLat,fromLng>toLat,toLng|km" per line (RoadDistances.key)
         route(s, "/road-km", "GET", null, (u, p) -> {
+            if (roadKmReply != null) return roadKmReply;
             StringBuilder b = new StringBuilder();
             Fares.roadKm().forEach((k, km) -> b.append(k).append('|').append(String.format(Locale.ROOT, "%.3f", km)).append('\n'));
-            return b.toString();
+            return roadKmReply = b.toString();
         });
         route(s, "/vehicles", "GET", "ANY", (u, p) -> {
             StringBuilder b = new StringBuilder();
@@ -527,11 +620,12 @@ public final class Main {
         route(s, "/fares/current", "GET", null, (u, p) -> json("base", String.valueOf(Fares.BASE), "rate", String.valueOf(Fares.RATE_PER_KM), "baseKm", String.valueOf(Fares.BASE_KM)));
         route(s, "/cards/all", "GET", "OPERATOR", (u, p) -> {
             StringBuilder b = new StringBuilder();
-            // uid,passengerType,name: the tap screen shows the rider's real discount
+            // uid,passengerType,name,cents: the tap screen shows the rider's real discount and balance in one call
+            // (names never hold a comma, Csv.clean removes them)
             for (String uid : store.allCards()) {
                 User owner = store.findUser(store.ownerOf(uid)).orElse(null);
                 b.append(uid).append(',').append(owner instanceof Passenger x ? x.getPassengerType() : "REGULAR")
-                        .append(',').append(owner == null ? "?" : owner.getName()).append('\n');
+                        .append(',').append(owner == null ? "?" : owner.getName()).append(',').append(store.balance(uid)).append('\n');
             }
             return b.toString();
         });
@@ -609,7 +703,7 @@ public final class Main {
             long c = cents(p);
             mayUse(u, uid);
             if (c < 500 || c > 500000) throw new IllegalArgumentException("Amount must be P5.00 to P5,000.00");
-            String[] r = Pay.start(c / 100.0);
+            String[] r = outsideLock(() -> Pay.start(c / 100.0));
             Csv.append(dir.resolve("pending.csv"), PENDING_H, r[0], u.getId(), uid, String.valueOf(c));
             return json("sessionId", r[0], "checkoutUrl", r[1]);
         });
@@ -624,8 +718,9 @@ public final class Main {
             String rowId = UUID.nameUUIDFromBytes(("load:" + id).getBytes(StandardCharsets.UTF_8)).toString();
             if (store.hasTxn(rowId) || Csv.read(dir.resolve("credited.csv"), 1).stream().anyMatch(r -> r[0].equals(id)))
                 return json("status", "paid", "cents", String.valueOf(store.balance(pd[2])));
-            if (!Pay.paid(id)) return json("status", "unpaid");
-            store.load(pd[2], u.getId(), Long.parseLong(pd[3]), "PayMongo", rowId);
+            if (!outsideLock(() -> Pay.paid(id))) return json("status", "unpaid");
+            // a second confirm may have credited it while PayMongo answered; store.load would refuse it, so report paid
+            if (!store.hasTxn(rowId)) store.load(pd[2], u.getId(), Long.parseLong(pd[3]), "PayMongo", rowId);
             return json("status", "paid", "cents", String.valueOf(store.balance(pd[2])));
         });
 
@@ -732,6 +827,7 @@ public final class Main {
             shapes = new RouteShapes(dir);                   // a new route has no road path until FetchRouteShapes runs
             loadRoadKm();
             planner = new TripPlanner(book, shapes);
+            routesReply = shapesReply = roadKmReply = null;
             return json("ok", "1");
         });
         route(s, "/admin/api/fares", "GET", "ADMIN", (u, p) -> {

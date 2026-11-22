@@ -198,15 +198,56 @@ public final class MockData {
         if (!(liveUser instanceof Passenger) || currentAccount == null) {
             return;
         }
+        apply(currentAccount, fetch());
+    }
+
+    // What refresh() downloads: network only, so it can run off the UI thread
+    private record Snapshot(List<String[]> cards, List<Txn> history, long points) {}
+
+    private static Snapshot fetch() {
+        List<String[]> cards = Api.myCards();                       // {uid, cents, "frozen" or ""}
+        for (String[] c : cards) {
+            if (c[1].isEmpty()) c[1] = String.valueOf(Api.balance(c[0]));   // older server: no balance in /cards
+        }
+        return new Snapshot(cards, Api.history(), Api.rewards().points());
+    }
+
+    /**
+     * refresh() without blocking the screen: downloads on a background thread, then updates the data and runs
+     * onDone on the UI thread. Offline or logged out meanwhile: nothing changes and onDone is not run.
+     */
+    public static void refreshInBackground(Runnable onDone) {
+        DemoAccount account = currentAccount;
+        if (!(liveUser instanceof Passenger) || account == null) {
+            return;
+        }
+        Thread t = new Thread(() -> {
+            try {
+                Snapshot s = fetch();
+                javafx.application.Platform.runLater(() -> {
+                    if (currentAccount == account) {                // still the same login
+                        apply(account, s);
+                        onDone.run();
+                    }
+                });
+            } catch (Api.ApiException offline) {
+                // keep showing the last known balance
+            }
+        }, "farex-refresh");
+        t.setDaemon(true);
+        t.start();
+    }
+
+    private static void apply(DemoAccount currentAccount, Snapshot s) {
         Map<String, DemoCard> before = new HashMap<>();
         for (DemoCard card : currentAccount.getCards()) {
             before.put(card.getCardNumber(), card);
         }
         currentAccount.getCards().clear();
-        for (String line : Api.cardsOf()) {
-            String uid = line.split(",")[0];          // "uid" or "uid,frozen" (reported lost, money not moved yet)
-            DemoCard card = new DemoCard(uid, currentAccount.getFullName(), Api.balance(uid) / 100.0, "--/--");
-            if (line.endsWith(",frozen")) {
+        for (String[] c : s.cards()) {
+            String uid = c[0];
+            DemoCard card = new DemoCard(uid, currentAccount.getFullName(), Long.parseLong(c[1]) / 100.0, "--/--");
+            if (!c[2].isEmpty()) {                     // reported lost, money not moved yet
                 card.freeze("Reported lost");
             }
             if (before.containsKey(uid)) {
@@ -217,11 +258,11 @@ public final class MockData {
             currentAccount.addCard(card);
         }
         currentAccount.getTransactions().clear();
-        List<Txn> history = Api.history();                       // newest first
+        List<Txn> history = s.history();                         // newest first
         for (int i = history.size() - 1; i >= 0; i--) {          // addTransaction puts each on top
             currentAccount.addTransaction(toUiRow(history.get(i)));
         }
-        currentAccount.addPoints((int) Api.rewards().points() - currentAccount.getPointBalance());
+        currentAccount.addPoints((int) s.points() - currentAccount.getPointBalance());
     }
 
     // A server ledger row as a Transactions tab line. Row: uuid,type,acc,card,amount,before,after,time,extra1,extra2

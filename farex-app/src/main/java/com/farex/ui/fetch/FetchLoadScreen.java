@@ -1,5 +1,9 @@
 package com.farex.ui.fetch;
 
+import java.util.concurrent.Callable;
+import java.util.function.Consumer;
+
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
@@ -7,6 +11,8 @@ import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.TextAlignment;
 
+import com.farex.Api;
+import com.farex.CardReader;
 import com.farex.ui.common.CardPickerDialog;
 import com.farex.ui.common.CardTile;
 import com.farex.ui.common.CommonUi;
@@ -115,12 +121,12 @@ public class FetchLoadScreen extends StepScreen {
                 CommonUi.note("Remove thick phone cases. Keep the card still until confirmed. "
                         + "No NFC? Use an authorized load-fetch terminal."),
                 CommonUi.spacer(),
-                // A laptop has no NFC, so this starts the fake card read
+                // Phone: reads the real card. Laptop has no NFC: a fake read
                 CommonUi.limeButton("Start reading card", () -> showStep(this::fetchingStep)),
                 CommonUi.link("Choose another card", this::pickCard));
     }
 
-    // ----- Fetch Load / 03: the fake card read (Esc = failure) -----
+    // ----- Fetch Load / 03: the card read, real on a phone, fake on a laptop (Esc = failure) -----
 
     private void fetchingStep() {
         body.getChildren().add(new FetchStep(this::showSuccess, this::showFailure));
@@ -222,8 +228,38 @@ public class FetchLoadScreen extends StepScreen {
             start(1);
         }
         @Override protected void onFinished() {
-            if (FetchLoadState.collect(load)) onSuccess.run(); else onFailure.run();
+            if (!CardReader.available()) {   // laptop
+                if (FetchLoadState.collect(load)) onSuccess.run(); else onFailure.run();
+                return;
+            }
+            String expected = FetchLoadState.getCard().getCardNumber();   // live cards are numbered by chip UID
+            inBackground(() -> CardReader.read()[0], uid -> {
+                if (uid == null || !uid.equalsIgnoreCase(expected) || !FetchLoadState.collect(load)) {
+                    onFailure.run();
+                    return;
+                }
+                // shortcut: a failed write still shows success, the server already credited it and the chip only holds a
+                // receipt (STALE until the next write). Tell the rider to tap again once real riders use this.
+                inBackground(() -> { CardReader.write(uid, Api.cardPayload(uid)); return uid; }, written -> onSuccess.run());
+            });
         }
         @Override protected void onFailed()   { onFailure.run(); }
+
+        // Card and network calls block, so off the FX thread. done gets null when work threw.
+        private void inBackground(Callable<String> work, Consumer<String> done) {
+            Thread t = new Thread(() -> {
+                String result;
+                try {
+                    result = work.call();
+                } catch (Exception e) {
+                    System.err.println("Card read failed: " + e.getMessage());
+                    result = null;
+                }
+                String r = result;
+                Platform.runLater(() -> { if (getScene() != null) done.accept(r); });   // left with the back arrow: drop it
+            }, "fetch-card");
+            t.setDaemon(true);
+            t.start();
+        }
     }
 }

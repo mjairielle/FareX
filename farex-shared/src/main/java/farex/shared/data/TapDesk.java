@@ -53,7 +53,7 @@ public class TapDesk {
     public BoardedInfo tapIn(String rawUid, int stopIdx) {
         String cardUid = resolveCard(rawUid);
         if (store.isCardFrozen(cardUid)) throw new IllegalStateException("Card is frozen / reported lost");
-        if (boarded.containsKey(cardUid) || store.activeBoardings().containsKey(cardUid))
+        if (boarded.containsKey(cardUid) || store.isOnBoard(cardUid))
             throw new IllegalStateException("Card is already tapped in");
         if (stopIdx < 0 || stopIdx >= stops.size()) throw new IllegalArgumentException("Invalid stop index");
         if (store.ownerOf(cardUid) == null) throw new IllegalStateException("Unknown card");
