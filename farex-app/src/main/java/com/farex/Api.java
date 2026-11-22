@@ -122,8 +122,9 @@ public final class Api {
 
     private static List<String> csv(String s) { return s.isEmpty() ? List.of() : List.of(s.split(",")); }
 
+    /** phone null = leave the saved phone as it is ("" clears it). */
     public static void updateProfile(String name, String phone) {
-        call("POST", "/profile/update", form("name", name, "phone", phone));
+        call("POST", "/profile/update", phone == null ? form("name", name) : form("name", name, "phone", phone));
     }
 
     /** Deletes the whole account (both roles); the card balance is written off. */

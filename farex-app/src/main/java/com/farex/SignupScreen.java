@@ -43,7 +43,8 @@ public class SignupScreen extends Screen {
                         throw new IllegalArgumentException("Passwords do not match");
                     }
                     Api.register(name.getText(), email.getText(), pass.getText(),
-                            passenger.isSelected() ? "PASSENGER" : "OPERATOR", type.getValue(), plate.getText());
+                            passenger.isSelected() ? "PASSENGER" : "OPERATOR", type.getValue(), plate.getText(),
+                            "", "");   // old screen, no email code step: the server answers "Email not verified" (new UI: ui/auth)
                     Nav.show(new LoginScreen("Account created. Please log in."));
                 }),
                 link("Already have an account? Log in", () -> Nav.show(new LoginScreen())),

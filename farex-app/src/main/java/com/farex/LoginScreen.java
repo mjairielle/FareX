@@ -24,7 +24,7 @@ public class LoginScreen extends Screen {
         getChildren().addAll(lime("FareX", 36), email, pass,
                 primary("Login", () -> {
                     Api.base = server.getText().trim();
-                    User u = Api.login(email.getText(), pass.getText());
+                    User u = Api.login(email.getText(), pass.getText()).user();
                     Session.user = u;
                     Nav.show(Nav.home(u));
                 }),

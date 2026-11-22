@@ -41,7 +41,7 @@ public class ProfileScreen extends Screen {
         Button btnSaveName = primary("Save Name Changes", () -> {
             String newName = nameField.getText().trim();
             if (newName.isBlank()) throw new IllegalArgumentException("Name cannot be empty");
-            Api.updateProfile(newName);
+            Api.updateProfile(newName, null);          // null: this screen has no phone field, keep the saved one
             // Update current session user in-memory
             if (p != null) {
                 Session.user = new Passenger(p.getId(), newName, p.getEmail(), p.getPassengerType());
