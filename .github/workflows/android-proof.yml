@@ -1,0 +1,27 @@
+name: android-proof
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'proof/**'
+      - '.github/workflows/android-proof.yml'
+jobs:
+  apk:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: gluonhq/setup-graalvm@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - run: sudo apt-get update && sudo apt-get install -y libasound2-dev libavcodec-dev libavformat-dev libavutil-dev libgl-dev libgtk-3-dev libpango1.0-dev libxtst-dev
+      - run: mvn -B -f proof/pom.xml -Dgluonfx.target=android gluonfx:build
+      # phone talks plain http to the laptop, Android blocks that unless the manifest allows it
+      - run: find proof/target/gluonfx -name AndroidManifest.xml -exec grep -L usesCleartextTraffic {} \; | xargs -r sed -i 's/<application /<application android:usesCleartextTraffic="true" /'
+      - run: mvn -B -f proof/pom.xml -Dgluonfx.target=android gluonfx:package
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: proof
+          path: |
+            proof/target/gluonfx/**/*.apk
+            proof/target/gluonfx/**/AndroidManifest.xml
