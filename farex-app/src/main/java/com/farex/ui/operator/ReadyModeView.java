@@ -25,6 +25,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 
 import com.farex.ui.data.MockData;
+import com.farex.ui.common.Loading;
 import com.farex.ui.common.CommonUi;
 import com.farex.ui.common.Icons;
 import com.farex.ui.common.CardTaps;
@@ -149,11 +150,12 @@ public class ReadyModeView extends StackPane {
 
     // Live, the server turns the route too; it refuses while riders are aboard
     private void turnAround() {
-        String why = OperatorState.turnAround();
-        if (why != null) {
-            new PopupDialog(WarningDialog.warningIcon(), "Couldn't turn around", why).button("OK", () -> { }).show();
-        }
-        showTab.accept(1);                                        // redraw with the new direction
+        OperatorState.turnAround(false, why -> {
+            showTab.accept(1);                                    // redraw with the new direction
+            if (why != null) {
+                new PopupDialog(WarningDialog.warningIcon(), "Couldn't turn around", why).button("OK", () -> { }).show();
+            }
+        });
     }
 
     // ----- QR card -----
@@ -263,18 +265,20 @@ public class ReadyModeView extends StackPane {
         boolean atEnd = OperatorState.isAtTerminal();
         Button next = CommonUi.limeButton(atEnd ? "Trip back" : "Next Stop ›", () -> {
             if (OperatorState.isAtTerminal()) {
-                TapTerminal.chargeMaxFares();     // still on board when leaving the terminal
-                String why = OperatorState.startNewTrip();   // turns around: the trip back
-                if (why != null) {
-                    new PopupDialog(WarningDialog.warningIcon(), "Couldn't start the trip back", why)
-                            .button("OK", () -> { }).show();
-                    return;
-                }
-                showTab.accept(1);                // the title shows the new direction
-            } else {
-                OperatorState.nextStop();
-                refreshLive();
+                // the trip back: riders still aboard pay the max fare, then the jeep turns around
+                OperatorState.turnAround(true, why -> {
+                    showTab.accept(1);            // the title shows the new direction
+                    if (why != null) {
+                        new PopupDialog(WarningDialog.warningIcon(), "Couldn't start the trip back", why)
+                                .button("OK", () -> { }).show();
+                    } else {
+                        showMaxFareIfAny();
+                    }
+                });
+                return;
             }
+            OperatorState.nextStop();
+            refreshLive();
             showMaxFareIfAny();
         });
         next.setFont(Theme.bold(15));
@@ -336,27 +340,40 @@ public class ReadyModeView extends StackPane {
         };
     }
 
+    // The riders (live: every card on the server, with balances) download behind a loading screen
     private void openPicker() {
-        Navigator.showOverlay(new TapPickerDialog(this::tap));
+        Loading.run("Loading riders…", TapTerminal::riders,
+                riders -> Navigator.showOverlay(new TapPickerDialog(riders, this::tap)));
     }
 
-    // A real card on the phone's NFC: the same tap as picking that card in the Simulate list
+    // A real card on the phone's NFC: the same tap as picking that card in the Simulate list.
+    // Finding the card and the tap both talk to the server, so both run behind the loading screen.
     private void tapCard(String uid) {
-        for (TapRider rider : TapTerminal.riders()) {
-            if (!rider.isApp() && rider.getCard().getCardNumber().equalsIgnoreCase(uid)) {
-                Navigator.closeOverlay();                // the last tap's pop-up, if still open
-                tap(rider);
-                return;
+        Loading.run("Reading card…", () -> {
+            for (TapRider rider : TapTerminal.riders()) {
+                if (!rider.isApp() && rider.getCard().getCardNumber().equalsIgnoreCase(uid)) {
+                    return TapTerminal.tap(rider);
+                }
             }
-        }
-        new PopupDialog(WarningDialog.warningIcon(), "Unknown card",
-                "Card " + uid + " is not linked to a FareX account. The rider adds it in the app first.")
-                .button("OK", () -> { }).show();
+            return null;
+        }, result -> {
+            if (result != null) {
+                showTap(result);
+            } else {
+                new PopupDialog(WarningDialog.warningIcon(), "Unknown card",
+                        "Card " + uid + " is not linked to a FareX account. The rider adds it in the app first.")
+                        .button("OK", () -> { }).show();
+            }
+        });
     }
 
     // First tap = tap in, second = tap out; then the matching pop-up
     private void tap(TapRider rider) {
-        TapResult result = TapTerminal.tap(rider);
+        Loading.run(TapTerminal.boardedAt(rider) == null ? "Tapping in…" : "Tapping out…",
+                () -> TapTerminal.tap(rider), this::showTap);
+    }
+
+    private void showTap(TapResult result) {
         refreshLive();
         Navigator.showOverlay(new TapResultDialog(result, this::openPicker));
     }

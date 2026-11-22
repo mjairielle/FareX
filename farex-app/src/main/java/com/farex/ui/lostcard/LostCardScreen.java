@@ -403,7 +403,7 @@ public class LostCardScreen extends StepScreen {
                     busyBar("Submitting report\u2026"));
             start(1);
         }
-        @Override protected void onFinished() { if (LostCardState.freeze()) onSuccess.run(); else onFailure.run(); }
+        @Override protected void onFinished() { finish(LostCardState::freeze, onSuccess, onFailure); }
         @Override protected void onFailed()   { onFailure.run(); }
     }
 
@@ -489,7 +489,7 @@ public class LostCardScreen extends StepScreen {
                     busyBar("Transferring\u2026"));
             start(2);
         }
-        @Override protected void onFinished() { if (LostCardState.transfer()) onSuccess.run(); else onFailure.run(); }
+        @Override protected void onFinished() { finish(LostCardState::transfer, onSuccess, onFailure); }
         @Override protected void onFailed()   { onFailure.run(); }
     }
 }

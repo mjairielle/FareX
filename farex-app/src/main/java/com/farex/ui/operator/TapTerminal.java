@@ -55,7 +55,7 @@ public final class TapTerminal {
     // ----- Riders -----
 
     // Every demo card (Aron 6767, Kenn 1111, Andrei 1313, ...) and the two app users
-    static List<TapRider> riders() {
+    static synchronized List<TapRider> riders() {
         List<TapRider> list = new ArrayList<>();
         if (MockData.isLive()) {
             try {
@@ -108,7 +108,9 @@ public final class TapTerminal {
 
     // ----- Tapping -----
 
-    static TapResult tap(TapRider rider) {
+    // synchronized (also chargeMaxFares, mergeServer): a tap runs off the UI thread behind a loading screen,
+    // and must not change who is on board while the QR rider sync merges the server's list
+    static synchronized TapResult tap(TapRider rider) {
         localTaps++;
         return isOnBoard(rider) ? tapOut(rider) : tapIn(rider);
     }
@@ -123,7 +125,7 @@ public final class TapTerminal {
         }
         if (OperatorState.isAtTerminal()) {
             return TapResult.blocked("End of route",
-                    "Tap New trip on the GPS card before boarding passengers.");
+                    "Tap Trip back on the GPS card before boarding passengers.");
         }
         if (onBoardCount() >= OperatorState.CAPACITY) {
             return TapResult.blocked("Jeepney is full",
@@ -182,7 +184,7 @@ public final class TapTerminal {
 
     // Called by "New trip" and "End shift": everyone still on board pays the whole route
     // at the regular fare (like TapDesk.missedTapOut), e.g. Philcoa -> Fairview 13.53 km = ₱40.05
-    static void chargeMaxFares() {
+    static synchronized void chargeMaxFares() {
         List<Api.StopCoord> stops = OperatorState.getGps().getRouteStops();
         double km = pathKm(0, stops.size() - 1);
         long fare = Fares.fare(km, new RegularFare());
@@ -272,7 +274,7 @@ public final class TapTerminal {
     // UI thread. QR boardings appear on board; riders who scanned off leave and their fare is added to the shift.
     // Returns true when something changed (Ready Mode then redraws).
     @SuppressWarnings("unchecked")
-    static boolean mergeServer(Object[] server) {
+    static synchronized boolean mergeServer(Object[] server) {
         List<Api.BoardedPassenger> onServer = (List<Api.BoardedPassenger>) server[0];
         List<farex.shared.txn.Txn> fares = (List<farex.shared.txn.Txn>) server[1];
         if ((int) server[2] != localTaps) {

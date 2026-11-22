@@ -9,6 +9,7 @@ import javafx.scene.layout.VBox;
 
 import javafx.scene.control.PasswordField;
 
+import com.farex.ui.common.Loading;
 import com.farex.ui.common.CommonUi;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.PopupDialog;
@@ -78,17 +79,17 @@ public class DeleteAccountView extends SubScreen {
         new PopupDialog(WarningDialog.warningIcon(), "Enter your password",
                 "Your account, both passenger and operator sides, is deleted. Any card balance is removed and cannot be refunded.")
                 .add(password, error)
-                .button("Delete my account", () -> {
-                    String why = MockData.deleteCurrentAccount(password.getText());
-                    if (why != null) {
-                        new PopupDialog(WarningDialog.warningIcon(), "Account not deleted", why)
-                                .button("OK", () -> { })
-                                .show();
-                        return;
-                    }
-                    LogoutDialog.clearFlows();
-                    showDeleted();
-                })
+                .button("Delete my account", () -> Loading.run("Deleting your account…",
+                        () -> MockData.deleteCurrentAccount(password.getText()), why -> {
+                            if (why != null) {
+                                new PopupDialog(WarningDialog.warningIcon(), "Account not deleted", why)
+                                        .button("OK", () -> { })
+                                        .show();
+                                return;
+                            }
+                            LogoutDialog.clearFlows();
+                            showDeleted();
+                        }))
                 .link("Keep my account", () -> { })
                 .show();
     }

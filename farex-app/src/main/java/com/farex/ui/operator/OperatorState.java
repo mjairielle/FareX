@@ -22,6 +22,7 @@ import com.farex.operator.ShiftSession;
 import farex.shared.user.Operator;
 
 import com.farex.ui.data.DemoAccount;
+import com.farex.ui.common.Loading;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.PopupDialog;
 import com.farex.ui.common.WarningDialog;
@@ -102,10 +103,6 @@ public final class OperatorState {
         return operatorMode;
     }
 
-    public static void enter() {
-        operatorMode = true;
-        loadRoute();
-    }
 
     public static String routeName() {
         return routeName;
@@ -119,27 +116,38 @@ public final class OperatorState {
 
     // The jeep turns around: the route runs the other way (Philcoa > Fairview becomes Fairview > Philcoa), back at
     // its first stop. Any number of jeeps may run the same route either way. Live: the server turns too, as it prices
-    // taps by stop, and refuses while riders are aboard. null = done, else why not.
-    public static String turnAround() {
-        if (MockData.isLive()) {
+    // taps by stop, and refuses while riders are aboard. chargeRiders: those still aboard pay the max fare first
+    // (leaving the terminal). The server part runs behind a loading screen; the stops change on the UI thread,
+    // where the GPS clock reads them. done gets null when turned, else why not.
+    public static void turnAround(boolean chargeRiders, java.util.function.Consumer<String> done) {
+        Loading.run("Turning around…", () -> {
             try {
-                Api.OperatorRoute r = Api.turnRoute();
-                gps.setRouteStops(r.stops());
-                routeName = r.name();
+                if (chargeRiders) {
+                    TapTerminal.chargeMaxFares();
+                }
+                return MockData.isLive() ? Api.turnRoute() : (Object) "";
             } catch (Api.ApiException e) {
                 return e.getMessage();
             }
-        } else {
-            List<Api.StopCoord> now = gps.getRouteStops(), back = new ArrayList<>();
-            for (int i = now.size() - 1; i >= 0; i--) {
-                back.add(new Api.StopCoord(back.size(), now.get(i).name(), now.get(i).lat(), now.get(i).lng()));
+        }, result -> {
+            if (result instanceof Api.OperatorRoute r) {
+                gps.setRouteStops(r.stops());
+                routeName = r.name();
+            } else if (!"".equals(result)) {
+                done.accept((String) result);
+                return;
+            } else {                       // mock: the same stops, reversed
+                List<Api.StopCoord> now = gps.getRouteStops(), back = new ArrayList<>();
+                for (int i = now.size() - 1; i >= 0; i--) {
+                    back.add(new Api.StopCoord(back.size(), now.get(i).name(), now.get(i).lat(), now.get(i).lng()));
+                }
+                gps.setRouteStops(back);
             }
-            gps.setRouteStops(back);
-        }
-        gps.setCurrentStopIdx(0);
-        gps.setAutoDriving(false);
-        sentStop = -2;                     // the server forgot the jeep's stop on turning: send it again
-        return null;
+            gps.setCurrentStopIdx(0);
+            gps.setAutoDriving(false);
+            sentStop = -2;                 // the server forgot the jeep's stop on turning: send it again
+            done.accept(null);
+        });
     }
 
     // Live: the stops of this operator's route from the server (/operator/route), loaded when Operator Mode opens.
@@ -173,10 +181,13 @@ public final class OperatorState {
     }
 
     // After login or the "Log in as" chooser: that role's home. The server token already acts as it.
+    // Operator: the jeep's route downloads first, behind a loading screen.
     public static void openRole(String role) {
         if ("OPERATOR".equals(role)) {
-            enter();
-            Navigator.go("operatorDashboard");
+            Loading.run("Opening Operator Mode…", OperatorState::loadRoute, () -> {
+                operatorMode = true;
+                Navigator.go("operatorDashboard");
+            });
         } else {
             leave();
             Navigator.go("dashboard");
@@ -185,12 +196,14 @@ public final class OperatorState {
 
     // Switch to a role of the same account (no password again), or show why not
     public static void switchTo(String role) {
-        String error = MockData.useRole(role);
-        if (error != null) {
-            new PopupDialog(WarningDialog.warningIcon(), "Couldn't switch", error).button("OK", () -> { }).show();
-        } else {
-            openRole(role);
-        }
+        Loading.run("OPERATOR".equals(role) ? "Switching to Operator Mode…" : "Switching to Passenger…",
+                () -> MockData.useRole(role), error -> {
+                    if (error != null) {
+                        new PopupDialog(WarningDialog.warningIcon(), "Couldn't switch", error).button("OK", () -> { }).show();
+                    } else {
+                        openRole(role);
+                    }
+                });
     }
 
     // "Exit Operator Mode": back to the passenger side. An operator-only account is asked first,
@@ -202,14 +215,14 @@ public final class OperatorState {
         }
         new PopupDialog("Use FareX as a passenger?",
                 "This account is for driving only. Add a passenger side to ride, load cards and plan trips with the same login.")
-                .button("Add passenger side", () -> {
-                    String error = MockData.addRole("PASSENGER", "");
-                    if (error != null) {
-                        new PopupDialog(WarningDialog.warningIcon(), "Couldn't add it", error).button("OK", () -> { }).show();
-                    } else {
-                        switchTo("PASSENGER");
-                    }
-                })
+                .button("Add passenger side", () -> Loading.run("Adding passenger side…",
+                        () -> MockData.addRole("PASSENGER", ""), error -> {
+                            if (error != null) {
+                                new PopupDialog(WarningDialog.warningIcon(), "Couldn't add it", error).button("OK", () -> { }).show();
+                            } else {
+                                switchTo("PASSENGER");
+                            }
+                        }))
                 .link("Cancel", () -> { })
                 .show();
     }
@@ -379,11 +392,6 @@ public final class OperatorState {
 
     public static void previousStop() {
         gps.rewindStop();
-    }
-
-    // At the terminal the jeep turns around for a new trip: Fairview back to Philcoa. null = done, else why not
-    public static String startNewTrip() {
-        return turnAround();
     }
 
     public static boolean isAtTerminal() {

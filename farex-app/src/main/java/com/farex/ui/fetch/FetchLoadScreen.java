@@ -244,12 +244,14 @@ public class FetchLoadScreen extends StepScreen {
         }
         @Override protected void onFinished() {
             if (!CardReader.available()) {   // laptop
-                if (FetchLoadState.collect(load)) onSuccess.run(); else onFailure.run();
+                finish(() -> FetchLoadState.collect(load), onSuccess, onFailure);
                 return;
             }
             String expected = FetchLoadState.getCard().getCardNumber();   // live cards are numbered by chip UID
-            inBackground(() -> CardReader.read()[0], uid -> {
-                if (uid == null || !uid.equalsIgnoreCase(expected) || !FetchLoadState.collect(load)) {
+            // the read and the server confirm both in the background
+            inBackground(() -> { String uid = CardReader.read()[0]; return uid != null && uid.equalsIgnoreCase(expected)
+                    && FetchLoadState.collect(load) ? uid : null; }, uid -> {
+                if (uid == null) {
                     onFailure.run();
                     return;
                 }

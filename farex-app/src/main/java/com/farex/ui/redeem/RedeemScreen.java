@@ -253,7 +253,7 @@ public class RedeemScreen extends StepScreen {
                     busyBar("Redeeming\u2026"));
             start(1);
         }
-        @Override protected void onFinished() { if (RedeemState.redeem()) onSuccess.run(); else onFailure.run(); }
+        @Override protected void onFinished() { finish(RedeemState::redeem, onSuccess, onFailure); }
         @Override protected void onFailed()   { onFailure.run(); }
     }
 }

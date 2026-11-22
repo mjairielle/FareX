@@ -1,5 +1,6 @@
 package com.farex.ui.load;
 
+import com.farex.ui.common.Loading;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.PopupDialog;
 import com.farex.ui.data.MockData;
@@ -44,12 +45,16 @@ public class BuyLoadScreen extends StepScreen {
     private void reviewStep() {
         setTitle("");
         body.getChildren().add(new LoadReviewStep(() -> {
-            String error = LoadPayment.pay();
-            if (error == null) {
-                restartAt(MockData.isLive() ? this::waitStep : this::receiptStep);   // live: the receipt only once paid
-            } else {
-                new PopupDialog(WarningDialog.warningIcon(), "Payment not started", error).button("OK", () -> { }).show();
-            }
+            Loading.run("Starting payment…", LoadPayment::pay, error -> {
+                if (error == null) {
+                    if (MockData.isLive()) {
+                        LoadPayment.openCheckout();
+                    }
+                    restartAt(MockData.isLive() ? this::waitStep : this::receiptStep);   // live: the receipt only once paid
+                } else {
+                    new PopupDialog(WarningDialog.warningIcon(), "Payment not started", error).button("OK", () -> { }).show();
+                }
+            });
         }));
     }
 

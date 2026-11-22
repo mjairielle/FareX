@@ -170,14 +170,15 @@ public class OtpView extends VBox {
             showError("Code expired. Tap Resend code.");
             return;
         }
-        String error = verify(code);
-        if (error == null) {
-            timer.stop();
-            onCodeAccepted();
-        } else {
-            showError(error);                      // e.g. "Wrong code. Try again."
-            clearBoxes();
-        }
+        Loading.run("Checking code…", () -> verify(code), error -> {
+            if (error == null) {
+                timer.stop();
+                onCodeAccepted();
+            } else {
+                showError(error);                  // e.g. "Wrong code. Try again."
+                clearBoxes();
+            }
+        });
     }
 
     // What the code is for and where it goes. Sign-up: the email typed on Register.
@@ -189,13 +190,19 @@ public class OtpView extends VBox {
         return MockData.getPendingContact();
     }
 
-    // Asks the server to email a code (it prints it in its window when no email account is set up)
+    // Asks the server to email a code (it prints it in its window when no email account is set up).
+    // In the background: sending the email takes seconds, and the screen can show meanwhile.
     protected void sendCode() {
-        try {
-            Api.sendOtp(otpPurpose(), otpEmail());
-        } catch (Api.ApiException e) {
-            showError(e.getMessage());             // e.g. "Wait 30 seconds before asking for another code"
-        }
+        String purpose = otpPurpose(), email = otpEmail();
+        Thread t = new Thread(() -> {
+            try {
+                Api.sendOtp(purpose, email);
+            } catch (Api.ApiException e) {
+                Platform.runLater(() -> showError(e.getMessage()));   // e.g. "Wait 30 seconds before asking for another code"
+            }
+        }, "farex-otp-send");
+        t.setDaemon(true);
+        t.start();
     }
 
     // The server checks the code. null = right (and otpPass is set), else why not.

@@ -6,6 +6,7 @@ import javafx.scene.Cursor;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
+import com.farex.ui.common.Loading;
 import com.farex.ui.common.Avatar;
 import com.farex.ui.common.CommonUi;
 import com.farex.ui.common.LabeledField;
@@ -128,19 +129,28 @@ public class AccountScreen extends StepScreen {
             showError("Your email is your login and cannot be changed yet.");
         } else {
             DemoAccount account = MockData.getCurrentAccount();
-            if (MockData.isLive() && !(name.equals(account.getFullName()) && phone.equals(account.getPhone()))) {
+            boolean send = MockData.isLive() && !(name.equals(account.getFullName()) && phone.equals(account.getPhone()));
+            Loading.run("Saving…", () -> {
+                if (!send) {
+                    return null;
+                }
                 try {
                     Api.updateProfile(name, phone);   // the server keeps them for every role of the account
+                    return null;
                 } catch (Api.ApiException e) {
-                    showError(e.getMessage());
+                    return e.getMessage();
+                }
+            }, error -> {
+                if (error != null) {
+                    showError(error);
                     return;
                 }
-            }
-            account.setFullName(name);
-            account.setEmail(email);
-            account.setPhone(phone);
-            ProfileState.clearDraft();
-            restartAt(this::viewStep);
+                account.setFullName(name);
+                account.setEmail(email);
+                account.setPhone(phone);
+                ProfileState.clearDraft();
+                restartAt(this::viewStep);
+            });
         }
     }
 

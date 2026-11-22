@@ -33,6 +33,23 @@ public abstract class ProgressStep extends VBox {
 
     protected abstract void onFinished();
 
+    // For onFinished: the server call runs off the UI thread (this screen stays animated instead of freezing),
+    // then ok or failed on the UI thread. A call that throws counts as failed.
+    protected void finish(java.util.function.BooleanSupplier work, Runnable ok, Runnable failed) {
+        Thread t = new Thread(() -> {
+            boolean done;
+            try {
+                done = work.getAsBoolean();
+            } catch (RuntimeException e) {
+                done = false;
+            }
+            boolean d = done;
+            Platform.runLater(() -> (d ? ok : failed).run());
+        }, "farex-progress");
+        t.setDaemon(true);
+        t.start();
+    }
+
     protected abstract void onFailed();
 
     // ----- Building blocks -----

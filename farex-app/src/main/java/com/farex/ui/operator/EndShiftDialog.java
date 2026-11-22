@@ -5,6 +5,7 @@ import javafx.scene.Group;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
+import com.farex.ui.common.Loading;
 import com.farex.ui.common.CommonUi;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.PopupDialog;
@@ -30,12 +31,13 @@ public final class EndShiftDialog {
         PopupDialog dialog = new PopupDialog(new Group(warning), "End this shift?",
                 "NFC and QR will stop. You can start a new shift anytime.")
                 .add(syncPanel(pending))
-                .button("End shift", () -> {
-                    TapTerminal.chargeMaxFares();     // anyone still on board pays the max fare
-                    TapTerminal.takeMaxFareResult();  // counted in the summary; no pop-up
-                    OperatorState.endShift();
-                    Navigator.go("operatorSummary");
-                })
+                .button("End shift", () -> Loading.run("Ending shift…",
+                        TapTerminal::chargeMaxFares,  // anyone still on board pays the max fare
+                        () -> {
+                            TapTerminal.takeMaxFareResult();  // counted in the summary; no pop-up
+                            OperatorState.endShift();
+                            Navigator.go("operatorSummary");
+                        }))
                 .link("Keep driving", () -> { });
         if (pending > 0) {
             dialog.link("Sync first", () -> Navigator.go("operatorSync"));

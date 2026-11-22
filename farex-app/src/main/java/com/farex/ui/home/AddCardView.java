@@ -8,6 +8,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 
+import com.farex.ui.common.Loading;
 import com.farex.ui.common.CardNumberField;
 import com.farex.ui.common.CardTaps;
 import com.farex.ui.common.CommonUi;
@@ -79,13 +80,22 @@ public class AddCardView extends SubScreen {
         }
 
         if (MockData.isLive()) {
-            try {
-                Api.addCard(uid);                       // card id on the server = the chip UID (8 or 14 hex)
-                MockData.refresh();
-            } catch (Api.ApiException e) {
-                showError(e.getMessage());               // e.g. "Card is already linked to an account"
-                return;
-            }
+            Loading.run("Adding your card…", () -> {
+                try {
+                    Api.addCard(uid);                   // card id on the server = the chip UID (8 or 14 hex)
+                    MockData.refresh();
+                    return null;
+                } catch (Api.ApiException e) {
+                    return e.getMessage();              // e.g. "Card is already linked to an account"
+                }
+            }, error -> {
+                if (error != null) {
+                    showError(error);
+                } else {
+                    Navigator.go("dashboard");
+                }
+            });
+            return;
         } else {
             account.addCard(new DemoCard(demoNumber, account.getFullName(), 0.00, "09/29"));
         }

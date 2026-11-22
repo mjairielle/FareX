@@ -43,12 +43,13 @@ ENV PORT=8080 \
 
 EXPOSE 8080
 
-USER farex
+# Starts as root only to hand a mounted volume to the farex user, then runs the server as farex (see start.sh)
+COPY farex-server/start.sh /app/start.sh
 
 # Healthcheck checking the public fares endpoint
 HEALTHCHECK --interval=15s --timeout=5s --start-period=5s --retries=3 \
   CMD wget -q -O - http://localhost:${PORT}/fares/current || exit 1
 
-# Copies each route file the data folder does not have yet (never overwrites: admin-added routes stay).
-# Render sets PORT itself; the server reads it.
-CMD ["sh", "-c", "cp -n /app/default-data/* /app/data/ 2>/dev/null || true; exec java -cp 'farex-server.jar:libs/*' farex.server.Main"]
+# Uses a Railway volume if one is attached (accounts survive deploys), copies route files the data folder lacks.
+# Railway and Render set PORT themselves; the server reads it.
+CMD ["sh", "/app/start.sh"]

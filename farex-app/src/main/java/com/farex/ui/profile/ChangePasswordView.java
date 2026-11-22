@@ -4,6 +4,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.layout.VBox;
 
+import com.farex.ui.common.Loading;
 import com.farex.ui.common.CommonUi;
 import com.farex.ui.common.LabeledField;
 import com.farex.ui.common.Navigator;
@@ -69,12 +70,20 @@ public class ChangePasswordView extends SubScreen {
         } else if (!newPassword.equals(confirm.getField().getText())) {
             showError("The new passwords don’t match.");
         } else if (live) {
-            try {
-                Api.changePassword(now, newPassword);
-                showChanged();
-            } catch (Api.ApiException e) {
-                showError(e.getMessage());
-            }
+            Loading.run("Saving your password…", () -> {
+                try {
+                    Api.changePassword(now, newPassword);
+                    return null;
+                } catch (Api.ApiException e) {
+                    return e.getMessage();
+                }
+            }, error -> {
+                if (error == null) {
+                    showChanged();
+                } else {
+                    showError(error);
+                }
+            });
         } else {
             account.setPassword(newPassword);
             showChanged();

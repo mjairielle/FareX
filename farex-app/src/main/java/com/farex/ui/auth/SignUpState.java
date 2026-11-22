@@ -2,6 +2,7 @@ package com.farex.ui.auth;
 
 import javafx.scene.control.TextField;
 
+import com.farex.ui.common.Loading;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.PopupDialog;
 import com.farex.ui.common.RoutePicker;
@@ -56,12 +57,14 @@ public final class SignUpState {
     }
 
     private static void send(String serverRole, String plate, String route) {
-        String error = MockData.registerOnServer(serverRole.isEmpty() ? "PASSENGER" : serverRole, plate, route);
-        if (error == null) {
-            Navigator.go("congrats");
-        } else {
-            failed(error);
-        }
+        Loading.run("Creating your account…",
+                () -> MockData.registerOnServer(serverRole.isEmpty() ? "PASSENGER" : serverRole, plate, route), error -> {
+                    if (error == null) {
+                        Navigator.go("congrats");
+                    } else {
+                        failed(error);
+                    }
+                });
     }
 
     private static void failed(String why) {

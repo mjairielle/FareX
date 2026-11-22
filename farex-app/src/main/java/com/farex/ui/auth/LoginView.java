@@ -8,6 +8,7 @@ import javafx.scene.layout.HBox;
 
 import com.farex.Api;
 import com.farex.ui.common.IconField;
+import com.farex.ui.common.Loading;
 import com.farex.ui.common.PopupDialog;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.Theme;
@@ -57,15 +58,16 @@ public class LoginView extends AuthenticationScreen {
                 showError("Enter your email and password.");
                 return;
             }
-            String error = MockData.login(contact, password);
-            if (error != null) {
-                showError(error);
-                serverRow.setVisible(error.startsWith("Cannot reach"));
-            } else if (MockData.hasBothRoles()) {
-                Navigator.go("chooseRole");                         // "Log in as" Passenger or Operator
-            } else {
-                OperatorState.openRole(MockData.currentRole());     // the server knows the account's role
-            }
+            Loading.run("Logging in…", () -> MockData.login(contact, password), error -> {
+                if (error != null) {
+                    showError(error);
+                    serverRow.setVisible(error.startsWith("Cannot reach"));
+                } else if (MockData.hasBothRoles()) {
+                    Navigator.go("chooseRole");                         // "Log in as" Passenger or Operator
+                } else {
+                    OperatorState.openRole(MockData.currentRole());     // the server knows the account's role
+                }
+            });
         });
 
         // Enter key: contact field -> password field -> login

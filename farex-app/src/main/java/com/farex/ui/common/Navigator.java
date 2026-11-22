@@ -44,6 +44,13 @@ public final class Navigator {
         container.getChildren().add(dialog);
     }
 
+    // Closes this dialog only if it is still the one showing (a screen change may have removed it already)
+    public static void closeOverlay(Node dialog) {
+        if (overlay == dialog) {
+            closeOverlay();
+        }
+    }
+
     public static void closeOverlay() {
         if (overlay != null) {
             container.getChildren().remove(overlay);

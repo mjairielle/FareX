@@ -20,7 +20,8 @@ final class LoadPayment {
     }
 
     // null when started, else why not (e.g. "Amount must be P5.00 to P5,000.00").
-    // Mock: paid at once. Live: opens the PayMongo page; nothing is saved until confirmed() says paid.
+    // Mock: paid at once. Live: starts a PayMongo checkout (the caller opens it on the UI thread with openCheckout());
+    // nothing is saved until confirmed() says paid. Network: call it off the UI thread.
     static String pay() {
         if (!MockData.isLive()) {
             addPending(MockData.nextReference());
@@ -31,7 +32,6 @@ final class LoadPayment {
             String[] checkout = Api.startLoad(BuyLoadState.getCard().getCardNumber(),
                     Math.round(BuyLoadState.getAmount() * 100), BuyLoadState.getMethod());
             BuyLoadState.setCheckout(checkout[0], checkout[1]);
-            openCheckout();
             return null;
         } catch (Api.ApiException e) {
             return e.getMessage();

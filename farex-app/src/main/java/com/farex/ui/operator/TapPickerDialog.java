@@ -19,6 +19,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
+import com.farex.ui.common.Loading;
 import com.farex.ui.common.CommonUi;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.Theme;
@@ -28,11 +29,11 @@ import com.farex.ui.trip.TripUi;
 // the right side says what tapping does now ("Tap in" or "Tap out" if already on board).
 public class TapPickerDialog extends StackPane {
 
-    public TapPickerDialog(Consumer<TapRider> onPick) {
+    public TapPickerDialog(java.util.List<TapRider> riders, Consumer<TapRider> onPick) {
         setBackground(Theme.solid(Color.rgb(0, 0, 0, 0.45)));
 
         VBox rows = new VBox(8);
-        for (TapRider rider : TapTerminal.riders()) {
+        for (TapRider rider : riders) {
             rows.getChildren().add(row(rider, onPick));
         }
 
