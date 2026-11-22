@@ -37,7 +37,7 @@ public class LoadCardStep extends VBox {
         super(16);
         VBox.setVgrow(this, Priority.ALWAYS);
         this.onDone = onDone;
-        Label caption = new Label("xPress Card Number (last 8 digits)");
+        Label caption = new Label("xPress Card Number (last 8 characters)");
         caption.setTextFill(Theme.WHITE);
         caption.setFont(Font.font(Theme.FONT, 12));
 
@@ -68,7 +68,7 @@ public class LoadCardStep extends VBox {
         numberField.setOnDigitsChanged(digits -> {
             errorLabel.setVisible(false);
             for (CardChoiceTile tile : tiles) {
-                tile.setSelected(tile.getCard().getLast8().equals(digits));
+                tile.setSelected(tile.getCard().getLast8().equalsIgnoreCase(digits));
             }
         });
 
@@ -110,11 +110,11 @@ public class LoadCardStep extends VBox {
 
     private void goNext() {
         if (!numberField.isComplete()) {
-            showError("Enter the last 8 digits of your card, for example 6767 6767.");
+            showError("Enter the last 8 characters of your card number, for example 5389 CB02.");
             return;
         }
         for (CardChoiceTile tile : tiles) {
-            if (tile.getCard().getLast8().equals(numberField.getDigits())) {
+            if (tile.getCard().getLast8().equalsIgnoreCase(numberField.getDigits())) {
                 BuyLoadState.setCard(tile.getCard());
                 onDone.run();
                 return;

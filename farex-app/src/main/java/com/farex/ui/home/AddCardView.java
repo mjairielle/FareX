@@ -28,7 +28,7 @@ public class AddCardView extends SubScreen {
     public AddCardView() {
         super("Add a xPress Card", "dashboard");
 
-        Label caption = new Label("xPress Card Number (last 8 digits)");
+        Label caption = new Label("xPress Card Number (last 8 characters)");
         caption.setTextFill(Theme.WHITE);
         caption.setFont(Font.font(Theme.FONT, 12));
 
@@ -58,7 +58,7 @@ public class AddCardView extends SubScreen {
 
     private void saveCard(CardNumberField numberField) {
         if (!numberField.isComplete()) {
-            showError("Enter the last 8 digits of your card, for example 6767 6767.");
+            showError("Enter the last 8 characters of your card number, for example 5389 CB02.");
             return;
         }
         link(numberField.getDigits(), numberField.getFullNumber());   // demo number: "00" + 8 digits

@@ -56,9 +56,10 @@ public class CardNumberField extends HBox {
 
         getChildren().addAll(prefix, divider, field);
 
-        // Keep only digits, max 8, and put a space after the 4th: "67676767" -> "6767 6767"
+        // Keep card characters only, max 8, and put a space after the 4th: "5389cb02" -> "5389 CB02".
+        // Hex, not just digits: a live card is named by its chip UID (0-9, A-F)
         field.textProperty().addListener((obs, oldText, newText) -> {
-            String digits = newText.replaceAll("\\D", "");
+            String digits = cardChars(newText);
             if (digits.length() > 8) {
                 digits = digits.substring(0, 8);
             }
@@ -82,7 +83,11 @@ public class CardNumberField extends HBox {
     }
 
     public String getDigits() {
-        return field.getText().replaceAll("\\D", "");
+        return cardChars(field.getText());
+    }
+
+    private static String cardChars(String text) {
+        return text.toUpperCase(java.util.Locale.ROOT).replaceAll("[^0-9A-F]", "");
     }
 
     public String getFullNumber() {

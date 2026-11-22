@@ -120,11 +120,22 @@ public class Store {
     }
 
     private synchronized User appendRole(String name, String email, String hash, String role, String passengerType, String plate) {
+        if (role.equals("OPERATOR") && plateTaken(plate)) throw new IllegalArgumentException("Plate " + plate.trim() + " is already registered to another operator");
         String id = UUID.randomUUID().toString().substring(0, 8);
         String type = role.equals("PASSENGER") ? passengerType : "";
         Csv.append(users, H_USERS, id, name, email, hash, role, type, Csv.clean(plate).trim());
         userRows = null;
         return findUser(id).get();
+    }
+
+    // One plate, one jeep. "abc 123" and "ABC-123" are the same plate. A deleted operator frees it; a retired one keeps it.
+    private boolean plateTaken(String plate) {
+        String want = plateKey(plate);
+        return userRows().stream().anyMatch(r -> r[4].equals("OPERATOR") && plateKey(r[6]).equals(want));
+    }
+
+    private static String plateKey(String plate) {
+        return plate.replaceAll("[^A-Za-z0-9]", "").toUpperCase(java.util.Locale.ROOT);
     }
 
     /** Every role row of the same email, this one included. */

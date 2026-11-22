@@ -211,7 +211,7 @@ public class LostCardScreen extends StepScreen {
             javafx.scene.layout.VBox.setVgrow(this, javafx.scene.layout.Priority.ALWAYS);
 
             VBox numberPanel = CommonUi.panel(
-                    CommonUi.small("xPress card number (last 8 digits)", Theme.WHITE), numberField);
+                    CommonUi.small("xPress card number (last 8 characters)", Theme.WHITE), numberField);
             numberPanel.setBorder(LIME_OUTLINE);
 
             errorLabel.setTextFill(Theme.ERROR);
@@ -231,7 +231,7 @@ public class LostCardScreen extends StepScreen {
             refresh();
 
             getChildren().addAll(
-                    heading("Link your new card", "Enter the last 8 digits, then hold the issued replacement "
+                    heading("Link your new card", "Enter the last 8 characters, then hold the issued replacement "
                             + "card to your phone to verify its UID."),
                     numberPanel,
                     errorLabel,
@@ -260,14 +260,14 @@ public class LostCardScreen extends StepScreen {
                 checkValue.setTextFill(Theme.LIME);
             } else {
                 uidValue.setText("—");
-                checkValue.setText("Waiting for 8 digits");
+                checkValue.setText("Waiting for 8 characters");
                 checkValue.setTextFill(Theme.GRAY);
             }
         }
 
         private void next() {
             if (!numberField.isComplete()) {
-                showError("Enter the last 8 digits of the new card, for example 8842 8842.");
+                showError("Enter the last 8 characters of the new card, for example 8842 8842.");
                 return;
             }
             // live cards are the 8 printed digits, like Add Card

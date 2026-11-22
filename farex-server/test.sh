@@ -59,4 +59,13 @@ ok "$(curl -s -X POST $B/admin/api/card/unlink -d uid=$C -H "$(H $MT)" | j ok)" 
 ok "$(curl -s -X POST $B/cards/add -d uid=$C -H "$(H $CT)" | j uid)" $C "another rider adds the unlinked card"
 ok "$(curl -s $B/balance?uid=$C -H "$(H $CT)" | j cents)" 10000 "the money stays on the card"
 ok "$(curl -s $B/balance?uid=$C -H "$(H $AT)" | j error)" "Card is not yours" "old owner no longer sees it"
+WP=$(signup w@m.com)
+ok "$(curl -s -X POST $B/register -d "name=W&email=w@m.com&password=password1&role=OPERATOR&plate=abc 123&otp=$WP" | j error)" \
+   "Plate abc 123 is already registered to another operator" "no second operator on Ben's plate ABC-123"
+CY=$(curl -s -X POST $B/login -d "email=cy@m.com&password=password1" | j id)
+ok "$(code -X POST $B/admin/api/user/delete -d id=$CY -H "$(H $AT)")" 403 "only admin can delete an account"
+ok "$(curl -s -X POST $B/admin/api/user/delete -d id=$CY -H "$(H $MT)" | j ok)" 1 "admin deletes Cy's account"
+ok "$(code $B/cards -H "$(H $CT)")" 401 "Cy's phone is logged out"
+ok "$(curl -s -X POST $B/login -d "email=cy@m.com&password=password1" | j error)" "Wrong email or password" "Cy can no longer log in"
+ok "$(curl -s -X POST $B/admin/api/user/delete -d id=a1 -H "$(H $MT)" | j error)" "Cannot delete an admin" "admin account cannot be deleted"
 exit $FAIL

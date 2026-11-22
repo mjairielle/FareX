@@ -209,8 +209,16 @@ const views = {
           return sel;
         }
         if (i === 4) return statusBadge(u[6]);
-        return u[3] === 'ADMIN' ? '' : statusButton(u, 'Suspend', 'Users');
+        return u[3] === 'ADMIN' ? '' : kids(el('div'), statusButton(u, 'Suspend', 'Users'), btn('Delete', () => del(u), 'warn'));
       }));
+    };
+    // Same as the rider deleting it in the app: every role of the email goes, cards are frozen, balances written off
+    const del = async u => {
+      if (!confirm('Delete the account of ' + u[1] + ' (' + u[2] + ')? Every role of this email is removed, '
+          + 'its cards are frozen and their balance is written off. This cannot be undone.')) return;
+      await api('POST', '/admin/api/user/delete', { id: u[0] });
+      say('Deleted the account of ' + u[1] + '.', true);
+      show('Users');
     };
     [q, role, st].forEach(x => x.oninput = draw);
     v.appendChild(card(null, kids(el('div', null, { className: 'filters' }), q, role, st), count, holder));

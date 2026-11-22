@@ -79,6 +79,18 @@ public class StoreTest {
     }
 
     @Test
+    void plateCannotBeRegisteredTwice() {
+        // seeded operator Ben drives ABC-123
+        IllegalArgumentException dup = assertThrows(IllegalArgumentException.class,
+                () -> store.register("Cy", "cy@mail.com", "password1", "OPERATOR", "", "abc 123"));
+        assertEquals("Plate abc 123 is already registered to another operator", dup.getMessage());
+        assertThrows(IllegalArgumentException.class, () -> store.addRole("p1", "OPERATOR", "ABC123"), "same plate as a second role");
+        store.register("Cy", "cy@mail.com", "password1", "OPERATOR", "", "XYZ-789");
+        store.deleteAccount("o1");
+        store.register("Di", "di@mail.com", "password1", "OPERATOR", "", "ABC-123");   // deleting Ben freed his plate
+    }
+
+    @Test
     void testInitialBalanceAndLoading() {
         assertEquals(50000, store.balance("0067676767"), "Seed balance of Ana's card");
         store.load("0067676767", "p1", 10000, "GCash");

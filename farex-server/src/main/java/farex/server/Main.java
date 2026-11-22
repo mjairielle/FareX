@@ -873,6 +873,13 @@ public final class Main {
             store.load(uid, owner, cents(p), "Cash at admin");
             return json("uid", uid, "cents", String.valueOf(store.balance(uid)));
         });
+        // Deletes the whole account (every role of the email) like /profile/delete; Store refuses an admin
+        route(s, "/admin/api/user/delete", "POST", "ADMIN", (u, p) -> {
+            User t = store.findUser(req(p, "id")).orElseThrow(() -> new IllegalArgumentException("No such user"));
+            store.deleteAccount(t.getId());
+            tokens.values().removeIf(x -> x.getEmail().equals(t.getEmail()));   // logged in phones are logged out
+            return json("ok", "1");
+        });
         // The card belongs to nobody again, so someone else can add it (a card linked to the wrong account)
         route(s, "/admin/api/card/unlink", "POST", "ADMIN", (u, p) -> {
             store.unlinkCard(req(p, "uid").trim());
