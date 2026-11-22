@@ -202,14 +202,21 @@ public final class MockData {
     }
 
     // What refresh() downloads: network only, so it can run off the UI thread
-    private record Snapshot(List<String[]> cards, List<Txn> history, long points) {}
+    // paid = loads PayMongo confirmed and not fetched yet, {sessionId, uid, cents, method}; null = server too old to say
+    private record Snapshot(List<String[]> cards, List<Txn> history, long points, List<String[]> paid) {}
 
     private static Snapshot fetch() {
         List<String[]> cards = Api.myCards();                       // {uid, cents, "frozen" or ""}
         for (String[] c : cards) {
             if (c[1].isEmpty()) c[1] = String.valueOf(Api.balance(c[0]));   // older server: no balance in /cards
         }
-        return new Snapshot(cards, Api.history(), Api.rewards().points());
+        List<String[]> paid;
+        try {
+            paid = Api.paidLoads();
+        } catch (Api.ApiException olderServer) {
+            paid = null;                                            // keep the pending loads already shown
+        }
+        return new Snapshot(cards, Api.history(), Api.rewards().points(), paid);
     }
 
     /**
@@ -246,7 +253,8 @@ public final class MockData {
     private static String shown(DemoAccount account) {
         StringBuilder b = new StringBuilder();
         for (DemoCard c : account.getCards()) {
-            b.append(c.getCardNumber()).append(':').append(c.getBalance()).append(':').append(c.isFrozen()).append(';');
+            b.append(c.getCardNumber()).append(':').append(c.getBalance()).append(':').append(c.isFrozen())
+                    .append(':').append(c.hasPendingLoad() ? c.getPendingLoad().getReference() : "").append(';');
         }
         return b.append(account.getPointBalance()).append(';').append(account.getTransactions().size()).toString();
     }
@@ -267,6 +275,15 @@ public final class MockData {
             card.setBalance(Long.parseLong(c[1]) / 100.0);
             if (!c[2].isEmpty() && !card.isFrozen()) {   // reported lost, money not moved yet (a server never unfreezes)
                 card.freeze("Reported lost");
+            }
+            if (s.paid() != null) {                     // Fetch Load shows only confirmed payments
+                List<PendingLoad> loads = new java.util.ArrayList<>();
+                for (String[] p : s.paid()) {
+                    if (p[1].equals(uid)) {
+                        loads.add(new PendingLoad(Long.parseLong(p[2]) / 100.0, p[3].isEmpty() ? "Others" : p[3], p[0]));
+                    }
+                }
+                card.setPendingLoads(loads);
             }
             currentAccount.addCard(card);
         }

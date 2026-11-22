@@ -24,6 +24,7 @@ import com.farex.ui.common.StepScreen;
 import com.farex.ui.common.Theme;
 import com.farex.ui.common.WarningDialog;
 import com.farex.ui.data.DemoCard;
+import com.farex.ui.data.MockData;
 import com.farex.ui.data.PendingLoad;
 
 // Fetch Load, all in one screen (opened from Home):
@@ -108,7 +109,7 @@ public class FetchLoadScreen extends StepScreen {
                 CommonUi.note("Just paid? Refresh the status before purchasing again. "
                         + "You can also check another linked card."),
                 // Checks again: if a load is pending now, this turns into "Fetch your pending load"
-                CommonUi.limeButton("Refresh status", () -> restartAt(this::startStep)),
+                CommonUi.limeButton("Refresh status", this::refreshStatus),
                 CommonUi.link("Choose another card", this::pickCard));
     }
 
@@ -185,6 +186,15 @@ public class FetchLoadScreen extends StepScreen {
     }
 
     // ----- Helpers -----
+
+    // Asks the server for payments confirmed since (live); redraws only when something changed. Mock: redraws.
+    private void refreshStatus() {
+        if (!MockData.isLive()) {
+            restartAt(this::startStep);
+            return;
+        }
+        MockData.refreshInBackground(() -> restartAt(this::startStep));
+    }
 
     // "Change" / "Choose another card": pick a card, then start over with it
     private void pickCard() {

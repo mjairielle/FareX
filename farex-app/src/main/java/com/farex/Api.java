@@ -186,9 +186,21 @@ public final class Api {
     }
 
     /** Returns {sessionId, checkoutUrl}. checkoutUrl "fake" means the server runs without PayMongo. */
-    public static String[] startLoad(String uid, long cents) {
-        String r = call("POST", "/load/start", form("uid", uid, "cents", String.valueOf(cents)));
+    public static String[] startLoad(String uid, long cents) { return startLoad(uid, cents, ""); }
+
+    public static String[] startLoad(String uid, long cents, String method) {
+        String r = call("POST", "/load/start", form("uid", uid, "cents", String.valueOf(cents), "method", method));
         return new String[]{field(r, "sessionId", ""), field(r, "checkoutUrl", "")};
+    }
+
+    /** Loads PayMongo confirmed as paid and not fetched yet: {sessionId, cardUid, cents, method}. Unpaid ones are never here. */
+    public static List<String[]> paidLoads() {
+        List<String[]> out = new ArrayList<>();
+        for (String l : lines(call("GET", "/load/paid", null))) {
+            String[] f = l.split(",", -1);
+            if (f.length >= 4) out.add(f);
+        }
+        return out;
     }
 
     /** True when paid and credited. False means not paid yet. */

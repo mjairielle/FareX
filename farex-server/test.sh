@@ -68,6 +68,17 @@ ok "$(curl -s -X POST $B/admin/api/user/delete -d id=$CY -H "$(H $MT)" | j ok)" 
 ok "$(code $B/cards -H "$(H $CT)")" 401 "Cy's phone is logged out"
 ok "$(curl -s -X POST $B/login -d "email=cy@m.com&password=password1" | j error)" "Wrong email or password" "Cy can no longer log in"
 ok "$(curl -s -X POST $B/admin/api/user/delete -d id=a1 -H "$(H $MT)" | j error)" "Cannot delete an admin" "admin account cannot be deleted"
+# ----- Buy Load: only a payment PayMongo confirmed shows in Fetch Load -----
+PS=$(curl -s -X POST $B/load/start -d "uid=0067676767&cents=20000&method=GCash" -H "$(H $AT)" | j sessionId)
+ok "$(curl -s $B/load/paid -H "$(H $AT)" | grep -c "^$PS,0067676767,20000,GCash$")" 1 "paid load is listed for Fetch Load, with its method"
+ok "$(curl -s $B/load/paid -H "$(H $OT)" | grep -c "$PS")" 0 "not shown to another account"
+if [ -n "$DATA" ]; then   # a checkout left unpaid (FAKE_PAY only says paid for fake- sessions)
+  echo "cs_unpaid,p1,0067676767,5000,$(date -u +%Y-%m-%dT%H:%M:%SZ),GCash" >> "$DATA/pending.csv"
+  ok "$(curl -s $B/load/paid -H "$(H $AT)" | grep -c cs_unpaid)" 0 "unpaid checkout never shows in Fetch Load"
+fi
+curl -s -X POST $B/load/confirm -d "sessionId=$PS" -H "$(H $AT)" >/dev/null
+ok "$(curl -s $B/load/paid -H "$(H $AT)" | grep -c "$PS")" 0 "fetched load leaves the list"
+
 # ----- admin: add, edit, delete everything -----
 fewest(){ curl -s "$B/plan?fromLat=14.5876&fromLng=120.9813&toLat=14.7349&toLng=121.0566" | grep "Fewest" | cut -d'|' -f3; }
 ok "$(code -X POST $B/admin/api/user/add -d "name=Dan&email=dan@m.com&password=password1&role=OPERATOR&plate=DAN-1" -H "$(H $AT)")" 403 "only admin adds accounts"

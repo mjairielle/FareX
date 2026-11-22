@@ -46,7 +46,26 @@ public final class BuyLoadState {
         amount = newAmount;
     }
 
+    // Live: the PayMongo checkout opened for this load: its session id (the reference) and page
+    private static String checkoutId;
+    private static String checkoutUrl;
+
+    public static String getCheckoutId() {
+        return checkoutId;
+    }
+
+    public static String getCheckoutUrl() {
+        return checkoutUrl;
+    }
+
+    public static void setCheckout(String id, String url) {
+        checkoutId = id;
+        checkoutUrl = url;
+    }
+
     public static void clear() {
+        checkoutId = null;
+        checkoutUrl = null;
         card = null;
         method = null;
         accountNumber = null;

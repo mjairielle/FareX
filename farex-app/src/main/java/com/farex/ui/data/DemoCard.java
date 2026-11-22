@@ -79,6 +79,22 @@ public class DemoCard {
         pendingLoads.add(load);
     }
 
+    // Live: the same payment (reference = PayMongo session) is never listed twice
+    public void addPendingLoadOnce(PendingLoad load) {
+        for (PendingLoad p : pendingLoads) {
+            if (p.getReference().equals(load.getReference())) {
+                return;
+            }
+        }
+        pendingLoads.add(load);
+    }
+
+    // Live: exactly what the server says is paid and not fetched yet (an unpaid checkout never shows)
+    void setPendingLoads(List<PendingLoad> loads) {
+        pendingLoads.clear();
+        pendingLoads.addAll(loads);
+    }
+
     // The server's balance after a payment it confirmed
     public void setBalance(double pesos) {
         balance = pesos;

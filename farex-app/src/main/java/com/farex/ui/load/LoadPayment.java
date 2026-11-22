@@ -19,26 +19,52 @@ final class LoadPayment {
     private LoadPayment() {
     }
 
-    // null when the pending load is saved, else why not (e.g. "Amount must be P5.00 to P5,000.00")
+    // null when started, else why not (e.g. "Amount must be P5.00 to P5,000.00").
+    // Mock: paid at once. Live: opens the PayMongo page; nothing is saved until confirmed() says paid.
     static String pay() {
-        String reference = MockData.nextReference();
-        if (MockData.isLive()) {
-            try {
-                String[] checkout = Api.startLoad(BuyLoadState.getCard().getCardNumber(),
-                        Math.round(BuyLoadState.getAmount() * 100));
-                reference = checkout[0];
-                if (!"fake".equals(checkout[1])) {
-                    FarexApp.openUrl(checkout[1]);   // pay there, then Fetch Load
-                }
-            } catch (Api.ApiException e) {
-                return e.getMessage();
-            }
+        if (!MockData.isLive()) {
+            addPending(MockData.nextReference());
+            addTransaction();
+            return null;
         }
-        PendingLoad load = new PendingLoad(BuyLoadState.getAmount(), BuyLoadState.getMethod(), reference);
-        BuyLoadState.getCard().addPendingLoad(load);
+        try {
+            String[] checkout = Api.startLoad(BuyLoadState.getCard().getCardNumber(),
+                    Math.round(BuyLoadState.getAmount() * 100), BuyLoadState.getMethod());
+            BuyLoadState.setCheckout(checkout[0], checkout[1]);
+            openCheckout();
+            return null;
+        } catch (Api.ApiException e) {
+            return e.getMessage();
+        }
+    }
+
+    // The PayMongo page again (closed by mistake). A server without PayMongo ("fake") has none.
+    static void openCheckout() {
+        String url = BuyLoadState.getCheckoutUrl();
+        if (url != null && !"fake".equals(url)) {
+            FarexApp.openUrl(url);
+        }
+    }
+
+    // Live: true once PayMongo confirms this checkout was paid; the load then waits on the card for Fetch Load.
+    // Blocks on the network, so call it off the UI thread. Offline counts as not confirmed yet.
+    static boolean confirmed() {
+        try {
+            for (String[] paid : Api.paidLoads()) {
+                if (paid[0].equals(BuyLoadState.getCheckoutId())) {
+                    return true;
+                }
+            }
+        } catch (Api.ApiException offline) {
+            // ask again on the next check
+        }
+        return false;
+    }
+
+    // UI thread, after confirmed(): the paid load shows in Fetch Load and in the notifications
+    static void addPending(String reference) {
+        BuyLoadState.getCard().addPendingLoadOnce(new PendingLoad(BuyLoadState.getAmount(), BuyLoadState.getMethod(), reference));
         addPaidNotification();
-        addTransaction();
-        return null;
     }
 
     // ₱200 with GCash -> "You have paid ₱200.00 using GCash."

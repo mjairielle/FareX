@@ -110,7 +110,7 @@ public final class Main {
     static final String SUSPENDED_H = "userId,action,time";
     // shortcut: dev default key, set CARD_KEY in .env before any real card is written
     static final byte[] CARD_KEY = Env.get("CARD_KEY", "farex-dev-card-key").getBytes(java.nio.charset.StandardCharsets.UTF_8);
-    static final String PENDING_H = "sessionId,accountId,cardUid,cents";
+    static final String PENDING_H = "sessionId,accountId,cardUid,cents,time,method";
 
     interface Act { String run(User u, Map<String, String> p) throws Exception; }
 
@@ -360,6 +360,11 @@ public final class Main {
         return "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
                 + "<title>FareX</title></head><body style=\"font-family:system-ui,sans-serif;background:#111;color:#eee;text-align:center;padding:48px 20px\">"
                 + "<h1 style=\"color:#c6ff3d\">" + title + "</h1><p>" + text + "</p></body></html>";
+    }
+
+    // The ledger row id of a PayMongo load, from its checkout session id: the ledger itself says if it was credited
+    static String loadRowId(String sessionId) {
+        return UUID.nameUUIDFromBytes(("load:" + sessionId).getBytes(StandardCharsets.UTF_8)).toString();
     }
 
     // After an admin changes routes: the planner, fares on road km and the app's cached route replies see it at once
@@ -713,8 +718,33 @@ public final class Main {
             mayUse(u, uid);
             if (c < 500 || c > 500000) throw new IllegalArgumentException("Amount must be P5.00 to P5,000.00");
             String[] r = outsideLock(() -> Pay.start(c / 100.0));
-            Csv.append(dir.resolve("pending.csv"), PENDING_H, r[0], u.getId(), uid, String.valueOf(c));
+            Csv.append(dir.resolve("pending.csv"), PENDING_H, r[0], u.getId(), uid, String.valueOf(c),
+                    Instant.now().toString(), clean(p.getOrDefault("method", "")));
             return json("sessionId", r[0], "checkoutUrl", r[1]);
+        });
+        // Loads paid at PayMongo and not fetched yet: "sessionId,cardUid,cents,method" per line. Fetch Load shows only
+        // these, so a checkout left unpaid never appears. A payment seen paid is kept in paid.csv (not asked again).
+        // shortcut: an unpaid checkout is asked about for 2 days, then dropped; one paid later than that needs the admin.
+        route(s, "/load/paid", "GET", "PASSENGER", (u, p) -> {
+            Set<String> seen = new HashSet<>(), done = new HashSet<>();
+            Csv.read(dir.resolve("paid.csv"), 1).forEach(r -> seen.add(r[0]));
+            Csv.read(dir.resolve("credited.csv"), 1).forEach(r -> done.add(r[0]));
+            Instant since = Instant.now().minus(java.time.Duration.ofDays(2));
+            StringBuilder b = new StringBuilder();
+            for (String[] r : Csv.read(dir.resolve("pending.csv"), 4)) {
+                if (!r[1].equals(u.getId()) || done.contains(r[0]) || store.hasTxn(loadRowId(r[0]))) continue;
+                if (!seen.contains(r[0])) {
+                    boolean recent;
+                    try { recent = r.length > 4 && Instant.parse(r[4]).isAfter(since); } catch (RuntimeException old) { recent = false; }
+                    boolean paid;
+                    try { paid = recent && outsideLock(() -> Pay.paid(r[0])); } catch (Exception offline) { paid = false; }   // ask again next time
+                    if (!paid) continue;
+                    Csv.append(dir.resolve("paid.csv"), "sessionId", r[0]);
+                    seen.add(r[0]);
+                }
+                b.append(String.join(",", r[0], r[2], r[3], r.length > 5 ? r[5] : "")).append('\n');
+            }
+            return b.toString();
         });
         // credited.csv remembers paid sessions, so confirming twice credits once
         route(s, "/load/confirm", "POST", "PASSENGER", (u, p) -> {
@@ -724,7 +754,7 @@ public final class Main {
             if (!pd[1].equals(u.getId())) throw new IllegalArgumentException("Unknown payment");
             // The ledger row id comes from the session id, so the ledger itself says if this payment was credited.
             // credited.csv is only read for payments made before this change.
-            String rowId = UUID.nameUUIDFromBytes(("load:" + id).getBytes(StandardCharsets.UTF_8)).toString();
+            String rowId = loadRowId(id);
             if (store.hasTxn(rowId) || Csv.read(dir.resolve("credited.csv"), 1).stream().anyMatch(r -> r[0].equals(id)))
                 return json("status", "paid", "cents", String.valueOf(store.balance(pd[2])));
             if (!outsideLock(() -> Pay.paid(id))) return json("status", "unpaid");

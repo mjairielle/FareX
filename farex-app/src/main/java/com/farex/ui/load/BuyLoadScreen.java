@@ -1,6 +1,8 @@
 package com.farex.ui.load;
 
+import com.farex.ui.common.Navigator;
 import com.farex.ui.common.PopupDialog;
+import com.farex.ui.data.MockData;
 import com.farex.ui.common.WarningDialog;
 import com.farex.ui.common.StepScreen;
 
@@ -44,10 +46,19 @@ public class BuyLoadScreen extends StepScreen {
         body.getChildren().add(new LoadReviewStep(() -> {
             String error = LoadPayment.pay();
             if (error == null) {
-                restartAt(this::receiptStep);
+                restartAt(MockData.isLive() ? this::waitStep : this::receiptStep);   // live: the receipt only once paid
             } else {
                 new PopupDialog(WarningDialog.warningIcon(), "Payment not started", error).button("OK", () -> { }).show();
             }
+        }));
+    }
+
+    // restartAt forgets the earlier steps, so back goes Home: the checkout is open, going back would pay twice
+    private void waitStep() {
+        setTitle("Payment");
+        body.getChildren().add(new LoadWaitStep(() -> restartAt(this::receiptStep), () -> {
+            BuyLoadState.clear();
+            Navigator.go("dashboard");
         }));
     }
 
