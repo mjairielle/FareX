@@ -11,6 +11,9 @@
 name: Android APK
 
 on:
+  # Run workflow needs this file on main; until then a push to nick builds the APK
+  push:
+    branches: [nick]
   workflow_dispatch:
     inputs:
       carto_key:
