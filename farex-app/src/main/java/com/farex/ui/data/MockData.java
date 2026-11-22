@@ -259,14 +259,14 @@ public final class MockData {
         currentAccount.getCards().clear();
         for (String[] c : s.cards()) {
             String uid = c[0];
-            DemoCard card = new DemoCard(uid, currentAccount.getFullName(), Long.parseLong(c[1]) / 100.0, "--/--");
-            if (!c[2].isEmpty()) {                     // reported lost, money not moved yet
-                card.freeze("Reported lost");
+            // Reuse the card object: a Buy Load in progress adds its pending load to it, and a new object would lose that
+            DemoCard card = before.get(uid);
+            if (card == null) {
+                card = new DemoCard(uid, currentAccount.getFullName(), 0, "--/--");
             }
-            if (before.containsKey(uid)) {
-                for (PendingLoad load : before.get(uid).getPendingLoads()) {
-                    card.addPendingLoad(load);
-                }
+            card.setBalance(Long.parseLong(c[1]) / 100.0);
+            if (!c[2].isEmpty() && !card.isFrozen()) {   // reported lost, money not moved yet (a server never unfreezes)
+                card.freeze("Reported lost");
             }
             currentAccount.addCard(card);
         }

@@ -79,10 +79,6 @@ public class DemoCard {
         pendingLoads.add(load);
     }
 
-    public List<PendingLoad> getPendingLoads() {
-        return pendingLoads;
-    }
-
     // The server's balance after a payment it confirmed
     public void setBalance(double pesos) {
         balance = pesos;

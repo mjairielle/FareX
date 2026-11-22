@@ -73,7 +73,6 @@ public final class FetchLoadState {
         if (MockData.isLive()) {
             try {
                 MockData.refresh();                          // the server's balance, not our sum
-                card = findCard(current.getCardNumber());   // refresh made new card objects
             } catch (Api.ApiException e) {
                 // paid and credited; the screen shows our sum until the next refresh
             }
@@ -85,13 +84,6 @@ public final class FetchLoadState {
                     "Your load has been **successfully** fetched.", false));
         }
         return true;
-    }
-
-    private static DemoCard findCard(String number) {
-        for (DemoCard c : MockData.getCurrentAccount().getCards()) {
-            if (c.getCardNumber().equals(number)) return c;
-        }
-        return getCard();
     }
 
     // ----- Opening and leaving -----
