@@ -769,7 +769,8 @@ public final class Main {
             long c = cents(p);
             mayUse(u, uid);
             if (c < 500 || c > 500000) throw new IllegalArgumentException("Amount must be P5.00 to P5,000.00");
-            String[] r = outsideLock(() -> Pay.start(c / 100.0));
+            String method = p.getOrDefault("method", "");
+            String[] r = outsideLock(() -> Pay.start(c / 100.0, method));
             Csv.append(dir.resolve("pending.csv"), PENDING_H, r[0], u.getId(), uid, String.valueOf(c),
                     Instant.now().toString(), clean(p.getOrDefault("method", "")));
             return json("sessionId", r[0], "checkoutUrl", r[1]);

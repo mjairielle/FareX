@@ -74,7 +74,9 @@ The server loads configuration from environment variables (or `.env` in the root
 | `FAKE_PAY` | `0` | `1` skips PayMongo and credits loads for free. The server refuses to start with it unless `DEV=1` |
 | `ADMIN_PASSWORD` | *(required)* | Admin account password, 8 or more characters. Applied on every start |
 | `CARD_KEY` | *(required)* | Secret used to seal card balances |
-| `PAYMONGO_SECRET` | *(required unless `FAKE_PAY`)* | Secret key for PayMongo checkout integration |
+| `PAYMONGO_SECRET` | *(required unless `FAKE_PAY`)* | Secret key for PayMongo checkout integration. `sk_test_…` shows PayMongo's test page (no real money); `sk_live_…` takes real payments |
+| `PAYMONGO_METHODS` | `gcash,paymaya,card` | PayMongo payment methods offered at checkout. Live keys: list only methods PayMongo activated for the account (`dob` = BPI online banking), or every checkout fails |
+| `PUBLIC_URL` | `http://localhost:8080` | This server's public address. PayMongo sends the payer back to `PUBLIC_URL/paid` or `/cancelled` |
 
 The server refuses to start in production mode while a demo password (`admin123` or `1234`) is still in `users.csv`.
 Run `./security-check.sh` after building to replay the launch review exploits. Expect all PASS.
