@@ -75,14 +75,14 @@ public final class MockData {
 
     // The Transactions history from the Figma (Sept 23-25, 2026), oldest first so the newest ends on top
     private static void addSampleTransactions(DemoAccount account) {
-        String trip = "Location → Location";
+        String trip = "Location › Location";
         sample(account, "2026-09-23T07:10", DemoTransaction.FARE, "Pay Fare", trip, -13);
         sample(account, "2026-09-23T09:30", DemoTransaction.FARE, "Pay Fare", trip, -21);
         sample(account, "2026-09-23T13:15", DemoTransaction.FARE, "Pay Fare", trip, -11);
         sample(account, "2026-09-23T17:40", DemoTransaction.FARE, "Pay Fare", trip, -15);
         sample(account, "2026-09-24T08:05", DemoTransaction.FARE, "Pay Fare", trip, -11);
         sample(account, "2026-09-24T14:20", DemoTransaction.TRANSFER, "Balance Transfer",
-                "Old xPress Card → New xPress Card", 325);
+                "Old xPress Card › New xPress Card", 325);
         sample(account, "2026-09-25T08:43", DemoTransaction.FARE, "Pay Fare", "8:43 AM | " + trip, -35);
         sample(account, "2026-09-25T10:00", DemoTransaction.LOAD, "Buy Load", "10:00 AM | BPI", 200);
         sample(account, "2026-09-25T15:00", DemoTransaction.LOAD, "Buy Load", "3:00 PM | GCash", 500);

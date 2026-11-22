@@ -112,6 +112,74 @@ function statusButton(u, active, view) {
   }, 'warn');
 }
 const statusBadge = st => badge(st, 'b-' + st);
+const lab = (t, input) => kids(el('div'), el('label', t), input);
+const actions = (...b) => kids(el('div'), ...b);
+
+// A form card at the top of the page, for adding or editing one thing.
+// fields: [label, key, value, kind]; kind is 'text' (default), 'password', 'date', 'number', 'area', or a list of options.
+// save gets {key: value} and returns a message; the page then reloads.
+function editor(title, fields, save) {
+  const old = document.querySelector('.editor'); if (old) old.remove();
+  const box = card(title), form = el('div', null, { className: 'form' }), inputs = {};
+  box.classList.add('editor'); box.style.borderColor = 'var(--lime)';
+  fields.forEach(([label, key, value, kind]) => {
+    let i;
+    if (Array.isArray(kind)) { i = el('select'); kind.forEach(o => i.appendChild(el('option', o))); }
+    else if (kind === 'area') i = el('textarea', null, { rows: 8 });
+    else i = el('input', null, { type: kind || 'text' });
+    i.value = value === undefined || value === null ? '' : value;
+    inputs[key] = i;
+    form.appendChild(lab(label, i));
+    if (kind === 'area') i.parentNode.style.gridColumn = '1 / -1';
+  });
+  const view = current;
+  kids(box, form, actions(btn('Save', async () => {
+    const msg = await save(Object.fromEntries(Object.entries(inputs).map(([k, i]) => [k, i.type === 'password' ? i.value : i.value.trim()])));
+    say(msg, true); show(view);
+  }), btn('Cancel', () => box.remove(), 'dark')));
+  $('view').prepend(box);
+  box.scrollIntoView({ behavior: 'smooth' });
+}
+// Asks first, then runs the delete and reloads the page
+const remove = (question, f, done) => btn('Delete', async () => { if (!confirm(question)) return; await f(); say(done, true); show(current); }, 'warn');
+
+// Add a route (id null) or edit one: name, direction and stops. Saving reloads the trip planner on the server.
+async function routeEditor(id) {
+  const ONE = 'One way (stop order only)', BOTH = 'Both ways';
+  let name = '', dir = BOTH, stops = '';
+  if (id) {
+    const lines = (await api('GET', '/admin/api/route', { id })).split(NL).filter(l => l.length);
+    const meta = lines.pop().slice(1).split('|');
+    name = meta[0] === id ? '' : meta[0];
+    dir = meta[1] === 'true' ? ONE : BOTH;
+    stops = lines.map(l => l.split(',').join(', ')).join(NL);
+  }
+  const fields = id ? [] : [['Route id (letters, digits, dash)', 'id']];
+  fields.push(['Display name, e.g. Lawton to SM Fairview', 'name', name], ['Direction', 'oneway', dir, [BOTH, ONE]],
+    ['Stops in riding order, one per line: name, lat, lng (e.g. Cubao, 14.62134, 121.05299)', 'stops', stops, 'area']);
+  editor(id ? 'Edit route ' + id : 'Add a route', fields, async f => {
+    const rid = id || f.id;
+    await api('POST', '/admin/api/route/add', { id: rid, name: f.name, oneway: f.oneway === ONE, replace: id ? 1 : 0,
+      stops: f.stops.split(NL).filter(l => l.trim()).join(';') });
+    return 'Route ' + rid + ' saved. The trip planner uses it now.';
+  });
+}
+
+// Add or edit an account. u = a row of /admin/api/users, or null for a new account.
+function userEditor(u, role) {
+  if (!u) return editor(role === 'OPERATOR' ? 'Add a vehicle (operator account)' : 'Add an account', [
+      ['Name', 'name'], ['Email', 'email'], ['Password (8+ characters)', 'password', '', 'password'],
+      ['Role', 'role', role || 'PASSENGER', ['PASSENGER', 'OPERATOR']], ['Discount (passengers)', 'type', 'REGULAR', ['REGULAR', 'STUDENT', 'SENIOR', 'PWD']],
+      ['Plate (operators)', 'plate']],
+    async f => { await api('POST', '/admin/api/user/add', f); return 'Added ' + f.name + '. They can log in now.'; });
+  const fields = [['Name', 'name', u[1]], ['Email', 'email', u[2]], ['Phone (09xxxxxxxxx, blank = none)', 'phone', u[7]]];
+  if (u[3] === 'OPERATOR') fields.push(['Plate', 'plate', u[5]]);
+  fields.push(['New password (blank keeps it)', 'password', '', 'password']);
+  editor('Edit ' + u[1], fields, async f => {
+    await api('POST', '/admin/api/user/edit', Object.assign({ id: u[0] }, f));
+    return 'Saved ' + f.name + '.' + (f.password || f.email !== u[2] ? ' Their phones were logged out.' : '');
+  });
+}
 
 // ----- charts: plain SVG -----
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -209,7 +277,7 @@ const views = {
           return sel;
         }
         if (i === 4) return statusBadge(u[6]);
-        return u[3] === 'ADMIN' ? '' : kids(el('div'), statusButton(u, 'Suspend', 'Users'), btn('Delete', () => del(u), 'warn'));
+        return u[3] === 'ADMIN' ? '' : actions(btn('Edit', () => userEditor(u), 'dark'), statusButton(u, 'Suspend', 'Users'), btn('Delete', () => del(u), 'warn'));
       }));
     };
     // Same as the rider deleting it in the app: every role of the email goes, cards are frozen, balances written off
@@ -221,14 +289,21 @@ const views = {
       show('Users');
     };
     [q, role, st].forEach(x => x.oninput = draw);
+    v.appendChild(kids(el('div', null, { className: 'bar' }), btn('Add an account', () => userEditor(null))));
     v.appendChild(card(null, kids(el('div', null, { className: 'filters' }), q, role, st), count, holder));
     draw();
   }},
 
-  Vehicles: { sub: 'One operator account per jeepney. Retire stops only the jeep; the owner can still ride as a passenger.', async render(v) {
+  Vehicles: { sub: 'One operator account per jeepney. Retire stops only the jeep; Delete removes it, and the owner can still ride as a passenger.', async render(v) {
     const data = rows(await api('GET', '/admin/api/users')).filter(r => r[3] === 'OPERATOR');
+    v.appendChild(kids(el('div', null, { className: 'bar' }), btn('Add a vehicle', () => userEditor(null, 'OPERATOR'))));
     v.appendChild(card(null, table([['Plate'], ['Operator'], ['Email'], ['Status'], ['']], data, (u, i) =>
-      i === 0 ? u[5] : i === 1 ? u[1] : i === 2 ? u[2] : i === 3 ? statusBadge(u[6]) : statusButton(u, 'Retire', 'Vehicles'))));
+      i === 0 ? u[5] : i === 1 ? u[1] : i === 2 ? u[2] : i === 3 ? statusBadge(u[6])
+      : actions(btn('Edit', () => editor('Edit vehicle ' + u[5], [['Plate', 'plate', u[5]]], async f => {
+            await api('POST', '/admin/api/user/edit', { id: u[0], plate: f.plate }); return 'Plate changed to ' + f.plate + '.'; }), 'dark'),
+          statusButton(u, 'Retire', 'Vehicles'),
+          remove('Delete jeepney ' + u[5] + ' of ' + u[1] + '? If this is their only role, the whole account is deleted.',
+            () => api('POST', '/admin/api/vehicle/delete', { id: u[0] }), 'Deleted jeepney ' + u[5] + '.')))));
   }},
 
   Cards: { sub: 'Every linked card and its balance. Load cash: take the money at the counter, then add it here.', async render(v) {
@@ -261,9 +336,18 @@ const views = {
       holder.appendChild(table([['Card ID'], ['Owner'], ['Balance', 'num'], ['Status'], ['']], shown, (r, i) =>
         i === 0 ? r[0] : i === 1 ? kids(el('div'), el('div', r[1]), el('div', r[2], { className: 'sub', style: 'margin:0;font-size:12px' }))
         : i === 2 ? peso(r[3]) : i === 3 ? (r[4] === 'true' ? badge('frozen', 'b-suspended') : badge('active', 'b-active'))
-        : kids(el('div'), r[4] === 'true' ? null : btn('Load cash', () => load(r[0], r[1])), btn('Unlink', () => unlink(r[0], r[1], r[3]), 'warn'))));
+        : actions(r[4] === 'true' ? null : btn('Load cash', () => load(r[0], r[1])), freeze(r[0], r[4] === 'true'), btn('Unlink', () => unlink(r[0], r[1], r[3]), 'warn'))));
     };
+    // Freeze: the card can no longer ride (lost, stolen). Unfreeze lets it ride again with the balance it has.
+    const freeze = (uid, frozen) => btn(frozen ? 'Unfreeze' : 'Freeze', async () => {
+      if (!confirm((frozen ? 'Let card ' + uid + ' ride again?' : 'Freeze card ' + uid + '? It can no longer pay fares until unfrozen.'))) return;
+      await api('POST', '/admin/api/card/freeze', { uid, frozen: !frozen });
+      say('Card ' + uid + (frozen ? ' can ride again.' : ' is frozen.'), true); show('Cards');
+    }, 'dark');
     q.oninput = draw;
+    v.appendChild(kids(el('div', null, { className: 'bar' }), btn('Link a card to an account', () => editor('Link a card to a passenger',
+      [['Card ID (8 or 14 hex characters)', 'uid'], ['Passenger email', 'email']],
+      async f => { const r = JSON.parse(await api('POST', '/admin/api/card/add', f)); return 'Card ' + r.uid + ' now belongs to ' + f.email + '.'; }))));
     v.appendChild(card(null, q, count, holder));
     draw();
     const uid = el('input', null, { placeholder: 'Card ID (printed on the card or shown in the app)' });
@@ -282,24 +366,39 @@ const views = {
       shown.slice(0, 60).forEach(r => {
         const stops = r[1].split(' > ');
         const row = kids(el('div', null, { className: 'route' }), el('span', r[0], { className: 'id' }), el('span', r[2] && r[2] !== r[0] ? r[2] : ''), el('div', stops.length + ' stops · ' + stops[0] + ' → ' + stops[stops.length - 1], { className: 'n' }));
-        row.onclick = () => { const open = row.querySelector('.stops'); if (open) open.remove(); else row.appendChild(el('div', stops.join(' → '), { className: 'stops' })); };
+        row.onclick = e => {
+          if (e.target.tagName === 'BUTTON') return;
+          const open = row.querySelector('.stops'); if (open) { open.remove(); return; }
+          row.appendChild(kids(el('div', null, { className: 'stops' }), el('div', stops.join(' → ')),
+            actions(btn('Edit', () => routeEditor(r[0]), 'dark'),
+              remove('Delete route ' + r[0] + '? The trip planner stops using it at once. Past trips keep their fares.',
+                () => api('POST', '/admin/api/route/delete', { id: r[0] }), 'Route ' + r[0] + ' deleted.'))));
+        };
         list.appendChild(row);
       });
     };
     q.oninput = draw;
+    v.appendChild(kids(el('div', null, { className: 'bar' }), btn('Add a route', () => routeEditor(null))));
     v.appendChild(card(null, q, count, list));
     draw();
-    const id = el('input', null, { placeholder: 'Route id, e.g. R4' });
-    const ta = el('textarea', null, { rows: 5, placeholder: 'One stop per line: name, lat, lng' + NL + 'Cubao, 14.62134, 121.05299' });
-    v.appendChild(card('Add a route', id, ta, btn('Add route', async () => {
-      const stops = ta.value.split(NL).filter(l => l.trim()).join(';');
-      await api('POST', '/admin/api/route/add', { id: id.value, stops }); say('Route ' + id.value + ' added', true); show('Routes'); })));
   }},
 
   Fares: { sub: 'Fare = base fare up to the base distance, then a rate per km after it. Students, seniors and PWD get 20% off automatically.', async render(v) {
     const d = rows(await api('GET', '/admin/api/fares'));
-    v.appendChild(card('Fare tables', table([['Effective'], ['Base fare', 'num'], ['Per km after base', 'num'], ['Base distance', 'num'], ['Published']], d, (r, i) =>
-      i === 0 ? (r[0] === 'Current' ? 'In use now' : r[0]) : i === 1 ? peso(r[1]) : i === 2 ? peso(r[2]) : i === 3 ? (r[4] ? r[4] + ' km' : '') : (r[3] === '-' ? '' : r[3]))));
+    // Edit = publish the changed table, then delete the old row (same effective date: the newer row wins)
+    const editFare = r => editor('Edit the fare table of ' + r[0], [['Base fare (' + PESO + ')', 'base', Number(r[1]) / 100, 'number'],
+        ['Per km after base (' + PESO + ')', 'rate', Number(r[2]) / 100, 'number'], ['Base distance (km)', 'baseKm', r[4] || '4.0', 'number'], ['Effective date', 'effective', r[0], 'date']],
+      async f => {
+        await api('POST', '/admin/api/fares/publish', { base: Math.round(Number(f.base) * 100), rate: Math.round(Number(f.rate) * 100), baseKm: f.baseKm, effective: f.effective });
+        await api('POST', '/admin/api/fares/delete', { effective: r[0], published: r[3] });
+        return 'Fare table saved.';
+      });
+    v.appendChild(card('Fare tables', table([['Effective'], ['Base fare', 'num'], ['Per km after base', 'num'], ['Base distance', 'num'], ['Published'], ['']], d, (r, i) =>
+      i === 0 ? (r[0] === 'Current' ? 'In use now' : r[0]) : i === 1 ? peso(r[1]) : i === 2 ? peso(r[2]) : i === 3 ? (r[4] ? r[4] + ' km' : '')
+      : i === 4 ? (r[3] === '-' ? '' : r[3])
+      : r[0] === 'Current' ? '' : actions(btn('Edit', () => editFare(r), 'dark'),
+          remove('Delete the fare table effective ' + r[0] + '? The fare in use is then picked again from the tables left.',
+            () => api('POST', '/admin/api/fares/delete', { effective: r[0], published: r[3] }), 'Fare table deleted.')))));
     const base = el('input', null, { type: 'number', step: '0.25', min: '0', placeholder: '14.00' });
     const rate = el('input', null, { type: 'number', step: '0.25', min: '0', placeholder: '2.00' });
     const baseKm = el('input', null, { type: 'number', step: '0.5', min: '0', placeholder: 'Blank keeps current' });
@@ -316,10 +415,16 @@ const views = {
   }},
 
   Promotions: { sub: 'Point multipliers for a date range, e.g. 2x points on holidays.', async render(v) {
-    v.appendChild(card('Promotions', table([['Name'], ['Multiplier', 'num'], ['Start'], ['End']], rows(await api('GET', '/admin/api/promos')), (r, i) => i === 1 ? r[1] + 'x' : r[i])));
+    const day = iso => iso.slice(0, 10);
+    v.appendChild(card('Promotions', table([['Name'], ['Multiplier', 'num'], ['Start'], ['End'], ['']], rows(await api('GET', '/admin/api/promos')), (r, i) =>
+      i === 1 ? r[1] + 'x' : i === 2 || i === 3 ? day(r[i])
+      : i === 4 ? actions(btn('Edit', () => editor('Edit ' + r[0], [['Name', 'name', r[0]], ['Multiplier (1 to 10)', 'multiplier', r[1], 'number'],
+            ['Start', 'start', day(r[2]), 'date'], ['End', 'end', day(r[3]), 'date']],
+            async f => { await api('POST', '/admin/api/promo', Object.assign({ id: r[4] }, f)); return 'Saved ' + f.name + '.'; }), 'dark'),
+          remove('Delete the promotion ' + r[0] + '? Points already earned with it stay.', () => api('POST', '/admin/api/promo/delete', { id: r[4] }), 'Deleted ' + r[0] + '.'))
+      : r[0])));
     const name = el('input', null, { placeholder: 'Name, e.g. Holiday double points' }), mult = el('input', null, { type: 'number', min: '1', max: '10', step: '0.5', placeholder: '2' });
     const s = el('input', null, { type: 'date' }), e = el('input', null, { type: 'date' });
-    const lab = (t, input) => kids(el('div'), el('label', t), input);
     v.appendChild(card('Create a promotion', kids(el('div', null, { className: 'form' }), lab('Name', name), lab('Multiplier (1 to 10)', mult), lab('Start', s), lab('End', e),
       btn('Activate', async () => { await api('POST', '/admin/api/promo', { name: name.value, multiplier: mult.value, start: s.value, end: e.value }); say('Activated', true); show('Promotions'); }))));
   }}

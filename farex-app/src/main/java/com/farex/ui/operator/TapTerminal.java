@@ -234,7 +234,7 @@ public final class TapTerminal {
             DemoAccount owner = MockData.allCards().get(rider.getCard());
             if (owner != null) {
                 owner.addTransaction(DemoTransaction.FARE, maxFare ? "Max Fare" : "Pay Fare",
-                        from + " → " + to, -fare / 100.0);
+                        from + " › " + to, -fare / 100.0);
             }
         }
         return record;

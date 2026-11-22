@@ -180,6 +180,6 @@ public final class TripState {
     public static String summary() {
         String from = (start == null) ? "starting point" : start.getName();
         String to = (destination == null) ? "selected destination" : destination.getName();
-        return from + " → " + to;
+        return from + " › " + to;
     }
 }

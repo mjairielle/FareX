@@ -86,9 +86,33 @@ public final class Rewards {
     }
 
     public void addPromotion(String name, double multiplier, Instant start, Instant end) {
-        if (multiplier < 1 || multiplier > 10) throw new IllegalArgumentException("Multiplier must be 1 to 10");
-        if (end.isBefore(start)) throw new IllegalArgumentException("End is before start");
+        checkPromo(name, multiplier, start, end);
         Csv.append(promos, PH, UUID.randomUUID().toString(), name, String.valueOf(multiplier), start.toString(), end.toString());
+    }
+
+    /** Admin edits a promotion in place. */
+    public synchronized void updatePromotion(String id, String name, double multiplier, Instant start, Instant end) {
+        checkPromo(name, multiplier, start, end);
+        List<String[]> rows = new ArrayList<>(Csv.read(promos));
+        boolean hit = false;
+        for (int i = 0; i < rows.size(); i++) {
+            if (rows.get(i)[0].equals(id)) { rows.set(i, new String[]{id, name, String.valueOf(multiplier), start.toString(), end.toString()}); hit = true; }
+        }
+        if (!hit) throw new IllegalArgumentException("No such promotion");
+        Csv.rewrite(promos, PH, rows);
+    }
+
+    /** Admin deletes a promotion. Points already earned under it stay. */
+    public synchronized void deletePromotion(String id) {
+        List<String[]> rows = new ArrayList<>(Csv.read(promos));
+        if (!rows.removeIf(r -> r[0].equals(id))) throw new IllegalArgumentException("No such promotion");
+        Csv.rewrite(promos, PH, rows);
+    }
+
+    private static void checkPromo(String name, double multiplier, Instant start, Instant end) {
+        if (name.isBlank()) throw new IllegalArgumentException("Name is required");
+        if (!(multiplier >= 1 && multiplier <= 10)) throw new IllegalArgumentException("Multiplier must be 1 to 10");
+        if (end.isBefore(start)) throw new IllegalArgumentException("End is before start");
     }
 
     public List<Promo> promotions() {

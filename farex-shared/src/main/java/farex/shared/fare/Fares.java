@@ -65,6 +65,20 @@ public final class Fares {
     }
 
     /**
+     * Admin deletes one fare table row (effective date + published time pick it). The fare in use is
+     * then chosen again from the rows left, or the built-in P14.00 / 4 km / P2.00 when none is due.
+     */
+    public static void delete(Path dir, String effective, String published) {
+        Path file = dir.resolve("fares.csv");
+        List<String[]> rows = new java.util.ArrayList<>(Csv.read(file));
+        if (!rows.removeIf(r -> r[0].equals(effective) && r.length > 3 && r[3].equals(published)))
+            throw new IllegalArgumentException("No such fare table");
+        Csv.rewrite(file, HEADER, rows);
+        BASE = 1400; BASE_KM = DEFAULT_BASE_KM; RATE_PER_KM = 200;
+        load(dir);
+    }
+
+    /**
      * Fare for one boarding, the way the LTFRB fare guides compute it:
      * base covers the first BASE_KM, RATE_PER_KM applies only past it, and the
      * total is rounded to the nearest 25 centavos (half up).

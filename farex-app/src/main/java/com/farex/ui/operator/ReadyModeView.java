@@ -239,7 +239,7 @@ public class ReadyModeView extends StackPane {
         prev.setDisable(!gps.hasPrevStop());
 
         boolean atEnd = OperatorState.isAtTerminal();
-        Button next = CommonUi.limeButton(atEnd ? "New trip ↺" : "Next Stop ›", () -> {
+        Button next = CommonUi.limeButton(atEnd ? "New trip" : "Next Stop ›", () -> {
             if (OperatorState.isAtTerminal()) {
                 TapTerminal.chargeMaxFares();     // still on board when leaving the terminal
                 OperatorState.startNewTrip();
@@ -280,8 +280,8 @@ public class ReadyModeView extends StackPane {
 
         Label prompt = CommonUi.small("Choose a card or app user to tap", Theme.WHITE);
         prompt.setFont(Font.font(Theme.FONT, 12));
-        Label chevron = CommonUi.smallBold("▾", Theme.WHITE);
-        chevron.setFont(Theme.bold(14));
+        javafx.scene.shape.Polygon chevron = new javafx.scene.shape.Polygon(0, 0, 10, 0, 5, 6);   // drawn: no ▾ in the font
+        chevron.setFill(Theme.WHITE);
         HBox dropDown = spread(prompt, chevron);
         dropDown.setPadding(new Insets(10, 12, 10, 12));
         dropDown.setBackground(Theme.rounded(Color.web("#141414"), 8));

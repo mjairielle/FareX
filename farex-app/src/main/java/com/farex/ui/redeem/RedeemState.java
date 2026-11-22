@@ -83,7 +83,7 @@ public final class RedeemState {
             account.deductPoints(selected);
             getCard().addPendingLoad(new PendingLoad(credit(selected), "Points", lastReference));
             account.addTransaction(DemoTransaction.REWARD, "Points Redeemed",
-                    CommonUi.pts(selected) + " → transit credit", credit(selected));
+                    CommonUi.pts(selected) + " to transit credit", credit(selected));
         }
         account.addNotification(new DemoNotification("Rewards Claimed",
                 "You have claimed **" + CommonUi.peso(credit(selected)) + "** rewards.", false));

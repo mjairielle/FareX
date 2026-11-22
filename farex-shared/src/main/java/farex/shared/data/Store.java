@@ -254,6 +254,44 @@ public class Store {
         writeUsers(rows);
     }
 
+    /** Admin changes the login email of the whole account (every role row of the old email). */
+    public synchronized void setEmail(String id, String email) {
+        String mail = email.trim().toLowerCase();
+        if (!mail.matches("[^\\s,@]+@[^\\s,@]+")) throw new IllegalArgumentException("Email is not valid");
+        String old = emailOf(id);
+        if (userRow(id) == null) throw new IllegalArgumentException("No such user");
+        if (mail.equals(old)) return;
+        if (userRows().stream().anyMatch(r -> r[2].equals(mail))) throw new IllegalArgumentException("Email already registered");
+        List<String[]> rows = Csv.read(users);
+        for (String[] r : rows) if (r.length >= 7 && r[2].equals(old)) r[2] = mail;
+        writeUsers(rows);
+    }
+
+    /** Admin changes an operator's jeepney plate. Still one plate, one jeep. */
+    public synchronized void setPlate(String id, String plate) {
+        String p = Csv.clean(plate).trim();
+        String[] me = userRow(id);
+        if (me == null || !me[4].equals("OPERATOR")) throw new IllegalArgumentException("No such operator");
+        if (p.isEmpty()) throw new IllegalArgumentException("Vehicle plate is required");
+        if (!plateKey(p).equals(plateKey(me[6])) && plateTaken(p)) throw new IllegalArgumentException("Plate " + p + " is already registered to another operator");
+        List<String[]> rows = Csv.read(users);
+        for (String[] r : rows) if (r.length >= 7 && r[0].equals(id)) r[6] = p;
+        writeUsers(rows);
+    }
+
+    /**
+     * Admin removes one role, e.g. a jeepney (operator row) whose owner keeps riding as a passenger.
+     * The account's last role deletes the whole account, as deleteAccount does.
+     */
+    public synchronized void deleteRole(String id) {
+        List<User> roles = siblings(id);
+        if (roles.size() <= 1) { deleteAccount(id); return; }
+        if (!allCardsOf(id).isEmpty()) throw new IllegalArgumentException("Unlink this role's cards first");
+        List<String[]> rows = Csv.read(users);
+        rows.removeIf(r -> r.length >= 7 && r[0].equals(id));
+        writeUsers(rows);
+    }
+
     public void setPassword(String id, String password) {
         if (password.length() < 8) throw new IllegalArgumentException("Password needs 8 or more characters");
         setPasswordHash(id, hashPassword(password));
@@ -301,6 +339,14 @@ public class Store {
 
     public void freezeCard(String uid) {
         if (!isCardFrozen(uid)) Csv.append(frozen, "uid", uid);
+    }
+
+    /** Admin lets a frozen card ride again (frozen.csv gets shorter, so its cache rereads it). */
+    public synchronized void unfreezeCard(String uid) {
+        List<String[]> rows = Csv.read(frozen);
+        if (!rows.removeIf(r -> r[0].equals(uid))) throw new IllegalArgumentException("Card " + uid + " is not frozen");
+        Csv.rewrite(frozen, "uid", rows);
+        isCardFrozen(uid);   // reread now, before a later freeze grows the file past where the cache was
     }
 
     /** Freezes old card, issues replacement, transfers remaining balance to new card. */

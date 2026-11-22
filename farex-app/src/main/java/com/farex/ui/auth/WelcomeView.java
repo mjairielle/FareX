@@ -5,6 +5,7 @@ import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
+import javafx.scene.shape.Polyline;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -23,9 +24,10 @@ public class WelcomeView extends BorderPane {
         VBox headline = new VBox(0, line1, line2);
         headline.setAlignment(Pos.CENTER);
 
-        Label arrow = new Label("\u2192");
-        arrow.setTextFill(Theme.BLACK);
-        arrow.setFont(Theme.bold(18));
+        // drawn: the phone's font has no arrow sign (it showed as a box)
+        Polyline arrow = new Polyline(0, 6, 14, 6, 9, 1, 14, 6, 9, 11);
+        arrow.setStroke(Theme.BLACK);
+        arrow.setStrokeWidth(2);
 
         Button getStarted = new Button("Get Started", arrow);
         Theme.limeButton(getStarted);

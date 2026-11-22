@@ -90,7 +90,7 @@ public class TripRoute {
 
         String summary = (plan.transfers() == 0 ? "Direct jeepney" : transfers(plan.transfers()))
                 + (walkedKm > 0 ? " · walk " + meters(walkedKm) : "")
-                + (routeIds.isEmpty() ? "" : " · " + String.join(" → ", routeIds));
+                + (routeIds.isEmpty() ? "" : " · " + String.join(" › ", routeIds));
         return new TripRoute(title(plan.label()), Double.parseDouble(plan.km()), plan.minutes(), plan.fareCents(),
                 summary, firstJeep, legs, List.copyOf(rides));
     }

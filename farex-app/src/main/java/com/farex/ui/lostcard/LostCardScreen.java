@@ -474,8 +474,8 @@ public class LostCardScreen extends StepScreen {
             Label amount = new Label(CommonUi.peso(card.getBalance()));
             amount.setTextFill(Theme.LIME);
             amount.setFont(Theme.bold(26));
-            String uids = card.getLastFour() + " \u2192 " + newNumber.substring(newNumber.length() - 4);
-            VBox panel = CommonUi.panel(amount, CommonUi.row("Old UID \u2192 New UID", uids));
+            String uids = card.getLastFour() + " › " + newNumber.substring(newNumber.length() - 4);
+            VBox panel = CommonUi.panel(amount, CommonUi.row("Old UID › New UID", uids));
             panel.getChildren().addAll(steps(
                     "Old UID frozen",
                     "New card issued and verified",

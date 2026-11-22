@@ -90,6 +90,74 @@ public class StoreTest {
         store.register("Di", "di@mail.com", "password1", "OPERATOR", "", "ABC-123");   // deleting Ben freed his plate
     }
 
+    // Admin edits: email, plate, one role, and unfreezing a card
+    @Test
+    void adminEditsAccountsVehiclesAndCards() {
+        store.setEmail("p1", "ana.cruz@mail.com");
+        assertTrue(store.login("ana.cruz@mail.com", "1234").isPresent(), "logs in with the new email");
+        assertThrows(IllegalArgumentException.class, () -> store.setEmail("p1", "ben@mail.com"), "email taken");
+        assertThrows(IllegalArgumentException.class, () -> store.setEmail("p1", "not an email"));
+
+        store.setPlate("o1", "XYZ-999");
+        assertEquals("XYZ-999", ((farex.shared.user.Operator) store.findUser("o1").get()).getVehiclePlate());
+        store.setPlate("o1", "xyz 999");                                   // the same plate written another way is fine
+        farex.shared.user.User op2 = store.register("Cy", "cy@mail.com", "password1", "OPERATOR", "", "ABC-123");   // Ben's old plate is free
+        assertThrows(IllegalArgumentException.class, () -> store.setPlate(op2.getId(), "XYZ999"), "plate taken");
+
+        farex.shared.user.User benRider = store.addRole("o1", "PASSENGER", "");
+        store.deleteRole("o1");                                            // the jeep goes, Ben still rides
+        assertTrue(store.findUser("o1").isEmpty());
+        assertTrue(store.findUser(benRider.getId()).isPresent());
+        store.deleteRole(benRider.getId());                                // last role: the whole account
+        assertTrue(store.login("ben@mail.com", "1234").isEmpty());
+
+        store.freezeCard("0067676767");
+        store.unfreezeCard("0067676767");
+        assertFalse(store.isCardFrozen("0067676767"));
+        store.freezeCard("0067676767");
+        assertTrue(store.isCardFrozen("0067676767"), "freezing again after an unfreeze is seen");
+        assertThrows(IllegalArgumentException.class, () -> store.unfreezeCard("DEADBEEF"));
+    }
+
+    @Test
+    void adminEditsRoutesFaresAndPromotions() {
+        RouteBook.saveRoute(tempDir, "B1", "Lawton to SM Fairview", true,
+                java.util.List.of(new String[]{"Lawton", "14.5931", "120.9801"}, new String[]{"SM City Fairview", "14.7349", "121.0566"}));
+        RouteBook b = new RouteBook(tempDir);
+        assertEquals("Lawton to SM Fairview", b.name("B1"));
+        assertTrue(b.isOneway("B1"));
+        RouteBook.saveRoute(tempDir, "B1", "", false,
+                java.util.List.of(new String[]{"A", "14.1", "121.1"}, new String[]{"B", "14.2", "121.2"}, new String[]{"C", "14.3", "121.3"}));
+        b = new RouteBook(tempDir);
+        assertEquals(3, b.routes().get("B1").size(), "stops replaced, not added");
+        assertFalse(b.isOneway("B1"));
+        assertEquals("B1", b.name("B1"), "blank name shows the id");
+        RouteBook.deleteRoute(tempDir, "B1");
+        assertFalse(new RouteBook(tempDir).routes().containsKey("B1"));
+        assertThrows(IllegalArgumentException.class, () -> RouteBook.deleteRoute(tempDir, "B1"));
+
+        long base = farex.shared.fare.Fares.BASE;
+        try {
+            farex.shared.fare.Fares.publish(tempDir, java.time.LocalDate.now().minusDays(1), 1500, 225, 4.0);
+            assertEquals(1500, farex.shared.fare.Fares.BASE);
+            String published = Csv.read(tempDir.resolve("fares.csv")).get(0)[3];
+            farex.shared.fare.Fares.delete(tempDir, java.time.LocalDate.now().minusDays(1).toString(), published);
+            assertEquals(1400, farex.shared.fare.Fares.BASE, "back to the built-in fare");
+        } finally {
+            farex.shared.fare.Fares.BASE = base;
+        }
+
+        farex.shared.reward.Rewards r = new farex.shared.reward.Rewards(tempDir);
+        java.time.Instant now = java.time.Instant.now();
+        r.addPromotion("Holiday", 2, now, now.plusSeconds(86400));
+        String id = r.promotions().get(0).id();
+        r.updatePromotion(id, "Holiday x3", 3, now, now.plusSeconds(86400));
+        assertEquals("Holiday x3", r.promotions().get(0).name());
+        assertEquals(3, r.promotions().get(0).multiplier());
+        r.deletePromotion(id);
+        assertTrue(r.promotions().isEmpty());
+    }
+
     @Test
     void testInitialBalanceAndLoading() {
         assertEquals(50000, store.balance("0067676767"), "Seed balance of Ana's card");

@@ -212,7 +212,7 @@ public class OperatorHistoryView extends ScrollPane {
             top.getChildren().add(tag);
         }
 
-        Label route = CommonUi.smallBold(r.getFrom() + " → " + r.getTo(), Theme.WHITE);
+        Label route = CommonUi.smallBold(r.getFrom() + " › " + r.getTo(), Theme.WHITE);
         route.setFont(Theme.bold(12));
         route.setWrapText(true);
         Label detail = CommonUi.small(detailFor(r), Color.web("#BDBDBD"));
@@ -300,6 +300,6 @@ public class OperatorHistoryView extends ScrollPane {
         if (!r.isSynced()) {
             return CommonUi.smallBold("Pending sync", OperatorUi.AMBER);
         }
-        return CommonUi.smallBold(r.isApp() ? "✓ Server confirmed" : "✓ Synced", Theme.LIME);
+        return CommonUi.smallBold(r.isApp() ? "Server confirmed" : "Synced", Theme.LIME);
     }
 }

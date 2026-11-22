@@ -362,6 +362,15 @@ public final class Main {
                 + "<h1 style=\"color:#c6ff3d\">" + title + "</h1><p>" + text + "</p></body></html>";
     }
 
+    // After an admin changes routes: the planner, fares on road km and the app's cached route replies see it at once
+    static void reloadRoutes() {
+        book = new RouteBook(dir);
+        shapes = new RouteShapes(dir);
+        loadRoadKm();
+        planner = new TripPlanner(book, shapes);
+        routesReply = shapesReply = roadKmReply = null;
+    }
+
     static double num(Map<String, String> p, String k) {
         try { return Double.parseDouble(req(p, k)); } catch (NumberFormatException e) { throw new IllegalArgumentException(k + " must be a number"); }
     }
@@ -789,7 +798,7 @@ public final class Main {
             StringBuilder b = new StringBuilder();
             for (String[] r : Csv.read(dir.resolve("users.csv"), 7))
                 b.append(String.join("|", clean(r[0]), clean(r[1]), clean(r[2]), r[4], clean(r[5]), clean(r[6]),
-                        status(r[0]).equals("PENDING") ? "pending" : suspended(r[0]) ? "suspended" : "active")).append('\n');
+                        status(r[0]).equals("PENDING") ? "pending" : suspended(r[0]) ? "suspended" : "active", r.length > 7 ? clean(r[7]) : "")).append('\n');
             return b.toString();
         });
         route(s, "/admin/api/user/type", "POST", "ADMIN", (u, p) -> {
@@ -819,15 +828,28 @@ public final class Main {
                     .append('|').append(clean(book.name(id))).append('\n'));
             return b.toString();
         });
+        // One route's stops for the edit form: "name,lat,lng" per line, then "#name|oneway"
+        route(s, "/admin/api/route", "GET", "ADMIN", (u, p) -> {
+            String id = req(p, "id");
+            List<RouteStop> stops = book.routes().get(id);
+            if (stops == null) throw new IllegalArgumentException("No route " + id);
+            StringBuilder b = new StringBuilder();
+            for (RouteStop x : stops) b.append(clean(x.name())).append(',').append(x.lat()).append(',').append(x.lng()).append('\n');
+            return b.append('#').append(clean(book.name(id))).append('|').append(book.isOneway(id)).append('\n').toString();
+        });
+        // Add (new id) or replace a route. replace=1 is required to overwrite, so a typo in a new id never wipes a route.
         route(s, "/admin/api/route/add", "POST", "ADMIN", (u, p) -> {
             List<String[]> stops = new ArrayList<>();
             for (String line : req(p, "stops").split(";")) stops.add(line.split(",", -1));
-            RouteBook.addRoute(dir, req(p, "id"), stops);
-            book = new RouteBook(dir);                       // planner sees the new route at once
-            shapes = new RouteShapes(dir);                   // a new route has no road path until FetchRouteShapes runs
-            loadRoadKm();
-            planner = new TripPlanner(book, shapes);
-            routesReply = shapesReply = roadKmReply = null;
+            String id = req(p, "id").trim();
+            if (!"1".equals(p.get("replace")) && book.routes().containsKey(id)) throw new IllegalArgumentException("Route " + id + " already exists");
+            RouteBook.saveRoute(dir, id, p.getOrDefault("name", ""), "true".equals(p.get("oneway")), stops);
+            reloadRoutes();
+            return json("ok", "1");
+        });
+        route(s, "/admin/api/route/delete", "POST", "ADMIN", (u, p) -> {
+            RouteBook.deleteRoute(dir, req(p, "id").trim());
+            reloadRoutes();
             return json("ok", "1");
         });
         route(s, "/admin/api/fares", "GET", "ADMIN", (u, p) -> {
@@ -845,13 +867,28 @@ public final class Main {
         });
         route(s, "/admin/api/promos", "GET", "ADMIN", (u, p) -> {
             StringBuilder b = new StringBuilder();
-            for (Rewards.Promo x : rewards.promotions()) b.append(clean(x.name())).append('|').append(x.multiplier()).append('|').append(x.start()).append('|').append(x.end()).append('\n');
+            // name|multiplier|start|end|id (id last, so older pages reading 4 columns still work)
+            for (Rewards.Promo x : rewards.promotions()) b.append(clean(x.name())).append('|').append(x.multiplier()).append('|').append(x.start()).append('|').append(x.end())
+                    .append('|').append(clean(x.id())).append('\n');
             return b.toString();
         });
+        // Creates a promotion, or edits the one with this id
         route(s, "/admin/api/promo", "POST", "ADMIN", (u, p) -> {
             LocalDate from, to;
             try { from = LocalDate.parse(req(p, "start")); to = LocalDate.parse(req(p, "end")); } catch (java.time.format.DateTimeParseException e) { throw new IllegalArgumentException("Bad date"); }
-            rewards.addPromotion(req(p, "name"), Double.parseDouble(req(p, "multiplier")), from.atStartOfDay().toInstant(ZoneOffset.UTC), to.plusDays(1).atStartOfDay().minusSeconds(1).toInstant(ZoneOffset.UTC));
+            double mult = num(p, "multiplier");
+            Instant first = from.atStartOfDay().toInstant(ZoneOffset.UTC), last = to.plusDays(1).atStartOfDay().minusSeconds(1).toInstant(ZoneOffset.UTC);
+            String id = p.getOrDefault("id", "");
+            if (id.isBlank()) rewards.addPromotion(clean(req(p, "name")), mult, first, last);
+            else rewards.updatePromotion(id, clean(req(p, "name")), mult, first, last);
+            return json("ok", "1");
+        });
+        route(s, "/admin/api/promo/delete", "POST", "ADMIN", (u, p) -> {
+            rewards.deletePromotion(req(p, "id"));
+            return json("ok", "1");
+        });
+        route(s, "/admin/api/fares/delete", "POST", "ADMIN", (u, p) -> {
+            Fares.delete(dir, req(p, "effective"), req(p, "published"));
             return json("ok", "1");
         });
         // Cards for the admin's Cards page: "uid|owner name|owner email|balance cents|frozen" per line
@@ -883,6 +920,54 @@ public final class Main {
         // The card belongs to nobody again, so someone else can add it (a card linked to the wrong account)
         route(s, "/admin/api/card/unlink", "POST", "ADMIN", (u, p) -> {
             store.unlinkCard(req(p, "uid").trim());
+            return json("ok", "1");
+        });
+        // Links a card to a passenger, found by email (a card nobody has, e.g. after an unlink or a new card at the counter)
+        route(s, "/admin/api/card/add", "POST", "ADMIN", (u, p) -> {
+            String email = req(p, "email").trim().toLowerCase();
+            String owner = Csv.read(dir.resolve("users.csv"), 7).stream().filter(r -> r[2].equals(email) && r[4].equals("PASSENGER")).map(r -> r[0])
+                    .findFirst().orElseThrow(() -> new IllegalArgumentException("No passenger account with email " + email));
+            return json("uid", store.addCard(req(p, "uid"), owner));
+        });
+        // frozen=true stops the card riding (lost or stolen); false lets it ride again
+        route(s, "/admin/api/card/freeze", "POST", "ADMIN", (u, p) -> {
+            String uid = req(p, "uid").trim();
+            if (store.ownerOf(uid) == null && !store.allCards().contains(uid)) throw new IllegalArgumentException("No card " + uid);
+            if ("true".equals(p.get("frozen"))) store.freezeCard(uid); else store.unfreezeCard(uid);
+            return json("ok", "1");
+        });
+        // Admin creates an account directly: no email code, and an operator is approved at once
+        route(s, "/admin/api/user/add", "POST", "ADMIN", (u, p) -> {
+            String role = req(p, "role");
+            if (!role.equals("PASSENGER") && !role.equals("OPERATOR")) throw new IllegalArgumentException("Bad role");
+            User n = store.register(req(p, "name"), req(p, "email"), req(p, "password"), role,
+                    p.getOrDefault("type", "REGULAR"), p.getOrDefault("plate", ""));
+            return json("id", n.getId());
+        });
+        // Edits an account. Blank fields keep their value; name, email, phone and password cover every role of the email.
+        route(s, "/admin/api/user/edit", "POST", "ADMIN", (u, p) -> {
+            String id = req(p, "id");
+            User t = store.findUser(id).orElseThrow(() -> new IllegalArgumentException("No such user"));
+            if (t.role().equals("ADMIN")) throw new IllegalArgumentException("Edit the admin in .env (ADMIN_PASSWORD)");
+            String name = p.getOrDefault("name", "").trim(), email = p.getOrDefault("email", "").trim(), plate = p.getOrDefault("plate", "").trim();
+            String pw = p.getOrDefault("password", "");
+            if (!pw.isEmpty() && pw.length() < 8) throw new IllegalArgumentException("Password needs 8 or more characters");
+            if (!plate.isEmpty()) store.setPlate(id, plate);
+            if (!email.isEmpty()) store.setEmail(id, email);
+            if (!name.isEmpty()) store.updateUserName(id, name);
+            if (p.containsKey("phone")) store.setPhone(id, p.get("phone"));
+            if (!pw.isEmpty()) store.setPassword(id, pw);
+            // a new password or email logs the account's phones out; otherwise live sessions see the new details
+            if (!pw.isEmpty() || !email.isEmpty()) tokens.values().removeIf(x -> x.getEmail().equals(t.getEmail()));
+            else tokens.replaceAll((k, x) -> store.findUser(x.getId()).orElse(x));
+            return json("ok", "1");
+        });
+        // Removes one role (a jeepney), or the whole account when it is the last role
+        route(s, "/admin/api/vehicle/delete", "POST", "ADMIN", (u, p) -> {
+            User t = store.findUser(req(p, "id")).orElseThrow(() -> new IllegalArgumentException("No such user"));
+            if (!t.role().equals("OPERATOR")) throw new IllegalArgumentException("Not a vehicle");
+            store.deleteRole(t.getId());
+            tokens.values().removeIf(x -> x.getId().equals(t.getId()));
             return json("ok", "1");
         });
         route(s, "/admin/summary", "GET", "ADMIN", (u, p) -> json("summary", store.summary()));

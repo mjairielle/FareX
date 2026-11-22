@@ -237,7 +237,7 @@ public class RedeemScreen extends StepScreen {
                     CommonUi.title("Redeeming your points\u2026"),
                     CommonUi.subtitle("Please wait while we confirm your redemption. Do not submit another request."));
             VBox.setMargin(heading, new Insets(0, 0, 6, 0));
-            Label exchange = new Label(CommonUi.pts(points) + " \u2192 " + CommonUi.peso(RedeemState.credit(points)));
+            Label exchange = new Label(CommonUi.pts(points) + " = " + CommonUi.peso(RedeemState.credit(points)));
             exchange.setTextFill(Theme.LIME);
             exchange.setFont(Theme.bold(24));
             VBox panel = CommonUi.panel(exchange);

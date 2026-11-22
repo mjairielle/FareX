@@ -44,13 +44,21 @@ public final class RouteBook {
     /** True when the route is ridden in stop order only (the other direction is its own route). */
     public boolean isOneway(String routeId) { return oneway.contains(routeId); }
 
-    /** Admin adds a new route. Existing routes are never edited, so old trips stay valid. Stops: name, lat, lng. */
+    /** Admin adds a new route. Stops: name, lat, lng. */
     public static void addRoute(Path dir, String id, List<String[]> stops) {
-        id = id.trim();
-        if (!id.matches("[A-Za-z0-9-]{1,12}")) throw new IllegalArgumentException("Route id: letters, digits, dash, up to 12");
+        for (String[] r : Csv.read(dir.resolve("routes.csv"))) if (r[0].equals(id.trim())) throw new IllegalArgumentException("Route " + id.trim() + " already exists");
+        saveRoute(dir, id, "", false, stops);
+    }
+
+    /**
+     * Admin adds a route, or replaces one: its stops, display name ("" = the id) and direction.
+     * Past trips keep the fare they were charged (the ledger has the km). The old road path no longer
+     * fits the new stops, so it is dropped: fares use straight-line km until FetchRouteShapes runs again.
+     */
+    public static void saveRoute(Path dir, String id, String name, boolean oneway, List<String[]> stops) {
+        String rid = id.trim();
+        if (!rid.matches("[A-Za-z0-9-]{1,12}")) throw new IllegalArgumentException("Route id: letters, digits, dash, up to 12");
         if (stops.size() < 2) throw new IllegalArgumentException("A route needs at least 2 stops");
-        Path file = dir.resolve("routes.csv");
-        for (String[] r : Csv.read(file)) if (r[0].equals(id)) throw new IllegalArgumentException("Route " + id + " already exists");
         for (String[] s : stops) {
             if (s.length != 3 || s[0].isBlank()) throw new IllegalArgumentException("Each stop is: name, lat, lng");
             try {
@@ -58,12 +66,40 @@ public final class RouteBook {
                 if (Math.abs(lat) > 90 || Math.abs(lng) > 180) throw new IllegalArgumentException("Coordinates out of range");
             } catch (NumberFormatException e) { throw new IllegalArgumentException("Bad coordinates for " + s[0]); }
         }
-        List<String[]> rows = new ArrayList<>();
+        Path file = dir.resolve("routes.csv");
+        List<String[]> rows = new ArrayList<>(Csv.read(file));
+        rows.removeIf(r -> r[0].equals(rid));
         for (int i = 0; i < stops.size(); i++) {
             String[] s = stops.get(i);
-            rows.add(new String[]{id, String.valueOf(i), s[0].trim(), s[1].trim(), s[2].trim()});
+            rows.add(new String[]{rid, String.valueOf(i), s[0].trim(), s[1].trim(), s[2].trim()});
         }
-        Csv.appendAll(file, H, rows);                        // one write, so a crash never leaves half a route
+        Csv.rewrite(file, H, rows);                          // one atomic write, so a crash never leaves half a route
+        List<String[]> names = new ArrayList<>(Csv.read(dir.resolve(NAMES_FILE)));
+        names.removeIf(r -> r[0].equals(rid));
+        if (!name.isBlank() || oneway) names.add(new String[]{rid, name.isBlank() ? rid : name.trim(), String.valueOf(oneway)});
+        Csv.rewrite(dir.resolve(NAMES_FILE), NAMES_HEADER, names);
+        dropRoadPath(dir, rid);
+    }
+
+    /** Admin deletes a route: its stops, name and road path. Past trips keep the fare they were charged. */
+    public static void deleteRoute(Path dir, String id) {
+        Path file = dir.resolve("routes.csv");
+        List<String[]> rows = new ArrayList<>(Csv.read(file));
+        if (!rows.removeIf(r -> r[0].equals(id))) throw new IllegalArgumentException("No route " + id);
+        Csv.rewrite(file, H, rows);
+        List<String[]> names = new ArrayList<>(Csv.read(dir.resolve(NAMES_FILE)));
+        if (names.removeIf(r -> r[0].equals(id))) Csv.rewrite(dir.resolve(NAMES_FILE), NAMES_HEADER, names);
+        dropRoadPath(dir, id);
+    }
+
+    // route_shapes.csv / route_km.csv rows of this route (written by FetchRouteShapes), when there are any
+    private static void dropRoadPath(Path dir, String id) {
+        for (String[] f : new String[][]{{"route_shapes.csv", "routeId,segment,seq,lat,lng"}, {"route_km.csv", "routeId,segment,km"}}) {
+            Path p = dir.resolve(f[0]);
+            if (!Files.exists(p)) continue;
+            List<String[]> rows = new ArrayList<>(Csv.read(p));
+            if (rows.removeIf(r -> r[0].equals(id))) Csv.rewrite(p, f[1], rows);
+        }
     }
 
     /** Every place a passenger can pick, sorted. */

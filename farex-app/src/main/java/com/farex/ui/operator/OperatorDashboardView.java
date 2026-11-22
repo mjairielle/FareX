@@ -206,7 +206,7 @@ public class OperatorDashboardView extends StackPane {
         String headline = (pending == 0) ? "All records synced"
                 : pending + (pending == 1 ? " record" : " records") + " not yet synced";
 
-        Button sync = new Button("⟳  Sync now");
+        Button sync = new Button("Sync now");
         Theme.paintButton(sync, "#141414", "#1C1C1C", "#0A0A0A", 8, "#CAFE06");
         sync.setBorder(new Border(new BorderStroke(Color.web("#3A3A3A"), BorderStrokeStyle.SOLID,
                 new CornerRadii(8), new BorderWidths(1))));

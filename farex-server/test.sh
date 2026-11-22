@@ -68,4 +68,39 @@ ok "$(curl -s -X POST $B/admin/api/user/delete -d id=$CY -H "$(H $MT)" | j ok)" 
 ok "$(code $B/cards -H "$(H $CT)")" 401 "Cy's phone is logged out"
 ok "$(curl -s -X POST $B/login -d "email=cy@m.com&password=password1" | j error)" "Wrong email or password" "Cy can no longer log in"
 ok "$(curl -s -X POST $B/admin/api/user/delete -d id=a1 -H "$(H $MT)" | j error)" "Cannot delete an admin" "admin account cannot be deleted"
+# ----- admin: add, edit, delete everything -----
+fewest(){ curl -s "$B/plan?fromLat=14.5876&fromLng=120.9813&toLat=14.7349&toLng=121.0566" | grep "Fewest" | cut -d'|' -f3; }
+ok "$(code -X POST $B/admin/api/user/add -d "name=Dan&email=dan@m.com&password=password1&role=OPERATOR&plate=DAN-1" -H "$(H $AT)")" 403 "only admin adds accounts"
+DAN=$(curl -s -X POST $B/admin/api/user/add -d "name=Dan&email=dan@m.com&password=password1&role=OPERATOR&plate=DAN-1" -H "$(H $MT)" | j id)
+ok "$(curl -s -X POST $B/login -d "email=dan@m.com&password=password1" | j role)" OPERATOR "admin-added operator logs in at once (no approval wait)"
+ok "$(curl -s -X POST $B/admin/api/user/edit -d "id=$DAN&name=Daniel&plate=abc 123" -H "$(H $MT)" | j error)" "Plate abc 123 is already registered to another operator" "edit keeps one plate per jeep"
+ok "$(curl -s -X POST $B/admin/api/user/edit -d "id=$DAN&name=Daniel&email=daniel@m.com&plate=DAN-2&phone=09171234567" -H "$(H $MT)" | j ok)" 1 "admin edits name, email, plate, phone"
+ok "$(curl -s $B/admin/api/users -H "$(H $MT)" | grep -c "^$DAN|Daniel|daniel@m.com|OPERATOR||DAN-2|active|09171234567$")" 1 "edits saved"
+ok "$(curl -s -X POST $B/admin/api/vehicle/delete -d "id=$DAN" -H "$(H $MT)" | j ok)" 1 "admin deletes a vehicle"
+ok "$(curl -s -X POST $B/login -d "email=daniel@m.com&password=password1" | j error)" "Wrong email or password" "its only role gone: account gone"
+ok "$(curl -s -X POST $B/admin/api/card/add -d "uid=ABCD1234&email=ana@mail.com" -H "$(H $MT)" | j uid)" ABCD1234 "admin links a card to a passenger"
+ok "$(curl -s $B/cards -H "$(H $AT)" | grep -c "^ABCD1234,")" 1 "the passenger sees it"
+curl -s -X POST $B/admin/api/card/freeze -d "uid=ABCD1234&frozen=true" -H "$(H $MT)" >/dev/null
+ok "$(curl -s $B/admin/api/cards -H "$(H $MT)" | grep "^ABCD1234|" | cut -d'|' -f5)" true "admin freezes a card"
+curl -s -X POST $B/admin/api/card/freeze -d "uid=ABCD1234&frozen=false" -H "$(H $MT)" >/dev/null
+ok "$(curl -s $B/admin/api/cards -H "$(H $MT)" | grep "^ABCD1234|" | cut -d'|' -f5)" false "and unfreezes it"
+ok "$(fewest)" 2 "museum to SM Fairview: 2 transfers with the OSM routes"
+ok "$(curl -s -X POST $B/admin/api/route/add -d "id=BUS1&name=Lawton to SM Fairview&oneway=true&stops=Ayala Blvd,14.5904,120.9853;Quezon Ave,14.6400,121.0100;SM City Fairview,14.7349,121.0566" -H "$(H $MT)" | j ok)" 1 "admin adds a route"
+ok "$(fewest)" 0 "planner rides it straight away: one jeep, no transfer"
+ok "$(curl -s -X POST $B/admin/api/route/add -d "id=BUS1&stops=A,14.1,121.1;B,14.2,121.2" -H "$(H $MT)" | j error)" "Route BUS1 already exists" "adding never overwrites"
+ok "$(curl -s -X POST $B/admin/api/route/add -d "id=BUS1&replace=1&name=Lawton to Fairview&stops=Ayala Blvd,14.5904,120.9853;SM City Fairview,14.7349,121.0566" -H "$(H $MT)" | j ok)" 1 "admin edits a route"
+ok "$(curl -s "$B/admin/api/route?id=BUS1" -H "$(H $MT)" | tail -1)" "#Lawton to Fairview|false" "edit saved name and direction"
+ok "$(curl -s -X POST $B/admin/api/route/delete -d "id=BUS1" -H "$(H $MT)" | j ok)" 1 "admin deletes a route"
+ok "$(fewest)" 2 "planner forgets it"
+curl -s -X POST $B/admin/api/promo -d "name=Holiday&multiplier=2&start=2026-12-24&end=2026-12-26" -H "$(H $MT)" >/dev/null
+PID=$(curl -s $B/admin/api/promos -H "$(H $MT)" | grep "^Holiday|" | cut -d'|' -f5)
+curl -s -X POST $B/admin/api/promo -d "id=$PID&name=Holiday x3&multiplier=3&start=2026-12-24&end=2026-12-26" -H "$(H $MT)" >/dev/null
+ok "$(curl -s $B/admin/api/promos -H "$(H $MT)" | grep -c "^Holiday x3|3.0|")" 1 "admin edits a promotion"
+curl -s -X POST $B/admin/api/promo/delete -d "id=$PID" -H "$(H $MT)" >/dev/null
+ok "$(curl -s $B/admin/api/promos -H "$(H $MT)" | grep -c Holiday)" 0 "admin deletes a promotion"
+curl -s -X POST $B/admin/api/fares/publish -d "base=1500&rate=225&baseKm=4&effective=2020-01-01" -H "$(H $MT)" >/dev/null
+FR=$(curl -s $B/admin/api/fares -H "$(H $MT)" | grep "^2020-01-01|")
+ok "$(curl -s $B/admin/api/fares -H "$(H $MT)" | head -1 | cut -d'|' -f2)" 1500 "published fare is in use"
+ok "$(curl -s -X POST $B/admin/api/fares/delete -d "effective=2020-01-01&published=$(echo $FR | cut -d'|' -f4)" -H "$(H $MT)" | j ok)" 1 "admin deletes a fare table"
+ok "$(curl -s $B/admin/api/fares -H "$(H $MT)" | head -1 | cut -d'|' -f2)" 1400 "back to the built-in fare"
 exit $FAIL

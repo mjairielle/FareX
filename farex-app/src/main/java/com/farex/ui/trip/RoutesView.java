@@ -270,7 +270,7 @@ public class RoutesView extends StackPane {
         name.setMinHeight(Region.USE_PREF_SIZE);
         HBox top = new HBox(8, id, name);
         HBox.setHgrow(name, Priority.ALWAYS);
-        String ends = p.oneway() ? p.firstStop() + " → " + p.lastStop() : p.firstStop() + " ↔ " + p.lastStop();
+        String ends = p.oneway() ? p.firstStop() + " › " + p.lastStop() : p.firstStop() + " – " + p.lastStop() + " (both ways)";
         Label where = TripUi.wrapped(p.meters() + " m away · " + ends);
         where.setMinHeight(Region.USE_PREF_SIZE);
         where.setTextFill(Color.web("#BDBDBD"));

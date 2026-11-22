@@ -101,7 +101,7 @@ public class TapResultDialog extends javafx.scene.layout.StackPane {
     // "4.2 km · Philcoa → Batasan / Base fare ₱15.60 / Student discount -₱2.60"
     private VBox fareBreakdown(TapResult r) {
         VBox box = inner(
-                bold(String.format(Locale.US, "%.1f km · %s → %s", r.km, r.from, r.to), 11),
+                bold(String.format(Locale.US, "%.1f km · %s › %s", r.km, r.from, r.to), 11),
                 text("Base fare " + OperatorUi.peso(r.baseCents)));
         long discount = r.baseCents - r.fareCents;
         if (discount > 0) {
