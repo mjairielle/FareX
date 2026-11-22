@@ -1,0 +1,261 @@
+package com.farex.ui.operator;
+
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
+
+import com.farex.Api;
+import com.farex.operator.GpsSimulator;
+
+import farex.shared.data.RouteStop;
+import farex.shared.fare.Fares;
+import farex.shared.fare.RegularFare;
+
+import com.farex.ui.data.DemoAccount;
+import com.farex.ui.data.DemoCard;
+import com.farex.ui.data.DemoTransaction;
+import com.farex.ui.data.MockData;
+
+// The jeep's tap reader (no UI). Live login: every card tap goes to the server's TapDesk, which
+// charges the real balance with the passenger's own discount. Mock login: same rules, run here
+// on the demo cards:
+// - first tap = tap in at the current stop, second tap = tap out and pay
+// - fare = farex-shared Fares.fare(km, rule): ₱14 for the first 4 km + ₱2 per km after (LTFRB 2026),
+//   rounded to ₱0.25; students/seniors/PWD 20% off the scale
+// - still on board when the jeep leaves the terminal (New trip) or the shift ends = max fare
+public final class TapTerminal {
+
+    private static final DateTimeFormatter TIME = DateTimeFormatter.ofPattern("h:mm a", Locale.US);
+
+    // Kenn's card is a student card; every other demo card is regular
+    private static final Set<String> STUDENT_CARDS = Set.of("0011111111");
+
+    // App users have no card: their balance is on the server
+    private static final List<TapRider> APP_RIDERS = List.of(
+            new TapRider("APP-0821", "App user", "REGULAR", 240.00),
+            new TapRider("APP-0632", "App user", "STUDENT", 85.00));
+
+    // Who is on board: rider ID -> where they boarded
+    private record Boarding(TapRider rider, int stopIdx, String stopName) {
+    }
+
+    private static final Map<String, Boarding> boarded = new LinkedHashMap<>();
+
+    // Max fares charged when leaving the terminal, waiting for Ready Mode to show them
+    private static TapResult unseenMaxFare = null;
+
+    private TapTerminal() {
+    }
+
+    // ----- Riders -----
+
+    // Every demo card (Aron 6767, Kenn 1111, Andrei 1313, ...) and the two app users
+    static List<TapRider> riders() {
+        List<TapRider> list = new ArrayList<>();
+        if (MockData.isLive()) {
+            try {
+                for (String[] c : Api.allCards()) {
+                    list.add(liveRider(c[0], c.length > 2 ? c[2] : "?", c.length > 1 ? c[1] : "REGULAR",
+                            c.length > 3 ? Long.parseLong(c[3]) : Api.balance(c[0])));   // older server: ask per card
+                }
+            } catch (Api.ApiException e) {
+                // server down: no cards to pick; app riders need the server too
+            }
+            return list;
+        }
+        for (DemoCard card : MockData.allCards().keySet()) {
+            list.add(riderFor(card));
+        }
+        list.addAll(APP_RIDERS);
+        return list;
+    }
+
+    // A server card with its owner's discount type (Student, Senior, PWD or Regular)
+    private static TapRider liveRider(String uid, String owner, String passengerType, long cents) {
+        Boarding onBoard = boarded.get(uid);
+        if (onBoard != null) {
+            return onBoard.rider();
+        }
+        return new TapRider(new DemoCard(uid, owner, cents / 100.0, "--/--"), passengerType);
+    }
+
+    private static TapRider riderFor(DemoCard card) {
+        Boarding onBoard = boarded.get(card.getCardNumber());
+        if (onBoard != null) {
+            return onBoard.rider();
+        }
+        return new TapRider(card, STUDENT_CARDS.contains(card.getCardNumber()) ? "STUDENT" : "REGULAR");
+    }
+
+    static boolean isOnBoard(TapRider rider) {
+        return boarded.containsKey(rider.getId());
+    }
+
+    // "Philcoa", or null when not on board
+    static String boardedAt(TapRider rider) {
+        Boarding b = boarded.get(rider.getId());
+        return (b == null) ? null : b.stopName();
+    }
+
+    static int onBoardCount() {
+        return boarded.size();
+    }
+
+    // ----- Tapping -----
+
+    static TapResult tap(TapRider rider) {
+        return isOnBoard(rider) ? tapOut(rider) : tapIn(rider);
+    }
+
+    private static TapResult tapIn(TapRider rider) {
+        GpsSimulator gps = OperatorState.getGps();
+        Api.StopCoord stop = gps.getCurrentStop();
+
+        if (rider.isFrozen()) {
+            return TapResult.blocked("Card is frozen",
+                    "This card was reported lost. Ask the passenger to use their new card.");
+        }
+        if (OperatorState.isAtTerminal()) {
+            return TapResult.blocked("End of route",
+                    "Tap New trip on the GPS card before boarding passengers.");
+        }
+        if (onBoardCount() >= OperatorState.CAPACITY) {
+            return TapResult.blocked("Jeepney is full",
+                    OperatorState.CAPACITY + " of " + OperatorState.CAPACITY
+                            + " seats are taken. Wait for someone to tap out.");
+        }
+
+        boolean offlineApp = rider.isApp() && !OperatorState.isOnline();
+        if (onServer(rider)) {
+            try {
+                Api.tapIn(rider.getId(), stop.index());   // server checks frozen, balance, double tap
+            } catch (Api.ApiException e) {
+                return TapResult.blocked("Tap refused", e.getMessage());
+            }
+        } else if (!offlineApp && !rider.canPay(Fares.fare(0, rider.getFareRule()))) {
+            // Must at least cover the shortest ride: ₱14.00 regular, ₱11.25 student
+            return TapResult.insufficient();
+        }
+
+        boarded.put(rider.getId(), new Boarding(rider, stop.index(), stop.name()));
+        OperatorState.addBoarded();
+
+        if (offlineApp) {
+            return TapResult.appOffline(rider, stop.name());
+        }
+        String note = rider.isApp() ? "Server confirmed · GPS saved"
+                : "Logged: " + LocalTime.now().format(TIME) + " · GPS saved";
+        return TapResult.tapIn(rider, stop.name(), note);
+    }
+
+    // Philcoa (0) -> Ever Gotesco (2): 3.29 km -> regular ₱19.57, student ₱15.66
+    private static TapResult tapOut(TapRider rider) {
+        Boarding b = boarded.get(rider.getId());
+        Api.StopCoord stop = OperatorState.getGps().getCurrentStop();
+        double km = pathKm(b.stopIdx(), stop.index());
+        long fare = Fares.fare(km, rider.getFareRule());
+        long base = Fares.fare(km, new RegularFare());
+
+        boolean offlineApp = rider.isApp() && !OperatorState.isOnline();
+        if (onServer(rider)) {
+            try {
+                fare = paidOnServer(rider, Api.tapOut(rider.getId(), stop.index()));
+            } catch (Api.ApiException e) {
+                return TapResult.blocked("Tap refused", e.getMessage());   // stays on board
+            }
+        } else if (!offlineApp && !rider.canPay(fare)) {
+            return TapResult.insufficient();    // stays on board, can try again after topping up
+        }
+
+        ShiftRecord record = charge(rider, b.stopName(), stop.name(), km, fare, base, false, offlineApp);
+        boarded.remove(rider.getId());
+        return TapResult.tapOut(record);
+    }
+
+    // ----- Max fare -----
+
+    // Called by "New trip" and "End shift": everyone still on board pays the whole route
+    // at the regular fare (like TapDesk.missedTapOut), e.g. Philcoa -> Fairview 13.53 km = ₱40.05
+    static void chargeMaxFares() {
+        List<Api.StopCoord> stops = OperatorState.getGps().getRouteStops();
+        double km = pathKm(0, stops.size() - 1);
+        long fare = Fares.fare(km, new RegularFare());
+
+        ShiftRecord first = null;
+        for (Boarding b : boarded.values()) {
+            boolean offlineApp = b.rider().isApp() && !OperatorState.isOnline();
+            long charged = fare;
+            if (onServer(b.rider())) {
+                try {
+                    charged = paidOnServer(b.rider(), Api.tapMissed(b.rider().getId()));
+                } catch (Api.ApiException e) {
+                    // shortcut: server unreachable, so it still has them on board and this local list forgets them. Queue it once offline sync exists.
+                    continue;
+                }
+            }
+            ShiftRecord record = charge(b.rider(), b.stopName(), "Route end", km, charged, charged, true, offlineApp);
+            if (first == null) {
+                first = record;
+            }
+        }
+        if (first != null) {
+            unseenMaxFare = TapResult.maxFare(first, boarded.size() - 1);
+        }
+        boarded.clear();
+    }
+
+    // The max-fare pop-up to show once (null if none)
+    static TapResult takeMaxFareResult() {
+        TapResult result = unseenMaxFare;
+        unseenMaxFare = null;
+        return result;
+    }
+
+    // ----- Helpers -----
+
+    // Takes the money (unless the app user is offline), saves the record, and adds
+    // "Pay Fare" to the card owner's Transactions tab
+    private static ShiftRecord charge(TapRider rider, String from, String to, double km, long fare,
+                                      long base, boolean maxFare, boolean offlineApp) {
+        if (!offlineApp && !onServer(rider)) {   // the server already took it
+            rider.pay(fare);
+        }
+        Double balance = offlineApp ? null : rider.getBalance();
+        ShiftRecord record = new ShiftRecord(rider.isApp(), rider.getShortId(), from, to, km, fare, base,
+                balance, maxFare, offlineApp);
+        OperatorState.addFare(record);
+
+        if (!rider.isApp()) {
+            DemoAccount owner = MockData.allCards().get(rider.getCard());
+            if (owner != null) {
+                owner.addTransaction(DemoTransaction.FARE, maxFare ? "Max Fare" : "Pay Fare",
+                        from + " → " + to, -fare / 100.0);
+            }
+        }
+        return record;
+    }
+
+    // Card taps of a server login go to the server
+    private static boolean onServer(TapRider rider) {
+        return MockData.isLive() && !rider.isApp();
+    }
+
+    // Server tap result {describe, balanceCents, onBoard, points, fareCents}: card shows the new balance, returns the fare
+    private static long paidOnServer(TapRider rider, String[] result) {
+        rider.getCard().setBalance(Long.parseLong(result[1]) / 100.0);
+        return Long.parseLong(result[4]);
+    }
+
+    // Distance along the stops via Fares.pathKm: road km when the server's distances are loaded
+    // (Api.loadRoadKm at login), else straight lines - the same number the server would charge
+    private static double pathKm(int a, int b) {
+        List<RouteStop> stops = new ArrayList<>();
+        for (Api.StopCoord s : OperatorState.getGps().getRouteStops()) stops.add(new RouteStop(s.name(), s.lat(), s.lng()));
+        return Fares.pathKm(stops, Math.min(a, b), Math.max(a, b));
+    }
+}

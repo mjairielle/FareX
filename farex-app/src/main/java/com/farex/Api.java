@@ -1,6 +1,8 @@
 package com.farex;
 
+import farex.shared.data.RouteShapes;
 import farex.shared.data.RouteStop;
+import farex.shared.fare.Fares;
 import farex.shared.reward.Rewards;
 import farex.shared.txn.Txn;
 import farex.shared.user.*;
@@ -9,13 +11,13 @@ import java.net.URLEncoder;
 import java.net.http.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.regex.*;
 
 /** The only class that talks to the server. Screens call this, never HTTP. Money is long centavos. */
 public final class Api {
-    /** Phone must use the laptop IP here, e.g. http://192.168.1.5:8080 . Login screen can change it. */
-    public static String base = System.getProperty("farex.server", "http://localhost:8080");
-    private static final HttpClient HTTP = HttpClient.newHttpClient();
+    /** Server address. The login screen can change it (e.g. a laptop at http://192.168.1.5:8080). */
+    public static String base = System.getProperty("farex.server",
+            com.gluonhq.attach.util.Platform.isDesktop() ? "http://localhost:8080" : "https://farex-production.up.railway.app");   // phones: the Railway server
+    private static final HttpClient HTTP = HttpClient.newBuilder().connectTimeout(java.time.Duration.ofSeconds(10)).build();
     private static String token;
 
     /** Unchecked so screens show the message in the red label with no extra code. */
@@ -25,19 +27,36 @@ public final class Api {
 
     private static String call(String method, String path, String body) {
         try {
-            HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(base + path))
+            HttpRequest.Builder b = HttpRequest.newBuilder(URI.create(base + path)).timeout(java.time.Duration.ofSeconds(75))   // a server that was asleep can take up to a minute to wake
                     .method(method, body == null ? HttpRequest.BodyPublishers.noBody() : HttpRequest.BodyPublishers.ofString(body));
             if (token != null) b.header("Authorization", "Bearer " + token);
-            HttpResponse<String> r = HTTP.send(b.build(), HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            if (r.statusCode() >= 400) throw new ApiException(field(r.body(), "error", "Server error " + r.statusCode()));
-            return r.body();
+            b.header("Accept-Encoding", "gzip");            // the map data is ~4x smaller zipped; HttpClient does not unzip itself
+            HttpResponse<byte[]> r = HTTP.send(b.build(), HttpResponse.BodyHandlers.ofByteArray());
+            byte[] raw = r.body();
+            if (r.headers().firstValue("Content-Encoding").orElse("").equalsIgnoreCase("gzip"))
+                raw = new java.util.zip.GZIPInputStream(new java.io.ByteArrayInputStream(raw)).readAllBytes();
+            String reply = new String(raw, StandardCharsets.UTF_8);
+            // 404 = this server has no such route: it is an older build than the app
+            if (r.statusCode() == 404) throw new ApiException("The server is out of date. Close it and start run-server.bat again.");
+            if (r.statusCode() >= 400) throw new ApiException(field(reply, "error", "Server error " + r.statusCode()));
+            return reply;
         } catch (ApiException e) { throw e;
         } catch (Exception e) { throw new ApiException("Cannot reach server at " + base); }
     }
 
+    /** "k":"value" from the server's flat JSON. The server escapes only \ and ". */
     static String field(String json, String k, String dflt) {
-        Matcher m = Pattern.compile("\"" + k + "\":\"((?:[^\"\\\\]|\\\\.)*)\"").matcher(json);
-        return m.find() ? m.group(1).replace("\\\"", "\"").replace("\\\\", "\\") : dflt;
+        String key = "\"" + k + "\":\"";
+        int i = json.indexOf(key);
+        if (i < 0) return dflt;
+        StringBuilder v = new StringBuilder();
+        for (i += key.length(); i < json.length(); i++) {
+            char c = json.charAt(i);
+            if (c == '"') return v.toString();
+            if (c == '\\' && i + 1 < json.length()) c = json.charAt(++i);
+            v.append(c);
+        }
+        return dflt;                                        // no closing quote: not a value
     }
 
     private static String form(String... kv) {
@@ -57,14 +76,42 @@ public final class Api {
 
     // ---------- account ----------
 
-    public static void register(String name, String email, String pw, String role, String type, String plate) {
-        call("POST", "/register", form("name", name, "email", email, "password", pw, "role", role, "passengerType", type, "plate", plate));
+    /** otp = the pass from verifyOtp for this email (purpose SIGNUP). */
+    public static void register(String name, String email, String pw, String role, String type, String plate, String phone, String otp) {
+        call("POST", "/register", form("name", name, "email", email, "password", pw, "role", role, "passengerType", type,
+                "plate", plate, "phone", phone, "otp", otp));
+    }
+
+    /** Emails a 6-digit code. purpose SIGNUP (the given email) or LOST (the logged-in account's email). */
+    public static void sendOtp(String purpose, String email) {
+        call("POST", "/otp/send", form("purpose", purpose, "email", email));
+    }
+
+    /** Checks the code; returns the one-time pass that register / freezeCard need. */
+    public static String verifyOtp(String purpose, String email, String code) {
+        return field(call("POST", "/otp/verify", form("purpose", purpose, "email", email, "code", code)), "otp", "");
+    }
+
+    /** user = the role the token acts as now; roles = every role of the account; pending = roles waiting for admin. */
+    public record Login(User user, List<String> roles, List<String> pending, String phone) {}
+
+    public static Login login(String email, String pw) {
+        String r = call("POST", "/login", form("email", email, "password", pw));
+        token = field(r, "token", null);
+        loadRoadKm();
+        return new Login(user(r), csv(field(r, "roles", "")), csv(field(r, "pending", "")), field(r, "phone", ""));
+    }
+
+    /** Same login, other role of the account ("PASSENGER" or "OPERATOR"). */
+    public static User switchRole(String role) { return user(call("POST", "/role/switch", form("role", role))); }
+
+    /** Adds a role to the logged-in account. Returns "pending" (operator, admin approves) or "active". */
+    public static String addRole(String role, String plate) {
+        return field(call("POST", "/role/add", form("role", role, "plate", plate)), "status", "");
     }
 
     /** Child class chosen by role, same as the local Store did. */
-    public static User login(String email, String pw) {
-        String r = call("POST", "/login", form("email", email, "password", pw));
-        token = field(r, "token", null);
+    private static User user(String r) {
         String id = field(r, "id", ""), name = field(r, "name", ""), mail = field(r, "email", "");
         return switch (field(r, "role", "")) {
             case "PASSENGER" -> new Passenger(id, name, mail, field(r, "passengerType", "REGULAR"));
@@ -73,17 +120,47 @@ public final class Api {
         };
     }
 
-    public static void updateProfile(String name) {
-        call("POST", "/profile/update", form("name", name));
+    private static List<String> csv(String s) { return s.isEmpty() ? List.of() : List.of(s.split(",")); }
+
+    public static void updateProfile(String name, String phone) {
+        call("POST", "/profile/update", form("name", name, "phone", phone));
+    }
+
+    /** Deletes the whole account (both roles); the card balance is written off. */
+    public static void deleteAccount(String password) {
+        call("POST", "/profile/delete", form("password", password));
+        token = null;
+    }
+
+    public static void changePassword(String current, String password) {
+        call("POST", "/profile/password", form("current", current, "password", password));
     }
 
     public static void logout() { token = null; }
 
     // ---------- cards and money ----------
 
-    public static List<String> cardsOf() { return lines(call("GET", "/cards", null)); }
+    /** "uid" or "uid,frozen" per card (frozen = reported lost, money not moved yet). */
+    public static List<String> cardsOf() {
+        List<String> out = new ArrayList<>();
+        for (String[] c : myCards()) out.add(c[2].isEmpty() ? c[0] : c[0] + ",frozen");
+        return out;
+    }
+
+    /** My cards as {uid, cents, "frozen" or ""}. cents is "" from an older server that does not send it. */
+    public static List<String[]> myCards() {
+        List<String[]> out = new ArrayList<>();
+        for (String l : lines(call("GET", "/cards", null))) {
+            String[] f = l.split(",");
+            boolean frozen = f[f.length - 1].equals("frozen");
+            out.add(new String[]{f[0], f.length > 1 && !f[1].equals("frozen") ? f[1] : "", frozen ? "frozen" : ""});
+        }
+        return out;
+    }
 
     public static void addCard(String tagUid) { call("POST", "/cards/add", form("uid", tagUid)); }
+
+    public static void freezeCard(String uid, String otp) { call("POST", "/cards/freeze", form("uid", uid, "otp", otp)); }
 
     /** Returns {newUid, balanceCents}. */
     public static String[] reportLostCard(String oldUid, String newTagUid) {
@@ -91,10 +168,10 @@ public final class Api {
         return new String[]{field(r, "newUid", ""), field(r, "cents", "0")};
     }
 
-    /** Operator only. Each item: {uid, ownerName}. */
+    /** Operator only. Each item: {uid, passengerType, ownerName, cents}; cents is missing from an older server. */
     public static List<String[]> allCards() {
         List<String[]> out = new ArrayList<>();
-        for (String l : lines(call("GET", "/cards/all", null))) out.add(l.split(",", 2));
+        for (String l : lines(call("GET", "/cards/all", null))) out.add(l.split(",", 4));
         return out;
     }
 
@@ -154,21 +231,121 @@ public final class Api {
 
     // ---------- trip planner ----------
 
-    /** One suggested trip. legs look like "R1: Philcoa > Tandang Sora (1.9 km)". */
-    public record PlanCard(String label, String km, int transfers, long fareCents, int minutes, List<String> legs) {}
+    /** The planner's route id for walking (to the first jeep, between jeeps, from the last one). */
+    public static final String WALK = "WALK";
+
+    /**
+     * One part of a trip: board `from`, ride `route`, get off at `to` (or walk, when route is WALK).
+     * fromAt / toAt = where those are; a ride can start or end "at the roadside near X" (a jeep
+     * flagged down on its road), which is no stop. Null from an older server.
+     */
+    public record PlanRide(String route, String from, String to, double km, RouteStop fromAt, RouteStop toAt) {
+        public PlanRide(String route, String from, String to, double km) { this(route, from, to, km, null, null); }
+        public boolean walk() { return WALK.equals(route); }
+    }
+
+    /** A jeepney route whose road passes near a point: how far, where, and its two ends. */
+    public record Passing(String routeId, String name, int meters, RouteStop at, String firstStop, String lastStop,
+                          boolean oneway) {}
+
+    /** Jeeps passing a point (the Routes map, tapped): routes whose road is within ~150 m, nearest first. */
+    public static List<Passing> passing(double lat, double lng) {
+        List<Passing> out = new ArrayList<>();
+        for (String l : lines(call("GET", "/passing?" + form("lat", String.valueOf(lat), "lng", String.valueOf(lng)), null))) {
+            String[] f = l.split("\\|", -1);
+            String[] ll = f[3].split("~");
+            out.add(new Passing(f[0], f[1], Integer.parseInt(f[2]),
+                    new RouteStop(f[1], Double.parseDouble(ll[0]), Double.parseDouble(ll[1])), f[4], f[5], Boolean.parseBoolean(f[6])));
+        }
+        return out;
+    }
+
+    /** One suggested trip. legs look like "Ride R1: Philcoa > Tandang Sora (1.90 km)" / "Walk: A > B (0.30 km)"; rides are the same, for the map. */
+    public record PlanCard(String label, String km, int transfers, long fareCents, int minutes, List<String> legs,
+                           List<PlanRide> rides) {}
 
     public static List<String> places() { return lines(call("GET", "/places", null)); }
 
+    /** Between two stops. */
     public static List<PlanCard> plan(String from, String to) {
+        return parsePlans(call("GET", "/plan?" + form("from", from, "to", to), null));
+    }
+
+    /** Between any two points, e.g. a pin on the map; the trip starts and ends with a walk to/from a stop. */
+    public static List<PlanCard> plan(double fromLat, double fromLng, String fromLabel,
+                                      double toLat, double toLng, String toLabel) {
+        return parsePlans(call("GET", "/plan?" + form(
+                "fromLat", String.valueOf(fromLat), "fromLng", String.valueOf(fromLng), "fromLabel", fromLabel,
+                "toLat", String.valueOf(toLat), "toLng", String.valueOf(toLng), "toLabel", toLabel), null));
+    }
+
+    // "14.65,121.04" -> a named point
+    private static RouteStop point(String name, String latLng) {
+        String[] ll = latLng.split(",");
+        return new RouteStop(name, Double.parseDouble(ll[0]), Double.parseDouble(ll[1]));
+    }
+
+    private static List<PlanCard> parsePlans(String body) {
         List<PlanCard> out = new ArrayList<>();
-        for (String l : lines(call("GET", "/plan?" + form("from", from, "to", to), null))) {
+        for (String l : lines(body)) {
             String[] f = l.split("\\|", -1);
             List<String> legs = new ArrayList<>();
+            List<PlanRide> rides = new ArrayList<>();
             for (String leg : f[5].split(";")) {
                 String[] x = leg.split("~");
-                legs.add(x[0] + ": " + x[1] + " > " + x[2] + " (" + x[3] + " km)");
+                PlanRide r = x.length >= 6
+                        ? new PlanRide(x[0], x[1], x[2], Double.parseDouble(x[3]), point(x[1], x[4]), point(x[2], x[5]))
+                        : new PlanRide(x[0], x[1], x[2], Double.parseDouble(x[3]));
+                legs.add((r.walk() ? "Walk: " : "Ride " + x[0] + ": ") + x[1] + " > " + x[2] + " (" + x[3] + " km)");
+                rides.add(r);
             }
-            out.add(new PlanCard(f[0], f[1], Integer.parseInt(f[2]), Long.parseLong(f[3]), Integer.parseInt(f[4]), legs));
+            out.add(new PlanCard(f[0], f[1], Integer.parseInt(f[2]), Long.parseLong(f[3]), Integer.parseInt(f[4]), legs, rides));
+        }
+        return out;
+    }
+
+    /** Every route's stops by route id, for the map. */
+    public static Map<String, List<RouteStop>> routeStops() {
+        Map<String, List<RouteStop>> out = new LinkedHashMap<>();
+        for (RouteDetail r : routes()) out.put(r.id(), r.stops());
+        return out;
+    }
+
+    /**
+     * Gives Fares the server's road distances, so fares worked out in the app (route fare table,
+     * tap terminal) match what the server charges. Older server or no file: straight lines stay.
+     */
+    public static void loadRoadKm() {
+        Map<String, Double> km = new HashMap<>();
+        try {
+            for (String l : lines(call("GET", "/road-km", null))) {
+                String[] f = l.split("\\|", -1);
+                if (f.length == 2) km.put(f[0], Double.parseDouble(f[1]));
+            }
+        } catch (ApiException | NumberFormatException e) {
+            return;
+        }
+        Fares.setRoadKm(km);
+    }
+
+    /** Road path per route and segment (stop i -> i+1), for the map. Empty if the server has none or is older. */
+    public static Map<String, Map<Integer, List<RouteShapes.Point>>> routeShapes() {
+        Map<String, Map<Integer, List<RouteShapes.Point>>> out = new LinkedHashMap<>();
+        List<String> rows;
+        try {
+            rows = lines(call("GET", "/route-shapes", null));
+        } catch (ApiException e) {
+            return out;                                     // straight lines between stops instead
+        }
+        for (String l : rows) {
+            String[] f = l.split("\\|", -1);
+            if (f.length < 3) continue;
+            List<RouteShapes.Point> pts = new ArrayList<>();
+            for (String pt : f[2].split(";")) {
+                String[] xy = pt.split("~");
+                if (xy.length == 2) pts.add(new RouteShapes.Point(Double.parseDouble(xy[0]), Double.parseDouble(xy[1])));
+            }
+            out.computeIfAbsent(f[0], k -> new TreeMap<>()).put(Integer.parseInt(f[1]), pts);
         }
         return out;
     }
@@ -235,9 +412,11 @@ public final class Api {
         return new String[]{field(r, "accepted", "0"), field(r, "skipped", "0")};
     }
 
-    public record RouteDetail(String id, List<RouteStop> stops) {}
+    /** name = "Commonwealth–SM Fairview via Regalado (to SM City Fairview)"; the id on older servers. */
+    public record RouteDetail(String id, List<RouteStop> stops, String name) {}
     public record VehicleInfo(String plate, String driverName, String operatorId) {}
-    public record FareRuleInfo(long base, long rate) {}
+    /** base covers the first baseKm; rate applies per km after that. */
+    public record FareRuleInfo(long base, long rate, double baseKm) {}
 
     public static List<RouteDetail> routes() {
         List<RouteDetail> out = new ArrayList<>();
@@ -252,7 +431,7 @@ public final class Api {
                         stList.add(new RouteStop(sp[0], Double.parseDouble(sp[1]), Double.parseDouble(sp[2])));
                     }
                 }
-                out.add(new RouteDetail(p[0], stList));
+                out.add(new RouteDetail(p[0], stList, p.length >= 3 && !p[2].isBlank() ? p[2] : p[0]));
             }
         }
         return out;
@@ -269,7 +448,8 @@ public final class Api {
 
     public static FareRuleInfo currentFares() {
         String r = call("GET", "/fares/current", null);
-        return new FareRuleInfo(Long.parseLong(field(r, "base", "1300")), Long.parseLong(field(r, "rate", "180")));
+        return new FareRuleInfo(Long.parseLong(field(r, "base", "1400")), Long.parseLong(field(r, "rate", "200")),
+                Double.parseDouble(field(r, "baseKm", "4.0")));
     }
 
     // ---------- admin panel ----------

@@ -20,8 +20,8 @@
         <maven.compiler.target>21</maven.compiler.target>
         <javafx.version>16</javafx.version>
         <glisten.version>6.0.5</glisten.version>
-        <attach.version>4.0.8</attach.version>
-        <mainClassName>com.farex.ui.FarexApp</mainClassName>
+        <attach.version>4.0.22</attach.version>
+        <mainClassName>com.farex.ui.UiLauncher</mainClassName>
     </properties>
 
     <dependencies>
@@ -34,6 +34,12 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
+        </dependency>
+        <!-- The street map on the Routes tab (com.farex.ui.common.RouteMap): pure JavaFX, no WebView -->
+        <dependency>
+            <groupId>com.gluonhq</groupId>
+            <artifactId>maps</artifactId>
+            <version>2.0.0-ea+6</version>
         </dependency>
         <dependency>
             <groupId>com.gluonhq</groupId>
@@ -65,7 +71,43 @@
             <artifactId>util</artifactId>
             <version>${attach.version}</version>
         </dependency>
+        <dependency>
+            <!-- phone keyboard height, to keep the field being typed in above it -->
+            <groupId>com.gluonhq.attach</groupId>
+            <artifactId>keyboard</artifactId>
+            <version>${attach.version}</version>
+        </dependency>
+        <dependency>
+            <!-- opens the PayMongo checkout in the phone's browser -->
+            <groupId>com.gluonhq.attach</groupId>
+            <artifactId>browser</artifactId>
+            <version>${attach.version}</version>
+        </dependency>
+        <dependency>
+            <!-- phone GPS for trip tracking (ui/trip/LocationSource) -->
+            <groupId>com.gluonhq.attach</groupId>
+            <artifactId>position</artifactId>
+            <version>${attach.version}</version>
+        </dependency>
     </dependencies>
+
+    <!-- The NFC reader's Android-side classes (src/android/java). GluonFX only adds Android code found in a jar
+         under META-INF/substrate/dalvik/precompiled/classes, so build-android.sh builds and installs that jar. -->
+    <profiles>
+        <profile>
+            <id>android-nfc</id>
+            <activation>
+                <file><exists>${basedir}/target/farex-nfc-dalvik.jar</exists></file>
+            </activation>
+            <dependencies>
+                <dependency>
+                    <groupId>com.farex</groupId>
+                    <artifactId>farex-nfc-dalvik</artifactId>
+                    <version>1.0-SNAPSHOT</version>
+                </dependency>
+            </dependencies>
+        </profile>
+    </profiles>
 
     <repositories>
         <repository>
@@ -106,9 +148,46 @@
                         <list>lifecycle</list>
                         <list>statusbar</list>
                         <list>storage</list>
+                        <list>position</list>   <!-- phone GPS for trip tracking -->
+                        <list>keyboard</list>
+                        <list>browser</list>
                     </attachList>
+                    <appIdentifier>com.farex.app</appIdentifier>
+                    <resourcesList>
+                        <list>.*[.]ttf$</list>     <!-- the bundled Inter font -->
+                        <list>.*carto[.]key$</list>  <!-- the CARTO map key (VoyagerTiles); gitignored -->
+                        <list>META-INF/services/.*</list>  <!-- ServiceLoader finds VoyagerTiles through this -->
+                    </resourcesList>
+                    <releaseConfiguration>
+                        <appLabel>FareX</appLabel>
+                        <versionCode>1</versionCode>
+                        <versionName>1.0</versionName>
+                    </releaseConfiguration>
                     <reflectionList>
                         <list>com.gluonhq.impl.charm.glisten.control.skin.GlistenButtonSkin</list>
+                        <!-- JavaFX finds the Application class by name at start; without this the native app shows a black screen -->
+                        <list>com.farex.ui.FarexApp</list>
+                        <list>com.farex.ui.common.VoyagerTiles</list>   <!-- map tiles, found by ServiceLoader -->
+                        <!-- JavaFX looks these up by name the first time one is drawn (missing one = crash on that screen) -->
+                        <list>javafx.scene.shape.Arc</list>
+                        <list>javafx.scene.shape.Circle</list>
+                        <list>javafx.scene.shape.CubicCurve</list>
+                        <list>javafx.scene.shape.Line</list>
+                        <list>javafx.scene.shape.Path</list>
+                        <list>javafx.scene.shape.Polygon</list>
+                        <list>javafx.scene.shape.Polyline</list>
+                        <list>javafx.scene.shape.Rectangle</list>
+                        <list>javafx.scene.shape.Shape</list>
+                        <list>javafx.scene.canvas.Canvas</list>
+                        <list>javafx.scene.image.ImageView</list>
+                        <list>javafx.scene.text.Text</list>
+                        <list>javafx.scene.text.TextFlow</list>
+                        <list>javafx.scene.Group</list>
+                        <list>javafx.scene.control.ProgressIndicator</list>
+                        <list>javafx.scene.control.ScrollPane</list>
+                        <list>javafx.scene.control.PasswordField</list>
+                        <list>javafx.scene.layout.GridPane</list>
+                        <list>javafx.scene.layout.BorderPane</list>
                     </reflectionList>
                     <mainClass>${mainClassName}</mainClass>
                 </configuration>

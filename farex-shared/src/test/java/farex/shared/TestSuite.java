@@ -16,8 +16,11 @@ public class TestSuite {
                 farex.shared.data.StoreTest.class,
                 farex.shared.data.OperatorTest.class,
                 farex.shared.plan.TripPlannerTest.class,
+                farex.shared.plan.TripPlannerNetworkTest.class,
+                farex.shared.plan.TripProgressTest.class,
                 farex.shared.reward.RewardsTest.class,
                 farex.shared.fare.FareRuleTest.class,
+                farex.shared.fare.RoadKmTest.class,
                 farex.shared.txn.TxnTest.class,
                 farex.shared.card.CardPayloadTest.class,
                 farex.shared.user.UserTest.class

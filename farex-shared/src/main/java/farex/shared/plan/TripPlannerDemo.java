@@ -15,10 +15,10 @@ public final class TripPlannerDemo {
         List<TripPlanner.Plan> plans = tp.plan("Cubao", "Fairview Terminal", new RegularFare());
         plans.forEach(p -> System.out.printf("  %s: %.1f km, %d transfers, P%.2f, %d min, %s%n", p.label(), p.km(), p.transfers(), p.fareCents() / 100.0, p.minutes(), p.legs()));
         check(plans.size() >= 2 && plans.size() <= 3, "2 to 3 distinct plans");
-        TripPlanner.Plan shortest = plans.stream().filter(p -> p.label().contains("Shortest")).findFirst().get();
+        TripPlanner.Plan fastest = plans.stream().filter(p -> p.label().contains("Fastest")).findFirst().get();
         TripPlanner.Plan fewest = plans.stream().filter(p -> p.label().contains("Fewest")).findFirst().get();
         TripPlanner.Plan cheapest = plans.stream().filter(p -> p.label().contains("Cheapest")).findFirst().get();
-        check(plans.stream().allMatch(p -> p.km() >= shortest.km() - 1e-9), "shortest has least km");
+        check(plans.stream().allMatch(p -> p.minutes() >= fastest.minutes() - 1), "fastest has least minutes");   // 1: minutes are rounded
         check(plans.stream().allMatch(p -> p.transfers() >= fewest.transfers()), "fewest has least transfers");
         check(plans.stream().allMatch(p -> p.fareCents() >= cheapest.fareCents()), "cheapest has least fare");
         check(plans.stream().map(p -> p.legs().toString()).distinct().count() == plans.size(), "no duplicate plans");

@@ -1,0 +1,90 @@
+# Builds the FareX Android APK on GitHub's Linux machines (Gluon cannot build Android on Windows).
+#
+# Run it: GitHub -> Actions -> "Android APK" -> Run workflow. About 30 minutes the first time.
+# Get it: open the finished run -> Artifacts -> FareX-apk (a zip holding farex-app.apk).
+#
+# CARTO map key: add it once as a repository secret named CARTO_API_KEY
+# (Settings -> Secrets and variables -> Actions -> New repository secret; needs repo admin).
+# Without it the APK still works and shows OpenStreetMap tiles (see VoyagerTiles.java).
+# No admin? Type the key into the "CARTO key" box when running the workflow instead. Note: in a
+# public repo that box's value can be seen on the run's page; the secret stays hidden.
+name: Android APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      carto_key:
+        description: 'CARTO key (optional; used only if the CARTO_API_KEY secret is not set)'
+        required: false
+        default: ''
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gluon GraalVM 23 (the one build-android.sh needs)
+        run: |
+          curl -sSL -o graalvm.tar.gz https://github.com/gluonhq/graal/releases/download/gluon-23+25.1-dev-2409082136/graalvm-java23-linux-amd64-gluon-23+25.1-dev.tar.gz
+          mkdir -p "$HOME/graalvm" && tar -xzf graalvm.tar.gz -C "$HOME/graalvm" --strip-components=1 && rm graalvm.tar.gz
+          echo "GRAALVM_HOME=$HOME/graalvm" >> "$GITHUB_ENV"
+
+      # Maven and the Android packaging (Gradle) run on a normal Java 21, like on a laptop;
+      # only the native step uses GRAALVM_HOME
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Libraries Gluon's native build links against
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q libasound2-dev libavcodec-dev libavformat-dev libavutil-dev libgl-dev \
+            libgtk-3-dev libpango1.0-dev libxtst-dev
+
+      - name: Cache Maven downloads and Gluon's Android SDK/NDK
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.m2/repository
+            ~/.gluon
+          key: farex-android-${{ hashFiles('**/pom.xml') }}
+          restore-keys: farex-android-
+
+      - name: CARTO key (the repository secret, else the key typed when running)
+        env:
+          CARTO_API_KEY: ${{ secrets.CARTO_API_KEY || inputs.carto_key }}
+        run: |
+          [ -n "$CARTO_API_KEY" ] && echo "::add-mask::$CARTO_API_KEY"
+          if [ -n "$CARTO_API_KEY" ]; then
+            mkdir -p farex-app/src/main/resources/com/farex/ui/common    # not in git: it only holds the ignored key
+            printf '%s\n' "$CARTO_API_KEY" > farex-app/src/main/resources/com/farex/ui/common/carto.key
+            echo "CARTO key added: the APK shows CARTO Voyager tiles"
+          else
+            echo "No CARTO_API_KEY secret: the APK shows OpenStreetMap tiles"
+          fi
+
+      # GitHub's machine has its own Android SDK in ANDROID_SDK_ROOT/ANDROID_HOME; Gluon uses the one it
+      # downloads, and Gradle refuses to build when the two disagree, so hide the machine's for this step
+      - name: Build the APK
+        # ANDROID_JAR: build-android.sh compiles the NFC reader against the machine's android.jar
+        run: |
+          export ANDROID_JAR="$(ls "$ANDROID_HOME"/platforms/android-*/android.jar | sort -V | tail -1)"
+          env -u ANDROID_SDK_ROOT -u ANDROID_HOME bash build-android.sh
+
+      - name: Show Gluon's logs (only when the build failed)
+        if: failure()
+        run: |
+          for f in farex-app/target/gluonfx/log/*.log farex-app/target/gluonfx/aarch64-android/gvm/log/*.log; do
+            [ -f "$f" ] || continue
+            echo "===== $f"; tail -n 80 "$f"
+          done
+
+      - name: Upload the APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: FareX-apk
+          path: farex-app/target/gluonfx/aarch64-android/gvm/farex-app.apk
+          if-no-files-found: error

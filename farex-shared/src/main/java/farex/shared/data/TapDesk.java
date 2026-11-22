@@ -6,7 +6,7 @@ import farex.shared.user.*;
 import java.time.Instant;
 import java.util.*;
 
-/** Operator side tap logic. Who is on board lives in memory for this shift. */
+/** Operator side tap logic. Who is on board is kept in boarding.csv so a restart or a second jeepney cannot lose or duplicate a rider. */
 public class TapDesk {
     public record BoardedInfo(String cardUid, String passengerName, int stopIdx, String stopName, Instant time) {}
 
@@ -19,12 +19,24 @@ public class TapDesk {
         this.store = store;
         this.operatorId = operatorId;
         this.stops = store.stops();
+        for (String[] r : store.activeBoardings().values()) {       // pick up riders still on board after a restart
+            int idx = Integer.parseInt(r[2]);
+            if (r[1].equals(operatorId) && idx >= 0 && idx < stops.size())
+                boarded.put(r[0], new BoardedInfo(r[0], nameOf(r[0]), idx, stops.get(idx).name(), java.time.Instant.parse(r[3])));
+        }
+    }
+
+    private String nameOf(String cardUid) {
+        return store.findUser(store.ownerOf(cardUid)).map(User::getName).orElse("Card " + Store.formatUid(cardUid));
     }
 
     public List<RouteStop> stops() { return stops; }
     public int onBoard() { return boarded.size(); }
     public List<BoardedInfo> boardedPassengers() { return new ArrayList<>(boarded.values()); }
-    public void clearBoarded() { boarded.clear(); }
+    public void clearBoarded() {
+        for (String uid : boarded.keySet()) store.logBoarding(uid, operatorId, 0, "ALIGHT");
+        boarded.clear();
+    }
 
     public String resolveCard(String identifier) {
         if (identifier == null || identifier.isBlank()) throw new IllegalArgumentException("Card or user ID is required");
@@ -41,12 +53,15 @@ public class TapDesk {
     public BoardedInfo tapIn(String rawUid, int stopIdx) {
         String cardUid = resolveCard(rawUid);
         if (store.isCardFrozen(cardUid)) throw new IllegalStateException("Card is frozen / reported lost");
-        if (boarded.containsKey(cardUid)) throw new IllegalStateException("Card is already tapped in");
+        if (boarded.containsKey(cardUid) || store.isOnBoard(cardUid))
+            throw new IllegalStateException("Card is already tapped in");
         if (stopIdx < 0 || stopIdx >= stops.size()) throw new IllegalArgumentException("Invalid stop index");
+        if (store.ownerOf(cardUid) == null) throw new IllegalStateException("Unknown card");
+        long bal = store.balance(cardUid);
+        if (bal < Fares.BASE) throw new IllegalStateException(String.format("Balance too low: P%.2f, load at least P%.2f to ride", bal / 100.0, Fares.BASE / 100.0));
 
-        String ownerId = store.ownerOf(cardUid);
-        String name = store.findUser(ownerId).map(User::getName).orElse("Card " + Store.formatUid(cardUid));
-        BoardedInfo info = new BoardedInfo(cardUid, name, stopIdx, stops.get(stopIdx).name(), Instant.now());
+        BoardedInfo info = new BoardedInfo(cardUid, nameOf(cardUid), stopIdx, stops.get(stopIdx).name(), Instant.now());
+        store.logBoarding(cardUid, operatorId, stopIdx, "BOARD");
         boarded.put(cardUid, info);
         return info;
     }
@@ -67,7 +82,11 @@ public class TapDesk {
     }
 
     private Txn charge(String cardUid, double km, FareRule rule) {
-        Txn t = store.pay(cardUid, operatorId, Fares.fare(km, rule), km);
+        // The rider got on with at least the base fare, so a longer trip may leave a small negative balance.
+        // The card then cannot tap in again until it is loaded. This is how an unpaid ride is never free.
+        long maxFare = Fares.fare(Fares.pathKm(stops, 0, stops.size() - 1), new RegularFare());
+        Txn t = store.pay(cardUid, operatorId, Fares.fare(km, rule), km, -maxFare);
+        store.logBoarding(cardUid, operatorId, 0, "ALIGHT");
         boarded.remove(cardUid);                      // only after payment worked
         return t;
     }
