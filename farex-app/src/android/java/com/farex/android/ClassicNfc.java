@@ -18,13 +18,14 @@ public final class ClassicNfc {
         return hex(tag.getId());
     }
 
-    public static byte[] read(Tag tag) throws Exception {
+    // synchronized: one card connection at a time (READ and WRITE can come from two request threads)
+    public static synchronized byte[] read(Tag tag) throws Exception {
         try (MifareClassic c = open(tag)) {
             return c.readBlock(BLOCK);
         }
     }
 
-    public static void write(Tag tag, byte[] payload16) throws Exception {
+    public static synchronized void write(Tag tag, byte[] payload16) throws Exception {
         if (payload16.length != 16) throw new IllegalArgumentException("payload must be 16 bytes");
         try (MifareClassic c = open(tag)) {
             c.writeBlock(BLOCK, payload16);

@@ -25,7 +25,10 @@ import javafx.scene.text.Font;
 
 import com.farex.ui.common.CommonUi;
 import com.farex.ui.common.Icons;
+import com.farex.ui.common.CardTaps;
 import com.farex.ui.common.Navigator;
+import com.farex.ui.common.PopupDialog;
+import com.farex.ui.common.WarningDialog;
 import com.farex.ui.common.Theme;
 import com.farex.ui.trip.TripUi;
 
@@ -71,6 +74,7 @@ public class ReadyModeView extends StackPane {
 
     private void buildTerminal() {
         refreshLive();
+        CardTaps.claim(simulateCard, this::tapCard);      // only during a shift: simulateCard is on screen then
 
         VBox content = new VBox(10, statusRow(), titleRow(), qrCard(), countCards, gpsCard, simulateCard);
         content.setPadding(new Insets(2, 18, 96, 18));   // bottom space so END SHIFT hides nothing
@@ -306,6 +310,20 @@ public class ReadyModeView extends StackPane {
 
     private void openPicker() {
         Navigator.showOverlay(new TapPickerDialog(this::tap));
+    }
+
+    // A real card on the phone's NFC: the same tap as picking that card in the Simulate list
+    private void tapCard(String uid) {
+        for (TapRider rider : TapTerminal.riders()) {
+            if (!rider.isApp() && rider.getCard().getCardNumber().equalsIgnoreCase(uid)) {
+                Navigator.closeOverlay();                // the last tap's pop-up, if still open
+                tap(rider);
+                return;
+            }
+        }
+        new PopupDialog(WarningDialog.warningIcon(), "Unknown card",
+                "Card " + uid + " is not linked to a FareX account. The rider adds it in the app first.")
+                .button("OK", () -> { }).show();
     }
 
     // First tap = tap in, second = tap out; then the matching pop-up

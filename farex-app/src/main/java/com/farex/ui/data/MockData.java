@@ -214,7 +214,8 @@ public final class MockData {
 
     /**
      * refresh() without blocking the screen: downloads on a background thread, then updates the data and runs
-     * onDone on the UI thread. Offline or logged out meanwhile: nothing changes and onDone is not run.
+     * onDone on the UI thread, only when something shown changed (a redraw for nothing made Home flicker).
+     * Offline or logged out meanwhile: nothing changes and onDone is not run.
      */
     public static void refreshInBackground(Runnable onDone) {
         DemoAccount account = currentAccount;
@@ -226,8 +227,11 @@ public final class MockData {
                 Snapshot s = fetch();
                 javafx.application.Platform.runLater(() -> {
                     if (currentAccount == account) {                // still the same login
+                        String before = shown(account);
                         apply(account, s);
-                        onDone.run();
+                        if (!shown(account).equals(before)) {
+                            onDone.run();
+                        }
                     }
                 });
             } catch (Api.ApiException offline) {
@@ -236,6 +240,15 @@ public final class MockData {
         }, "farex-refresh");
         t.setDaemon(true);
         t.start();
+    }
+
+    // What a refresh can change on screen: cards, balances, frozen, points, number of transactions
+    private static String shown(DemoAccount account) {
+        StringBuilder b = new StringBuilder();
+        for (DemoCard c : account.getCards()) {
+            b.append(c.getCardNumber()).append(':').append(c.getBalance()).append(':').append(c.isFrozen()).append(';');
+        }
+        return b.append(account.getPointBalance()).append(';').append(account.getTransactions().size()).toString();
     }
 
     private static void apply(DemoAccount currentAccount, Snapshot s) {

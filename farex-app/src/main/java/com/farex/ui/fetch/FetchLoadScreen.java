@@ -14,6 +14,7 @@ import javafx.scene.text.TextAlignment;
 import com.farex.Api;
 import com.farex.CardReader;
 import com.farex.ui.common.CardPickerDialog;
+import com.farex.ui.common.CardTaps;
 import com.farex.ui.common.CardTile;
 import com.farex.ui.common.CommonUi;
 import com.farex.ui.common.Navigator;
@@ -114,10 +115,12 @@ public class FetchLoadScreen extends StepScreen {
     // ----- Fetch Load / 02: hold the card against the phone -----
 
     private void holdStep(DemoCard card) {
+        CardTile tile = new CardTile(card);
+        CardTaps.claim(tile, uid -> showStep(this::fetchingStep));   // phone: the tap itself starts the fetch
         body.getChildren().addAll(
                 heading("Hold your card near your phone",
                         "Turn on NFC, then place your xPress card against the back of your phone."),
-                new CardTile(card),
+                tile,
                 CommonUi.note("Remove thick phone cases. Keep the card still until confirmed. "
                         + "No NFC? Use an authorized load-fetch terminal."),
                 CommonUi.spacer(),
@@ -129,7 +132,9 @@ public class FetchLoadScreen extends StepScreen {
     // ----- Fetch Load / 03: the card read, real on a phone, fake on a laptop (Esc = failure) -----
 
     private void fetchingStep() {
-        body.getChildren().add(new FetchStep(this::showSuccess, this::showFailure));
+        FetchStep step = new FetchStep(this::showSuccess, this::showFailure);
+        CardTaps.claim(step, uid -> { });       // the fetch reads the card itself: no balance pop-up meanwhile
+        body.getChildren().add(step);
     }
 
     // ----- Results (pop-ups) -----

@@ -64,7 +64,9 @@ public class HomeView extends ScrollPane {
         if (refresh) {
             MockData.refreshInBackground(() -> {
                 if (getParent() instanceof Pane parent) {   // still on screen
-                    parent.getChildren().setAll(new HomeView(showTab, false));
+                    HomeView fresh = new HomeView(showTab, false);
+                    fresh.setVvalue(getVvalue());           // keep where the user scrolled to
+                    parent.getChildren().setAll(fresh);
                 }
             });
         }

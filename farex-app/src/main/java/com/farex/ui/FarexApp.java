@@ -70,6 +70,7 @@ public class FarexApp extends Application {
         StackPane root = new StackPane();
         root.setBackground(Theme.solid(Theme.DARK));
         Navigator.init(root);
+        com.farex.ui.common.CardTaps.start();   // real NFC taps on a phone
 
         Navigator.register("splash", SplashView::new);
         Navigator.register("welcome", WelcomeView::new);

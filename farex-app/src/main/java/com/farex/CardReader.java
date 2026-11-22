@@ -28,6 +28,11 @@ public final class CardReader {
         return r;
     }
 
+    /** UID of the next card tapped on the phone. Throws "no card" after 30 s without a tap. */
+    public static String next() throws IOException {
+        return ask("NEXT", 35_000);
+    }
+
     /** Writes 16 bytes (32 hex) to the card just read. Fails if another card is on the phone now. */
     public static void write(String uid, String payloadHex) throws IOException {
         ask("WRITE " + uid + " " + payloadHex, 10_000);

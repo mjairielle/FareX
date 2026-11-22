@@ -15,6 +15,9 @@
 set -euo pipefail
 : "${GRAALVM_HOME:?Set GRAALVM_HOME to the Gluon GraalVM 23 folder, see the top of this file}"
 cd "$(dirname "$0")"
+# The map needs CARTO: without the key the app falls back to OpenStreetMap, which blocks it ("403 Access blocked")
+KEY=farex-app/src/main/resources/com/farex/ui/common/carto.key
+[ -s "$KEY" ] || { echo "Missing $KEY (the CARTO API key, one line). The map would show 'Access blocked'."; exit 1; }
 mvn -q install -DskipTests -pl farex-shared -am        # the app needs the shared module (and the parent pom) installed
 
 cd farex-app

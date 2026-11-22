@@ -9,6 +9,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.text.Font;
 
 import com.farex.ui.common.CardNumberField;
+import com.farex.ui.common.CardTaps;
 import com.farex.ui.common.Navigator;
 import com.farex.ui.common.SubScreen;
 import com.farex.ui.common.Theme;
@@ -48,23 +49,27 @@ public class AddCardView extends SubScreen {
 
         body.getChildren().addAll(caption, numberField, errorLabel, spacer, saveButton);
         Platform.runLater(numberField::focusField);
+        // On a phone, tapping the card links it by its chip UID: no typing
+        CardTaps.claim(this, uid -> link(uid, uid));
     }
 
     private void saveCard(CardNumberField numberField) {
-        DemoAccount account = MockData.getCurrentAccount();
-
         if (!numberField.isComplete()) {
             showError("Enter the last 8 digits of your card, for example 6767 6767.");
             return;
         }
+        link(numberField.getDigits(), numberField.getFullNumber());   // demo number: "00" + 8 digits
+    }
+
+    // uid: what the server knows the card by; demoNumber: the card number in demo mode
+    private void link(String uid, String demoNumber) {
+        DemoAccount account = MockData.getCurrentAccount();
         if (account == null) {
             showError("Please log in again.");
             return;
         }
-
-        String fullNumber = numberField.getFullNumber();   // "00" + 8 digits
         for (DemoCard existing : account.getCards()) {
-            if (existing.getLast8().equals(numberField.getDigits())) {     // demo "00..." or live 8-digit numbers
+            if (existing.getLast8().equalsIgnoreCase(uid) || existing.getCardNumber().equalsIgnoreCase(uid)) {
                 showError("This card is already added.");
                 return;
             }
@@ -72,14 +77,14 @@ public class AddCardView extends SubScreen {
 
         if (MockData.isLive()) {
             try {
-                Api.addCard(numberField.getDigits());   // card id on the server = the 8 printed digits
+                Api.addCard(uid);                       // card id on the server = the chip UID (8 or 14 hex)
                 MockData.refresh();
             } catch (Api.ApiException e) {
                 showError(e.getMessage());               // e.g. "Card is already linked to an account"
                 return;
             }
         } else {
-            account.addCard(new DemoCard(fullNumber, account.getFullName(), 0.00, "09/29"));
+            account.addCard(new DemoCard(demoNumber, account.getFullName(), 0.00, "09/29"));
         }
         Navigator.go("dashboard");
     }
