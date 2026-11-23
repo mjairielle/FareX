@@ -157,6 +157,22 @@ public class OperatorDashboardView extends StackPane {
                 OperatorUi.divider(),
                 infoRow("Vehicle Plate", OperatorUi.plateChip(operator.getVehiclePlate())),
                 infoRow("Route", route));
+        if (OperatorState.isOnShift()) {
+            // Follows the jeep: Auto Drive and Next Stop change it while this tab is open
+            Label at = CommonUi.smallBold("", Theme.LIME);
+            at.textProperty().bind(OperatorState.stopStatus());
+            Label arriving = CommonUi.small("", Theme.WHITE);
+            arriving.textProperty().bind(OperatorState.arrivalStatus());
+            arriving.managedProperty().bind(arriving.textProperty().isNotEmpty());
+            for (Label l : new Label[]{at, arriving}) {
+                l.setWrapText(true);
+                l.setTextAlignment(javafx.scene.text.TextAlignment.RIGHT);
+                l.setMaxWidth(200);
+            }
+            VBox where = new VBox(2, at, arriving);
+            where.setAlignment(Pos.CENTER_RIGHT);
+            card.getChildren().add(infoRow("Current Stop", where));
+        }
         card.setSpacing(10);
         return card;
     }

@@ -105,10 +105,11 @@ public class ReadyModeView extends StackPane {
         getChildren().addAll(scroll, end);
 
         // Auto Drive moves the jeep while this screen is open: redraw when it does
-        OperatorState.setGpsListener(this::refreshLive);
+        Runnable redraw = this::refreshLive;
+        OperatorState.setGpsListener(redraw);
         sceneProperty().addListener((obs, was, now) -> {
             if (now == null) {
-                OperatorState.setGpsListener(null);
+                OperatorState.clearGpsListener(redraw);
             }
         });
     }
@@ -241,6 +242,11 @@ public class ReadyModeView extends StackPane {
         });
         Label nextStop = CommonUi.smallBold((next == null) ? "End of route" : "Next: " + next.name(), Theme.LIME);
         nextStop.setWrapText(true);
+        Label arriving = CommonUi.small("", Theme.WHITE);   // "Arriving at Batasan in 4s", ticks every second
+        arriving.textProperty().bind(OperatorState.arrivalStatus());
+        arriving.setWrapText(true);
+        arriving.setVisible(auto);
+        arriving.setManaged(auto);
 
         VBox.setMargin(caption, new Insets(4, 0, 0, 0));
         return new Node[] {
@@ -250,6 +256,7 @@ public class ReadyModeView extends StackPane {
             new VBox(2, stopName, coords),
             stopButtons(gps),
             nextStop,
+            arriving,
             autoDrive,
         };
     }

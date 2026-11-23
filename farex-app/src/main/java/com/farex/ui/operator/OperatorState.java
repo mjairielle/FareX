@@ -9,6 +9,8 @@ import java.util.Locale;
 import java.util.Random;
 
 import javafx.application.Platform;
+import javafx.beans.property.ReadOnlyStringProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -71,6 +73,10 @@ public final class OperatorState {
     // one stop every 6 ticks (6 s). The open Ready Mode screen listens so it can redraw.
     private static final Timeline gpsClock = new Timeline(new KeyFrame(Duration.seconds(1), e -> onGpsTick()));
     private static Runnable gpsListener = null;
+    // "3. Batasan" and, with Auto Drive on, "Arriving at Dona Carmen in 4s": labels bind to these, so they tick
+    // every second without rebuilding the screen (a rebuild under the finger could drop a tap on Next Stop)
+    private static final SimpleStringProperty stopStatus = new SimpleStringProperty("");
+    private static final SimpleStringProperty arrivalStatus = new SimpleStringProperty("");
     private static double accuracyMeters = 3.0;
     private static final Random random = new Random();
 
@@ -145,6 +151,7 @@ public final class OperatorState {
             }
             gps.setCurrentStopIdx(0);
             gps.setAutoDriving(false);
+            updateDriveStatus();
             sentStop = -2;                 // the server forgot the jeep's stop on turning: send it again
             done.accept(null);
         });
@@ -277,6 +284,7 @@ public final class OperatorState {
         records.clear();
         gps.setCurrentStopIdx(0);
         gps.setAutoDriving(false);
+        updateDriveStatus();
         gpsClock.setCycleCount(Animation.INDEFINITE);
         gpsClock.play();
     }
@@ -380,6 +388,29 @@ public final class OperatorState {
         gpsListener = listener;
     }
 
+    // A screen leaving stops listening, unless a newer screen already took over (START SHIFT builds the new
+    // Ready Mode screen before the old one leaves: clearing blindly left Auto Drive with nobody redrawing)
+    public static void clearGpsListener(Runnable mine) {
+        if (gpsListener == mine) {
+            gpsListener = null;
+        }
+    }
+
+    public static ReadOnlyStringProperty stopStatus() {
+        return stopStatus;
+    }
+
+    public static ReadOnlyStringProperty arrivalStatus() {
+        return arrivalStatus;
+    }
+
+    private static void updateDriveStatus() {
+        Api.StopCoord stop = gps.getCurrentStop(), next = gps.getNextStop();
+        stopStatus.set(stop == null ? "" : (stop.index() + 1) + ". " + stop.name());
+        arrivalStatus.set(gps.isAutoDriving() && next != null
+                ? "Arriving at " + next.name() + " in " + gps.getCountdown() + "s" : "");
+    }
+
     // "Next Stop": Philcoa (0) -> Tandang Sora (1) ... Reaching Fairview Terminal (5) completes a trip
     public static void nextStop() {
         if (gps.hasNextStop()) {
@@ -388,10 +419,12 @@ public final class OperatorState {
                 arrivedAtTerminal();
             }
         }
+        updateDriveStatus();
     }
 
     public static void previousStop() {
         gps.rewindStop();
+        updateDriveStatus();
     }
 
     public static boolean isAtTerminal() {
@@ -403,6 +436,7 @@ public final class OperatorState {
             return;     // nowhere left to drive
         }
         gps.toggleAutoDriving();
+        updateDriveStatus();
     }
 
     // "Fix GPS": take a fresh reading, accuracy between ±1.5 m and ±4.0 m
@@ -464,10 +498,15 @@ public final class OperatorState {
     private static void onGpsTick() {
         syncStop(gps.getCurrentStopIdx());
         pollQrRiders();
+        int was = gps.getCurrentStopIdx();
         boolean moved = gps.tick();
         if (moved && isAtTerminal()) {
             gps.setAutoDriving(false);
             arrivedAtTerminal();
+        }
+        updateDriveStatus();
+        if (gps.getCurrentStopIdx() != was) {
+            Navigator.toast("Arrived at " + gps.getCurrentStop().name());
         }
         if (moved && gpsListener != null) {
             gpsListener.run();
