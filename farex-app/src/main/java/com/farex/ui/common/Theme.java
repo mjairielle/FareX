@@ -50,14 +50,38 @@ public final class Theme {
     // each weight's own "P" (on Android a missing letter shows as a box).
     public static final String FONT = "Poppins";
 
-    // Call once at start, before any screen is built
+    // Call once at start, before any screen is built.
+    // JavaFX loads a font from inside the app by copying it to a temp file first, and on Android the default temp
+    // folder does not exist: the load fails silently and every screen falls back to Roboto, with no bold. So when the
+    // plain load fails, the font is copied into the app's own private storage and loaded from that file.
     public static void loadFonts() {
+        StringBuilder loaded = new StringBuilder();
         for (String weight : new String[]{"Regular", "Medium", "SemiBold", "Bold"}) {
-            try (java.io.InputStream in = Theme.class.getResourceAsStream("/com/farex/ui/fonts/Poppins-" + weight + ".ttf")) {
-                if (in != null) Font.loadFont(in, 12);
+            String name = "Poppins-" + weight + ".ttf";
+            Font font = null;
+            try (java.io.InputStream in = Theme.class.getResourceAsStream("/com/farex/ui/fonts/" + name)) {
+                if (in != null) font = Font.loadFont(in, 12);
             } catch (java.io.IOException e) {
-                // keep going: that weight falls back to a system font
+                // try the file below
             }
+            if (font == null) font = loadFromFile(name);
+            loaded.append(font == null ? name + " FAILED" : font.getName()).append("; ");
+        }
+        System.out.println("FareX fonts: " + loaded);    // shows in the phone's log (adb logcat)
+    }
+
+    private static Font loadFromFile(String name) {
+        java.io.File dir = com.gluonhq.attach.storage.StorageService.create()
+                .flatMap(com.gluonhq.attach.storage.StorageService::getPrivateStorage)
+                .orElse(new java.io.File(System.getProperty("java.io.tmpdir", ".")));
+        java.io.File file = new java.io.File(dir, name);
+        try (java.io.InputStream in = Theme.class.getResourceAsStream("/com/farex/ui/fonts/" + name)) {
+            if (in == null) return null;
+            java.nio.file.Files.copy(in, file.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            return Font.loadFont(file.toURI().toString(), 12);
+        } catch (java.io.IOException | RuntimeException e) {
+            System.err.println("Font " + name + " not loaded: " + e);
+            return null;
         }
     }
 

@@ -57,7 +57,17 @@ public class MainShell extends BorderPane {
     private final Label titleLabel = new Label();
     private final List<NavTab> tabs = new ArrayList<>();
 
+    private int tab;
+
     public MainShell() {
+        // Phone back: Routes, Transactions or Profile -> Home; on Home, press twice to exit
+        Navigator.setBack(this, () -> {
+            if (tab != 0) {
+                showTab(0);
+            } else {
+                Navigator.backToExit();
+            }
+        });
         setBackground(Theme.solid(Theme.DARK));
         setTop(buildHeader());
         setCenter(contentArea);
@@ -66,6 +76,7 @@ public class MainShell extends BorderPane {
     }
 
     public void showTab(int index) {
+        tab = index;
         titleLabel.setText(TITLES[index]);
         for (int i = 0; i < tabs.size(); i++) {
             tabs.get(i).setActive(i == index);

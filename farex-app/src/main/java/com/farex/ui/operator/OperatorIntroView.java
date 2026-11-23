@@ -3,6 +3,7 @@ package com.farex.ui.operator;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
@@ -37,7 +38,8 @@ public class OperatorIntroView extends SubScreen {
         top.setAlignment(Pos.TOP_CENTER);
         VBox.setMargin(top, new Insets(14, 0, 18, 0));
 
-        body.getChildren().addAll(top, infoPanel());
+        VBox panel = infoPanel();
+        body.getChildren().addAll(top, panel);
         // Same login, no second password: the account switches role, waits for approval, or asks to become an operator
         if (MockData.isPending("OPERATOR")) {
             body.getChildren().addAll(
@@ -52,10 +54,14 @@ public class OperatorIntroView extends SubScreen {
             RoutePicker route = new RoutePicker();
             Label error = CommonUi.small("", Theme.ERROR);
             error.setWrapText(true);
-            body.getChildren().addAll(
-                    CommonUi.note("This account is for riding only. Add your jeepney and its route to become an operator. "
-                            + "An admin approves it before you can switch."),
-                    plate, route, error, CommonUi.spacer(),
+            Node note = CommonUi.note("This account is for riding only. Add your jeepney and its route to become an operator. "
+                    + "An admin approves it before you can switch.");
+            // The open route list is tall: the wheel, title and panels step aside so nothing else gets squeezed
+            for (Node n : new Node[] {top, panel, note}) {
+                n.visibleProperty().bind(javafx.beans.binding.Bindings.not(route.openProperty()));
+                n.managedProperty().bind(n.visibleProperty());
+            }
+            body.getChildren().addAll(note, plate, route, error, CommonUi.spacer(),
                     CommonUi.limeButton("Become an operator", () -> {
                         String why = plate.getText().isBlank() ? "Enter your jeepney plate."
                                 : route.hasRoutes() && route.routeId().isEmpty() ? "Choose the route your jeepney runs."

@@ -97,10 +97,11 @@ public class DeleteAccountView extends SubScreen {
     // Profile / 11 (pop-up): account removed and signed out (its login no longer works until restart).
     // The only way out is the button: there is no account to go back to.
     private void showDeleted() {
-        new PopupDialog(CommonUi.doubleCheck(), "Account deleted!",
+        PopupDialog done = new PopupDialog(CommonUi.doubleCheck(), "Account deleted!",
                 "Your FareX account has been permanently deleted. You’re now signed out.")
                 .add(CommonUi.small("Thank you for travelling with FareX.", Theme.WHITE))
-                .button("Log in / Sign up", () -> Navigator.go("welcome"))
-                .show();
+                .button("Log in / Sign up", () -> Navigator.go("welcome"));
+        Navigator.setBack(done, () -> Navigator.go("welcome"));   // phone back: the same as its button
+        done.show();
     }
 }

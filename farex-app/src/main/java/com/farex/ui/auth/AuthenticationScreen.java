@@ -29,6 +29,12 @@ public abstract class AuthenticationScreen extends VBox {
         top.setAlignment(Pos.CENTER);
         top.setBackground(Theme.solid(Theme.LIME));
         VBox.setVgrow(top, Priority.ALWAYS);
+        // With the keyboard open the screen is short: the logo area gives way (cropped) so the form sits on the keyboard
+        top.setMinHeight(0);
+        javafx.scene.shape.Rectangle crop = new javafx.scene.shape.Rectangle();
+        crop.widthProperty().bind(top.widthProperty());
+        crop.heightProperty().bind(top.heightProperty());
+        top.setClip(crop);
 
         // Error label starts hidden (and takes no space)
         errorLabel.setTextFill(Theme.ERROR);

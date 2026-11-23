@@ -13,6 +13,7 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 
+import com.farex.ui.common.Navigator;
 import com.farex.ui.common.Assets;
 import com.farex.ui.common.Icons;
 import com.farex.ui.common.Theme;
@@ -30,6 +31,14 @@ public class OperatorShell extends BorderPane {
     private final List<StackPane> tabs = new ArrayList<>();
 
     public OperatorShell(int startTab) {
+        // Phone back: Ready Mode or History -> Dashboard; on the Dashboard, press twice to exit
+        Navigator.setBack(this, () -> {
+            if (OperatorState.getLastTab() != 0) {
+                showTab(0);
+            } else {
+                Navigator.backToExit();
+            }
+        });
         setBackground(Theme.solid(Theme.DARK));
         setTop(buildHeader());
         setCenter(contentArea);

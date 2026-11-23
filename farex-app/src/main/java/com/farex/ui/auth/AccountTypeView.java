@@ -71,11 +71,7 @@ public class AccountTypeView extends StackPane {
         StackPane.setAlignment(outlinedName, Pos.TOP_CENTER);
         StackPane.setMargin(outlinedName, new Insets(90, 0, 0, 0));
 
-        Label back = new Label("\u2039");
-        back.setTextFill(Theme.BLACK);
-        back.setFont(Theme.bold(40));
-        back.setCursor(Cursor.HAND);
-        back.setOnMouseClicked(e -> {
+        javafx.scene.Node back = com.farex.ui.common.SubScreen.backButton(Theme.BLACK, () -> {
             if (chooser) {
                 MockData.logout();   // back = not logging in after all
                 Navigator.go("login");
@@ -84,7 +80,7 @@ public class AccountTypeView extends StackPane {
             }
         });
         StackPane.setAlignment(back, Pos.TOP_LEFT);
-        StackPane.setMargin(back, new Insets(14, 0, 0, 22));
+        StackPane.setMargin(back, new Insets(14, 0, 0, 8));
 
         // Dark panel
         Label title = new Label(chooser ? "Log in as" : "Account Type");

@@ -3,6 +3,7 @@ package com.farex.ui.common;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
+import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
@@ -45,15 +46,30 @@ public abstract class SubScreen extends VBox {
         header.setMaxHeight(76);
 
         if (onBack != null) {
-            Label back = new Label("‹");
-            back.setTextFill(Theme.BLACK);
-            back.setFont(Theme.bold(36));
-            back.setCursor(Cursor.HAND);
-            back.setOnMouseClicked(e -> onBack.run());
+            Node back = backButton(Theme.BLACK, onBack);
             StackPane.setAlignment(back, Pos.CENTER_LEFT);
-            StackPane.setMargin(back, new Insets(0, 0, 4, 20));
+            StackPane.setMargin(back, new Insets(0, 0, 0, 6));
             header.getChildren().add(back);
         }
         return header;
+    }
+
+    // The back arrow: a drawn chevron (the font's "‹" was too small to see and to hit) in a 48 x 48 touch area,
+    // the size Android asks for
+    public static Node backButton(javafx.scene.paint.Color color, Runnable onBack) {
+        javafx.scene.shape.Polyline chevron = new javafx.scene.shape.Polyline(13, 0, 0, 12, 13, 24);
+        chevron.setStroke(color);
+        chevron.setStrokeWidth(3.2);
+        chevron.setStrokeLineCap(javafx.scene.shape.StrokeLineCap.ROUND);
+        chevron.setStrokeLineJoin(javafx.scene.shape.StrokeLineJoin.ROUND);
+        chevron.setFill(null);
+        StackPane button = new StackPane(chevron);
+        button.setMinSize(48, 48);
+        button.setMaxSize(48, 48);
+        button.setPickOnBounds(true);                 // the whole square takes the tap, not just the thin line
+        button.setCursor(Cursor.HAND);
+        button.setOnMouseClicked(e -> onBack.run());
+        Navigator.setBack(button, onBack);                // the phone's back does the same
+        return button;
     }
 }

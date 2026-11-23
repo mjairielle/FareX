@@ -5,7 +5,9 @@ import com.gluonhq.attach.keyboard.KeyboardService;
 import com.gluonhq.attach.util.Platform;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
+import javafx.geometry.Insets;
 import javafx.scene.control.ButtonBase;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextInputControl;
 import javafx.scene.input.MouseEvent;
 import javafx.stage.Screen;
@@ -72,6 +74,15 @@ public class FarexApp extends Application {
         root.setStyle("-fx-font-family: '" + Theme.FONT + "';");   // text that sets no font of its own: Poppins too
         Navigator.init(root);
         com.farex.ui.common.CardTaps.start();   // real NFC taps on a phone
+
+        // Phone back on the screens that have no back arrow (all others press their arrow)
+        Navigator.onBack("splash", Navigator::backToExit);
+        Navigator.onBack("welcome", Navigator::backToExit);
+        Navigator.onBack("login", () -> Navigator.go("welcome"));
+        Navigator.onBack("register", () -> Navigator.go("login"));
+        Navigator.onBack("otp", () -> Navigator.go("register"));
+        Navigator.onBack("signUpDetails", () -> Navigator.go("register"));   // its "Back" link
+        Navigator.onBack("congrats", () -> Navigator.go("login"));           // its button
 
         Navigator.register("splash", SplashView::new);
         Navigator.register("welcome", WelcomeView::new);
@@ -141,7 +152,18 @@ public class FarexApp extends Application {
             Rectangle2D screen = Screen.getPrimary().getVisualBounds();
             scene = new Scene(root, screen.getWidth(), screen.getHeight());
         }
+        scene.setFill(Theme.DARK);              // never a white strip behind the app (keyboard opening, screen changes)
         ignoreTapsAfterScroll(scene);
+        // The phone's back button and back swipe reach JavaFX as the Esc key (Gluon maps KEYCODE_BACK to ESCAPE).
+        // Phones only: on a laptop Esc stays the demo key for "connection dropped" on the progress screens.
+        if (Platform.isAndroid()) {
+            scene.addEventFilter(javafx.scene.input.KeyEvent.KEY_PRESSED, e -> {
+                if (e.getCode() == javafx.scene.input.KeyCode.ESCAPE) {
+                    e.consume();
+                    Navigator.back();
+                }
+            });
+        }
         KeyboardService.create().ifPresent(keyboard -> keepFieldAboveKeyboard(scene, root, keyboard));
 
         stage.setTitle("FareX");
@@ -175,35 +197,54 @@ public class FarexApp extends Application {
         return Math.hypot(e.getSceneX() - down[0], e.getSceneY() - down[1]) > 12;
     }
 
-    // While the phone keyboard is up, slide the whole screen up so the field being typed in stays above it, on every
-    // screen (the keyboard covered the login boxes). The height Gluon reports can be off by the system bars and the
-    // keyboard's suggestion strip, so the field goes well clear of it: above the keyboard with a wide margin, and never
-    // lower than the upper part of the screen (a phone keyboard takes at most about half of it).
+    // While the phone keyboard is up the screen gets only the space above it, like Android's "resize" mode (Messenger):
+    // it lays out again with the form right on top of the keyboard, no blank strip and nothing behind the keyboard.
+    // If the field being typed in still does not fit, its scroll area scrolls to it; a screen that cannot scroll
+    // slides up as a last resort. Nothing moves while the keyboard is closed (a focused field alone is not typing).
     static void keepFieldAboveKeyboard(Scene scene, StackPane root, KeyboardService keyboard) {
-        boolean[] reported = {false};            // this phone reports the keyboard: trust "0" as closed
-        Runnable fit = () -> {
-            double height = scene.getHeight(), kb = keyboard.visibleHeightProperty().get();
-            reported[0] |= kb > 0;
+        boolean[] pending = {false};
+        Runnable reveal = () -> {
+            pending[0] = false;
+            double kb = keyboard.visibleHeightProperty().get();
             Node field = scene.getFocusOwner();
             double shift = 0;
-            boolean open = kb > 0 || (!reported[0] && Platform.isAndroid());
-            if (open && field instanceof TextInputControl && field.getScene() != null) {
-                double bottom = field.localToScene(0, field.getBoundsInLocal().getHeight()).getY() - root.getTranslateY();
-                double limit = Math.max(height * 0.2, Math.min(kb > 0 ? height - kb - 48 : height, height * 0.45));   // never off the top
-                shift = Math.max(0, bottom - limit);
+            if (kb > 0 && field instanceof TextInputControl && field.getScene() != null) {
+                double top = scene.getHeight() - kb - 12;                        // what the keyboard leaves visible
+                double over = field.localToScene(0, field.getBoundsInLocal().getHeight()).getY() - root.getTranslateY() - top;
+                ScrollPane scroll = null;
+                for (Node n = field.getParent(); n != null && scroll == null; n = n.getParent()) {
+                    if (n instanceof ScrollPane sp) scroll = sp;
+                }
+                if (over > 0 && scroll != null && scroll.getContent() != null) {
+                    double range = scroll.getContent().getLayoutBounds().getHeight() - scroll.getViewportBounds().getHeight();
+                    if (range > 0) {
+                        double can = (1 - scroll.getVvalue()) * range;            // how far it can still scroll down
+                        scroll.setVvalue(Math.min(1, scroll.getVvalue() + Math.min(over, can) / range));
+                        over -= Math.min(over, can);
+                    }
+                }
+                shift = Math.max(0, over);
             }
             root.setTranslateY(-shift);
         };
-        keyboard.visibleHeightProperty().addListener((o, old, h) -> fit.run());
-        // The field can move after it got focus (the screen lays out again, an error line appears above it): follow it.
-        // Our own shift moves it too, but then fit computes the same shift again, so this settles at once.
-        javafx.beans.value.ChangeListener<Object> moved = (o, was, now) -> fit.run();
+        Runnable later = () -> {                                               // once per pulse, after layout
+            if (!pending[0]) {
+                pending[0] = true;
+                javafx.application.Platform.runLater(reveal);
+            }
+        };
+        keyboard.visibleHeightProperty().addListener((o, old, h) -> {
+            root.setPadding(new Insets(0, 0, Math.max(0, h.doubleValue()), 0));
+            later.run();
+        });
+        // The field can move after it got focus (layout, an error line above it, our own scroll): check again
+        javafx.beans.value.ChangeListener<Object> moved = (o, was, now) -> later.run();
         scene.focusOwnerProperty().addListener((o, old, focused) -> {
             if (old != null) old.localToSceneTransformProperty().removeListener(moved);
             if (focused instanceof TextInputControl) focused.localToSceneTransformProperty().addListener(moved);
-            javafx.application.Platform.runLater(fit);       // after the field's layout
+            later.run();
         });
-        scene.heightProperty().addListener((o, was, now) -> fit.run());
+        scene.heightProperty().addListener((o, was, now) -> later.run());
     }
 
     public static void main(String[] args) {

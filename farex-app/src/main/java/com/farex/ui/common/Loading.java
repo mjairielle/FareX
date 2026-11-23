@@ -42,6 +42,7 @@ public final class Loading extends StackPane {
     /** Runs work in the background behind a loading screen, then done(result) on the UI thread. */
     public static <T> void run(String message, Supplier<T> work, Consumer<T> done) {
         Loading screen = new Loading(message);
+        Navigator.keepOnBack(screen);                     // the phone's back cannot interrupt it
         Navigator.showOverlay(screen);
         Thread t = new Thread(() -> {
             T result = null;
