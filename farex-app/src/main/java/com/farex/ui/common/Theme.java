@@ -45,14 +45,15 @@ public final class Theme {
         return new Background(new BackgroundFill(color, radii, Insets.EMPTY));
     }
 
-    // Inter ships inside the app (resources/com/farex/ui/fonts, OFL licence): phones have no "System" font
-    // that looks the same everywhere, and some lack the peso sign
-    public static final String FONT = "Inter";
+    // Poppins, the Figma design's font, ships inside the app (resources/com/farex/ui/fonts, OFL licence): phones have
+    // no font that looks the same everywhere. Poppins itself has no peso sign, so these files carry one added from
+    // each weight's own "P" (on Android a missing letter shows as a box).
+    public static final String FONT = "Poppins";
 
     // Call once at start, before any screen is built
     public static void loadFonts() {
-        for (String weight : new String[]{"Regular", "Medium", "Bold"}) {
-            try (java.io.InputStream in = Theme.class.getResourceAsStream("/com/farex/ui/fonts/Inter-" + weight + ".ttf")) {
+        for (String weight : new String[]{"Regular", "Medium", "SemiBold", "Bold"}) {
+            try (java.io.InputStream in = Theme.class.getResourceAsStream("/com/farex/ui/fonts/Poppins-" + weight + ".ttf")) {
                 if (in != null) Font.loadFont(in, 12);
             } catch (java.io.IOException e) {
                 // keep going: that weight falls back to a system font

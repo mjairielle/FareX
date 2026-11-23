@@ -10,7 +10,8 @@ import com.farex.CardReader;
 
 // Real NFC card taps on a phone. One thread waits for each new tap (CardReader.next); the screen on show decides
 // what a tap does by claiming it (Ready Mode taps in/out, Add Card links the card, Fetch Load starts fetching).
-// Anywhere else a tap shows the card's balance. A laptop has no card reader: start() does nothing there.
+// Anywhere else a tap shows the card's balance, once logged in (before that a tap does nothing).
+// A laptop has no card reader: start() does nothing there.
 public final class CardTaps {
 
     private static Node owner;                 // the claim holds while this node is on screen
@@ -47,6 +48,9 @@ public final class CardTaps {
     }
 
     private static void dispatch(String uid) {
+        if (com.farex.ui.data.MockData.getCurrentAccount() == null) {
+            return;                            // welcome, login, sign-up: nobody to show a balance to, so a tap does nothing
+        }
         if (owner != null && owner.getScene() != null) {
             onTap.accept(uid);
         } else {
