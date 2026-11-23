@@ -83,6 +83,7 @@ public class AddCardView extends SubScreen {
             Loading.run("Adding your card…", () -> {
                 try {
                     Api.addCard(uid);                   // card id on the server = the chip UID (8 or 14 hex)
+                    account.setMainCard(uid);           // the card just added becomes "My card"
                     MockData.refresh();
                     return null;
                 } catch (Api.ApiException e) {
@@ -98,6 +99,7 @@ public class AddCardView extends SubScreen {
             return;
         } else {
             account.addCard(new DemoCard(demoNumber, account.getFullName(), 0.00, "09/29"));
+            account.setMainCard(demoNumber);            // the card just added becomes "My card"
         }
         Navigator.go("dashboard");
     }

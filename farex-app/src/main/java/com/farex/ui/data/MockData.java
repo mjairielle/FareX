@@ -304,6 +304,7 @@ public final class MockData {
             }
             currentAccount.addCard(card);
         }
+        currentAccount.putMainFirst();
         currentAccount.getTransactions().clear();
         List<Txn> history = s.history();                         // newest first
         for (int i = history.size() - 1; i >= 0; i--) {          // addTransaction puts each on top

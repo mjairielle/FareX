@@ -84,6 +84,26 @@ public class DemoAccount {
         return cards.isEmpty() ? null : cards.get(0);
     }
 
+    // The card the rider chose as "My card" (Home, Scan to Pay and the first pick everywhere use the first card).
+    // shortcut: kept until logout, a new login starts with the server's order; save it on the server if riders mind.
+    private String mainCard;
+
+    /** Makes this card "My card": it moves to the top of the list and stays there after server refreshes. */
+    public void setMainCard(String cardNumber) {
+        mainCard = cardNumber;
+        putMainFirst();
+    }
+
+    /** After a refresh rebuilt the list in the server's order: the chosen card back on top. */
+    public void putMainFirst() {
+        for (int i = 0; i < cards.size(); i++) {
+            if (cards.get(i).getCardNumber().equalsIgnoreCase(mainCard)) {   // chip UIDs: any letter case
+                cards.add(0, cards.remove(i));
+                return;
+            }
+        }
+    }
+
     // ----- Points -----
 
     // Home shows this as "250.00 xPress Points"

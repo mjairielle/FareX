@@ -18,7 +18,7 @@ import com.farex.ui.data.DemoAccount;
 import com.farex.ui.data.DemoCard;
 import com.farex.ui.data.MockData;
 
-// View All Cards: the first card on top with its balance, the rest below as plain cards
+// View All Cards: "My card" on top, the other cards below in the same design; tap one to use it
 public class AllCardsView extends SubScreen {
 
     public AllCardsView() {
@@ -40,11 +40,18 @@ public class AllCardsView extends SubScreen {
         // ----- Other cards -----
         // Example: 3 cards -> cards 1 and 2 (Kenn, Andrei) go here
         if (cards.size() > 1) {
-            Label other = sectionLabel("OTHER CARDS");
+            Label other = sectionLabel("OTHER CARDS · TAP ONE TO USE IT");
             VBox.setMargin(other, new Insets(8, 0, 0, 0));
             list.getChildren().add(other);
             for (int i = 1; i < cards.size(); i++) {
-                list.getChildren().add(new CardTile(cards.get(i), false));
+                DemoCard card = cards.get(i);
+                CardTile tile = new CardTile(card);       // same design and balance as "My card"
+                tile.setCursor(javafx.scene.Cursor.HAND);
+                tile.setOnMouseClicked(e -> {             // becomes "My card": Home, Buy Load and Fetch Load use it
+                    account.setMainCard(card.getCardNumber());
+                    Navigator.go("allCards");
+                });
+                list.getChildren().add(tile);
             }
         }
 
