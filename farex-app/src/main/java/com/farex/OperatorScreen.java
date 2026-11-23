@@ -434,7 +434,7 @@ public class OperatorScreen extends Screen {
             return;
         Api.StopCoord s = gps.getRouteStops().get(idx);
         try {
-            Csv.append(Path.of("data", "local_stops.csv"), "operatorId,plate,stopIdx,stopName,lat,lng,time",
+            Csv.append(Path.of("data", "local_stops.txt"), "operatorId,plate,stopIdx,stopName,lat,lng,time",
                     operator.getId(), operator.getVehiclePlate(), String.valueOf(idx), s.name(),
                     String.valueOf(s.lat()), String.valueOf(s.lng()), Instant.now().toString());
         } catch (Exception ignored) {
@@ -485,7 +485,7 @@ public class OperatorScreen extends Screen {
                     setSuccess(String.format(Locale.ROOT, "🛰️ GPS Proximity Match: %s (%.0f meters away)",
                             stops.get(bestIdx).name(), bestDist * 1000));
                 } else {
-                    Csv.append(Path.of("data", "candidate_stops.csv"), "operatorId,plate,lat,lng,time",
+                    Csv.append(Path.of("data", "candidate_stops.txt"), "operatorId,plate,lat,lng,time",
                             operator.getId(), operator.getVehiclePlate(), String.valueOf(lat), String.valueOf(lng),
                             Instant.now().toString());
                     setNotice(String.format(Locale.ROOT,

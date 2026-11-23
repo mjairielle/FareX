@@ -33,13 +33,13 @@ flowchart TD
 
 ## Data files on the server, all CSV
 
-- `users.csv`, accounts, role, discount type, linked card UIDs.
-- `cards.csv`, card UID, last synced balance, status, active or frozen.
-- `ledger.csv`, append only, every transaction row, UUID keyed.
-- `routes.csv`, `stops.csv`, `vehicles.csv`, transport data.
-- `fares.csv`, versioned by effective date.
-- `promotions.csv`, active point multipliers.
-- `rewards.csv`, points balance and redemption history per account.
+- `users.txt`, accounts, role, discount type, linked card UIDs.
+- `cards.txt`, card UID, last synced balance, status, active or frozen.
+- `ledger.txt`, append only, every transaction row, UUID keyed.
+- `routes.txt`, `stops.txt`, `vehicles.txt`, transport data.
+- `fares.txt`, versioned by effective date.
+- `promotions.txt`, active point multipliers.
+- `rewards.txt`, points balance and redemption history per account.
 
 ## Why signing matters
 

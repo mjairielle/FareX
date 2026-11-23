@@ -35,7 +35,7 @@ COPY --from=builder /build/farex-server/target/farex-server-*.jar /app/farex-ser
 
 # Copy only the shared route data (routes, stops, road km, road shapes). Accounts, cards and the ledger are never
 # baked into the image: the first run creates them from ADMIN_PASSWORD, see docker-compose.yml.
-COPY --chown=farex:farex data/routes.csv data/stops.csv data/route_km.csv data/route_shapes.csv data/route_names.csv data/stops_km.csv /app/default-data/
+COPY --chown=farex:farex data/routes.txt data/stops.txt data/route_km.txt data/route_shapes.txt data/route_names.txt data/stops_km.txt /app/default-data/
 
 # Default environment configuration
 ENV PORT=8080 \

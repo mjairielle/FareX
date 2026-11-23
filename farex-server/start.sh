@@ -9,6 +9,11 @@ if [ -n "$RAILWAY_ENVIRONMENT_NAME$RAILWAY_ENVIRONMENT" ] && [ -z "$RAILWAY_VOLU
   echo "WARNING: no Railway volume attached. Accounts, cards and balances are lost on every deploy."
   echo "WARNING: in Railway, attach a volume to this service (mount path /app/data)."
 fi
+# Data files are .txt now (comma-separated inside). A volume from before still has name.csv: rename it first, or the
+# default route files copied next would hide the admin's edited routes.csv. A name.txt that exists is never replaced.
+for f in "$DATA_DIR"/*.csv; do
+  [ -e "$f" ] && [ ! -e "${f%.csv}.txt" ] && mv "$f" "${f%.csv}.txt" && echo "Renamed $(basename "$f") to .txt"
+done
 cp -n /app/default-data/* "$DATA_DIR"/ 2>/dev/null || true   # route files it lacks; never overwrites admin edits
 if [ "$(id -u)" = 0 ] && command -v su >/dev/null; then
   # A volume is mounted owned by root: give it to the server's user, then drop root (no su: stays root, still works)

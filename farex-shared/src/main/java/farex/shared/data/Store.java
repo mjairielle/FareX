@@ -41,7 +41,7 @@ public class Store {
     private final Set<String> frozenSet = new HashSet<>();
     private final Map<String, String[]> lastBoard = new HashMap<>();
 
-    // users.csv parsed once; parsed again after Store writes it or when the file changes on disk (hand edit).
+    // users.txt parsed once; parsed again after Store writes it or when the file changes on disk (hand edit).
     // The rows are shared, never change one: writers read the file fresh.
     private List<String[]> userRows;
     private Map<String, String[]> userById;
@@ -52,12 +52,12 @@ public class Store {
 
     /** First run seeds one admin with adminPassword. demo adds the sample passenger, operator and card. */
     public Store(Path dir, String adminPassword, boolean demo) {
-        users = dir.resolve("users.csv");
-        cards = dir.resolve("cards.csv");
-        ledger = dir.resolve("ledger.csv");
-        stops = dir.resolve("stops.csv");
-        frozen = dir.resolve("frozen.csv");
-        boarding = dir.resolve("boarding.csv");
+        users = dir.resolve("users.txt");
+        cards = dir.resolve("cards.txt");
+        ledger = dir.resolve("ledger.txt");
+        stops = dir.resolve("stops.txt");
+        frozen = dir.resolve("frozen.txt");
+        boarding = dir.resolve("boarding.txt");
         ledgerTail = new TailFile(ledger);
         cardsTail = new TailFile(cards);
         frozenTail = new TailFile(frozen);
@@ -194,7 +194,7 @@ public class Store {
             case "PASSENGER" -> new Passenger(r[0], r[1], r[2], r[5]);
             case "OPERATOR" -> new Operator(r[0], r[1], r[2], r[6]);
             case "ADMIN" -> new Admin(r[0], r[1], r[2]);
-            default -> throw new IllegalStateException("Bad role in users.csv: " + r[4]);
+            default -> throw new IllegalStateException("Bad role in users.txt: " + r[4]);
         };
     }
 
@@ -376,7 +376,7 @@ public class Store {
         if (!isCardFrozen(uid)) Csv.append(frozen, "uid", uid);
     }
 
-    /** Admin lets a frozen card ride again (frozen.csv gets shorter, so its cache rereads it). */
+    /** Admin lets a frozen card ride again (frozen.txt gets shorter, so its cache rereads it). */
     public synchronized void unfreezeCard(String uid) {
         List<String[]> rows = Csv.read(frozen);
         if (!rows.removeIf(r -> r[0].equals(uid))) throw new IllegalArgumentException("Card " + uid + " is not frozen");
@@ -422,7 +422,7 @@ public class Store {
 
     /**
      * Admin: the card belongs to nobody again, so anyone can add it. Its ledger rows and balance stay with the card.
-     * cards.csv gets shorter, so the cards cache (TailFile) rereads it on the next lookup.
+     * cards.txt gets shorter, so the cards cache (TailFile) rereads it on the next lookup.
      */
     public synchronized void unlinkCard(String uid) {
         List<String[]> rows = Csv.read(cards);
@@ -574,7 +574,7 @@ public class Store {
 
     private void seedStops() {
         if (Files.exists(stops)) return;                  // a mounted data folder may already have its own stops
-        // Sample coordinates along Commonwealth Ave, QC. Edit stops.csv to change the route.
+        // Sample coordinates along Commonwealth Ave, QC. Edit stops.txt to change the route.
         String[][] s = {
             {"Philcoa", "14.65400", "121.05377"}, {"Tandang Sora", "14.66223", "121.06619"},
             {"Ever Gotesco", "14.67959", "121.08409"}, {"Batasan", "14.68766", "121.08730"},

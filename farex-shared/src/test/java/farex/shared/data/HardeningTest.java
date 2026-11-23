@@ -37,13 +37,13 @@ public class HardeningTest {
     @Test
     void renameWithNewlineStaysOneRow() throws Exception {
         store.updateUserName("p1", "Ana\nx,y,z");
-        assertEquals(4, Files.readAllLines(dir.resolve("users.csv")).size());   // header + 3 users
+        assertEquals(4, Files.readAllLines(dir.resolve("users.txt")).size());   // header + 3 users
     }
 
     @Test
     void registerNameWithCarriageReturnCannotAddRow() throws Exception {
         store.register("Bob\r1,fake,x", "bob@x.com", "pass1234", "PASSENGER", "REGULAR", "");
-        assertEquals(5, Files.readAllLines(dir.resolve("users.csv")).size());
+        assertEquals(5, Files.readAllLines(dir.resolve("users.txt")).size());
         assertTrue(store.login("ana@mail.com", "1234").isPresent());
     }
 
@@ -65,7 +65,7 @@ public class HardeningTest {
 
     @Test
     void badFaresRowIsSkippedNotThrown() throws Exception {
-        Files.writeString(dir.resolve("fares.csv"), Fares.HEADER + "\noops,1,2,3\n2020-01-01,notnum,200,x\n2020-01-01\n");
+        Files.writeString(dir.resolve("fares.txt"), Fares.HEADER + "\noops,1,2,3\n2020-01-01,notnum,200,x\n2020-01-01\n");
         long base = Fares.BASE;
         assertDoesNotThrow(() -> Fares.load(dir));
         assertEquals(base, Fares.BASE);
@@ -79,7 +79,7 @@ public class HardeningTest {
 
     @Test
     void unknownRoleIsNeverAdmin() throws Exception {
-        Files.writeString(dir.resolve("users.csv"),
+        Files.writeString(dir.resolve("users.txt"),
                 "id,name,email,passwordHash,role,passengerType,vehiclePlate\nz9,Z,z@x.com,h,WEIRD,,\n");
         assertThrows(IllegalStateException.class, () -> new Store(dir).findUser("z9"));
     }
@@ -98,13 +98,13 @@ public class HardeningTest {
         store.setPassword("a1", "N3wPassword!");
         assertTrue(store.login("admin@mail.com", "N3wPassword!").isPresent());
         assertTrue(store.login("admin@mail.com", "admin123").isEmpty());
-        assertFalse(Files.exists(dir.resolve("users.csv.tmp")));
+        assertFalse(Files.exists(dir.resolve("users.txt.tmp")));
         assertThrows(IllegalArgumentException.class, () -> store.setPassword("a1", "short"));
     }
 
     @Test
     void damagedRouteRowDoesNotStopRouteBook() throws Exception {
-        Files.writeString(dir.resolve("routes.csv"), "routeId,seq,name,lat,lng\nR1,0,A,14.1,121.1\nR1,x,B,14.2,121.2\nR1,1\nR1,2,C,14.3,121.3\n");
+        Files.writeString(dir.resolve("routes.txt"), "routeId,seq,name,lat,lng\nR1,0,A,14.1,121.1\nR1,x,B,14.2,121.2\nR1,1\nR1,2,C,14.3,121.3\n");
         RouteBook b = new RouteBook(dir);
         assertEquals(2, b.routes().get("R1").size(), "good rows kept, bad rows skipped");
     }
@@ -119,19 +119,19 @@ public class HardeningTest {
 
     @Test
     void mountedStopsFileIsNotSeededTwice(@TempDir Path other) throws Exception {
-        Files.writeString(other.resolve("stops.csv"), "seq,name,lat,lng\n0,Only,14.1,121.1\n");
+        Files.writeString(other.resolve("stops.txt"), "seq,name,lat,lng\n0,Only,14.1,121.1\n");
         new Store(other, "S3cretPass!", false);
-        assertEquals(1, Files.readAllLines(other.resolve("stops.csv")).size() - 1, "no duplicate stops added");
+        assertEquals(1, Files.readAllLines(other.resolve("stops.txt")).size() - 1, "no duplicate stops added");
     }
 
     @Test
     void oldFareRowsWithoutBaseKmStillLoadAndBadOnesAreSkipped() throws Exception {
-        Files.writeString(dir.resolve("fares.csv"), Fares.HEADER + "\n2020-01-01,1400,200,x\n2020-02-01,1500,250,x,5.0\nbroken\n2020-03-01,zz,1,x\n");
+        Files.writeString(dir.resolve("fares.txt"), Fares.HEADER + "\n2020-01-01,1400,200,x\n2020-02-01,1500,250,x,5.0\nbroken\n2020-03-01,zz,1,x\n");
         Fares.load(dir);
         assertEquals(1500, Fares.BASE);
         assertEquals(250, Fares.RATE_PER_KM);
         assertEquals(5.0, Fares.BASE_KM);
-        Files.delete(dir.resolve("fares.csv"));
+        Files.delete(dir.resolve("fares.txt"));
         Fares.publish(dir, java.time.LocalDate.of(2020, 1, 1), 1400, 200, 4.0);   // restore the defaults other tests expect
     }
 }

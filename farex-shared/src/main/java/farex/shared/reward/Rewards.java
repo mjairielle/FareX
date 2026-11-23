@@ -7,9 +7,9 @@ import java.util.*;
 
 /**
  * Points ledger. Append only, balance is the sum. Earn is keyed by trip id so a retry never double counts.
- * Files: rewards.csv (id,time,accountId,type,points,ref) and promotions.csv (id,name,multiplier,start,end).
+ * Files: rewards.txt (id,time,accountId,type,points,ref) and promotions.txt (id,name,multiplier,start,end).
  * Redeem order is spend, then credit the card, refund if the credit fails. A crash in between costs the passenger
- * points (support can refund from rewards.csv), it can never create free money.
+ * points (support can refund from rewards.txt), it can never create free money.
  */
 public final class Rewards {
     public static final double POINTS_PER_KM = 1.0;
@@ -29,8 +29,8 @@ public final class Rewards {
     private final Set<String> earnedTrips = new HashSet<>();
 
     public Rewards(Path dir) {
-        rewards = dir.resolve("rewards.csv");
-        promos = dir.resolve("promotions.csv");
+        rewards = dir.resolve("rewards.txt");
+        promos = dir.resolve("promotions.txt");
         rewardsTail = new farex.shared.data.TailFile(rewards);
     }
 

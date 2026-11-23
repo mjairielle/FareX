@@ -17,7 +17,7 @@ public class TripPlannerNetworkTest {
     @TempDir
     Path tempDir;
 
-    /** Writes routes.csv (+ route_names.csv) from "id|oneway|name,lat,lng;name,lat,lng;..." lines. */
+    /** Writes routes.txt (+ route_names.txt) from "id|oneway|name,lat,lng;name,lat,lng;..." lines. */
     private RouteBook book(Path dir, String... routes) throws Exception {
         List<String> stops = new ArrayList<>(List.of("routeId,seq,name,lat,lng"));
         List<String> names = new ArrayList<>(List.of(RouteBook.NAMES_HEADER));
@@ -28,7 +28,7 @@ public class TripPlannerNetworkTest {
             for (int i = 0; i < s.length; i++) stops.add(f[0] + "," + i + "," + s[i]);
         }
         Files.createDirectories(dir);
-        Files.write(dir.resolve("routes.csv"), stops);
+        Files.write(dir.resolve("routes.txt"), stops);
         Files.write(dir.resolve(RouteBook.NAMES_FILE), names);
         return new RouteBook(dir);
     }

@@ -47,13 +47,13 @@ get "/balance?uid=AABBCCDD" $TM | grep -q '"cents":"0"' && ok "operator sync can
 reg "name=Bob%0D1,fake,x&email=bob@x.com&password=pass1234&role=PASSENGER" >/dev/null
 [ -n "$(tok eve@x.com pass1234)" ] && [ -n "$(tok bob@x.com pass1234)" ] && ok "CR in name does not break login" || bad "CR injection broke login"
 get /admin/api/users $TA | grep -q "eve@x.com" && ok "admin user list still works" || bad "admin user list broken"
-printf 'effective,base,ratePerKm,published\noops,1,2,3\n' > $W/data/fares.csv
-get /fares/current $TE | grep -q '"base"' && ok "bad fares.csv row skipped" || bad "bad fares.csv row breaks requests"
+printf 'effective,base,ratePerKm,published\noops,1,2,3\n' > $W/data/fares.txt
+get /fares/current $TE | grep -q '"base"' && ok "bad fares.txt row skipped" || bad "bad fares.txt row breaks requests"
 # 7: a card with P0 cannot ride
 post /tap/in "uid=AABBCCDD&stop=0" $TM | grep -q "Balance too low" && ok "tap in refused at P0" || bad "P0 card boarded"
 
 # 8: passwords are salted, login locks after 5 wrong tries
-grep -qE ',[0-9a-f]{64},' $W/data/users.csv && bad "plain SHA-256 hash in users.csv" || ok "no plain SHA-256 hashes stored"
+grep -qE ',[0-9a-f]{64},' $W/data/users.txt && bad "plain SHA-256 hash in users.txt" || ok "no plain SHA-256 hashes stored"
 for i in 1 2 3 4 5; do post /login "email=bob@x.com&password=wrongwrong$i" >/dev/null; done
 post /login "email=bob@x.com&password=pass1234" | grep -q "Too many tries" && ok "login locked after 5 wrong tries" || bad "no lockout"
 reg "name=Short&email=short@x.com&password=1234567&role=PASSENGER" | grep -q "8 or more" && ok "7 character password rejected" || bad "short password accepted"

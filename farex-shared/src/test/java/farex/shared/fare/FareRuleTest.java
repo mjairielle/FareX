@@ -77,8 +77,8 @@ public class FareRuleTest {
     void testOldFareRowsLoadAndBaseKmPublishes() {
         withTable(Fares.BASE, Fares.BASE_KM, Fares.RATE_PER_KM, () -> {
             try {
-                // A fares.csv written before baseKm existed: 4 columns.
-                Files.writeString(tempDir.resolve("fares.csv"),
+                // A fares.txt written before baseKm existed: 4 columns.
+                Files.writeString(tempDir.resolve("fares.txt"),
                         "effective,base,ratePerKm,published\n2026-01-01,1300,200,2026-01-01T00:00:00Z\n");
                 Fares.load(tempDir);
                 assertEquals(1300, Fares.BASE);

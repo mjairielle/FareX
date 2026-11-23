@@ -184,13 +184,13 @@ public final class Main {
         for (String[] r : suspendedTail.poll(2, lastStatus::clear)) lastStatus.put(r[0], r[1]);
         return lastStatus.getOrDefault(id, "");
     }
-    static TailFile suspendedTail;                                    // suspended.csv is append only: read new rows only
+    static TailFile suspendedTail;                                    // suspended.txt is append only: read new rows only
     static final Map<String, String> lastStatus = new HashMap<>();
 
-    // The fare table is read again only when fares.csv changes, or a new day may start a published table
+    // The fare table is read again only when fares.txt changes, or a new day may start a published table
     static Object faresStamp;
     static void fares() {
-        Object now = List.of(Csv.stamp(dir.resolve("fares.csv")), LocalDate.now(ZoneOffset.UTC));
+        Object now = List.of(Csv.stamp(dir.resolve("fares.txt")), LocalDate.now(ZoneOffset.UTC));
         if (!now.equals(faresStamp)) { Fares.load(dir); faresStamp = now; }
     }
 
@@ -234,11 +234,11 @@ public final class Main {
         return v.isEmpty() ? dflt : v.substring(0, Math.min(v.length(), 80));
     }
 
-    // Route segments, plus the operator jeep's stops.csv route ("STOPS" rows in stops_km.csv), which the
+    // Route segments, plus the operator jeep's stops.txt route ("STOPS" rows in stops_km.txt), which the
     // OSM route import does not cover: its max fare would fall back to straight lines
     static void loadRoadKm() {
         Map<String, Double> km = new HashMap<>(RoadDistances.load(dir, book.routes()));
-        km.putAll(RoadDistances.load(dir, "stops_km.csv", Map.of("STOPS", store.stops())));
+        km.putAll(RoadDistances.load(dir, "stops_km.txt", Map.of("STOPS", store.stops())));
         Fares.setRoadKm(km);
     }
 
@@ -294,7 +294,7 @@ public final class Main {
         Map<String, String[]> users = new HashMap<>();
         int passengers = 0, operators = 0, suspendedN = 0;
         StringBuilder out = new StringBuilder(), waiting = new StringBuilder();
-        for (String[] r : Csv.read(dir.resolve("users.csv"), 7)) {
+        for (String[] r : Csv.read(dir.resolve("users.txt"), 7)) {
             users.put(r[0], r);
             if (r[4].equals("PASSENGER")) passengers++;
             if (r[4].equals("OPERATOR")) operators++;
@@ -331,7 +331,7 @@ public final class Main {
         for (int i = 0; i < days; i++) { loadP += loadDay[i]; fareP += fareDay[i]; trips += tripDay[i]; }
 
         long earned = 0, redeemed = 0;
-        for (String[] r : Csv.read(dir.resolve("rewards.csv"), 5)) {
+        for (String[] r : Csv.read(dir.resolve("rewards.txt"), 5)) {
             try {
                 if (Instant.parse(r[1]).atZone(MANILA).toLocalDate().isBefore(first)) continue;
                 long pts = Long.parseLong(r[4]);
@@ -452,12 +452,13 @@ public final class Main {
 
     public static void main(String[] a) throws Exception {
         dir = Path.of(Env.get("DATA_DIR", "data"));
-        suspendedTail = new TailFile(dir.resolve("suspended.csv"));
-        statsTail = new TailFile(dir.resolve("ledger.csv"));
+        Csv.renameOldCsv(dir);                             // data files are .txt now: carry the old .csv ones over
+        suspendedTail = new TailFile(dir.resolve("suspended.txt"));
+        statsTail = new TailFile(dir.resolve("ledger.txt"));
         boolean dev = "1".equals(Env.get("DEV", "0"));
         String adminPw = Env.get("ADMIN_PASSWORD", dev ? "admin123" : null);
         if (!dev && Pay.FAKE) throw new IllegalStateException("FAKE_PAY gives free money, it needs DEV=1");
-        if (!java.nio.file.Files.exists(dir.resolve("users.csv")) && (adminPw == null || adminPw.length() < 8))
+        if (!java.nio.file.Files.exists(dir.resolve("users.txt")) && (adminPw == null || adminPw.length() < 8))
             throw new IllegalStateException("First run: set ADMIN_PASSWORD (8+ characters) in .env, or DEV=1 for a demo");
         store = new Store(dir, adminPw, dev);
         // ADMIN_PASSWORD in .env is always the admin login, set on every start (demo default admin123)
@@ -466,7 +467,7 @@ public final class Main {
         else System.out.println("Admin page: http://localhost:" + Env.get("PORT", "8080") + "/admin  login admin@mail.com, password from "
                 + Env.source("ADMIN_PASSWORD") + (adminPw == null ? "" : " (" + adminPw.length() + " characters)"));
         if (!dev) {
-            if (store.hasDefaultLogins()) throw new IllegalStateException("Demo passwords (1234, admin123) only run with DEV=1 in .env. Public run: change them or delete those rows in data/users.csv");
+            if (store.hasDefaultLogins()) throw new IllegalStateException("Demo passwords (1234, admin123) only run with DEV=1 in .env. Public run: change them or delete those rows in data/users.txt");
             if (Env.get("CARD_KEY", null) == null) throw new IllegalStateException("CARD_KEY is required");
         }
         book = new RouteBook(dir);
@@ -543,7 +544,7 @@ public final class Main {
             checkPass(p, "SIGNUP", req(p, "email"), true);
             if (!phone.isEmpty()) store.setPhone(n.getId(), phone);
             // An operator can write fare rows, so admin must approve first. Admin page Reinstate lets them in.
-            if (role.equals("OPERATOR")) Csv.append(dir.resolve("suspended.csv"), SUSPENDED_H, n.getId(), "PENDING", Instant.now().toString());
+            if (role.equals("OPERATOR")) Csv.append(dir.resolve("suspended.txt"), SUSPENDED_H, n.getId(), "PENDING", Instant.now().toString());
             return json("id", n.getId(), "status", role.equals("OPERATOR") ? "pending" : "active");
         });
         route(s, "/login", "POST", null, (u, p) -> {
@@ -586,7 +587,7 @@ public final class Main {
         route(s, "/role/add", "POST", "ANY", (u, p) -> {
             String role = req(p, "role").toUpperCase();
             User n = store.addRole(u.getId(), role, p.getOrDefault("plate", ""), routeParam(role, p));
-            if (role.equals("OPERATOR")) Csv.append(dir.resolve("suspended.csv"), SUSPENDED_H, n.getId(), "PENDING", Instant.now().toString());
+            if (role.equals("OPERATOR")) Csv.append(dir.resolve("suspended.txt"), SUSPENDED_H, n.getId(), "PENDING", Instant.now().toString());
             return json("status", role.equals("OPERATOR") ? "pending" : "active");
         });
 
@@ -771,20 +772,20 @@ public final class Main {
             if (c < 500 || c > 500000) throw new IllegalArgumentException("Amount must be P5.00 to P5,000.00");
             String method = p.getOrDefault("method", "");
             String[] r = outsideLock(() -> Pay.start(c / 100.0, method));
-            Csv.append(dir.resolve("pending.csv"), PENDING_H, r[0], u.getId(), uid, String.valueOf(c),
+            Csv.append(dir.resolve("pending.txt"), PENDING_H, r[0], u.getId(), uid, String.valueOf(c),
                     Instant.now().toString(), clean(p.getOrDefault("method", "")));
             return json("sessionId", r[0], "checkoutUrl", r[1]);
         });
         // Loads paid at PayMongo and not fetched yet: "sessionId,cardUid,cents,method" per line. Fetch Load shows only
-        // these, so a checkout left unpaid never appears. A payment seen paid is kept in paid.csv (not asked again).
+        // these, so a checkout left unpaid never appears. A payment seen paid is kept in paid.txt (not asked again).
         // shortcut: an unpaid checkout is asked about for 2 days, then dropped; one paid later than that needs the admin.
         route(s, "/load/paid", "GET", "PASSENGER", (u, p) -> {
             Set<String> seen = new HashSet<>(), done = new HashSet<>();
-            Csv.read(dir.resolve("paid.csv"), 1).forEach(r -> seen.add(r[0]));
-            Csv.read(dir.resolve("credited.csv"), 1).forEach(r -> done.add(r[0]));
+            Csv.read(dir.resolve("paid.txt"), 1).forEach(r -> seen.add(r[0]));
+            Csv.read(dir.resolve("credited.txt"), 1).forEach(r -> done.add(r[0]));
             Instant since = Instant.now().minus(java.time.Duration.ofDays(2));
             StringBuilder b = new StringBuilder();
-            for (String[] r : Csv.read(dir.resolve("pending.csv"), 4)) {
+            for (String[] r : Csv.read(dir.resolve("pending.txt"), 4)) {
                 if (!r[1].equals(u.getId()) || done.contains(r[0]) || store.hasTxn(loadRowId(r[0]))) continue;
                 if (!seen.contains(r[0])) {
                     boolean recent;
@@ -792,23 +793,23 @@ public final class Main {
                     boolean paid;
                     try { paid = recent && outsideLock(() -> Pay.paid(r[0])); } catch (Exception offline) { paid = false; }   // ask again next time
                     if (!paid) continue;
-                    Csv.append(dir.resolve("paid.csv"), "sessionId", r[0]);
+                    Csv.append(dir.resolve("paid.txt"), "sessionId", r[0]);
                     seen.add(r[0]);
                 }
                 b.append(String.join(",", r[0], r[2], r[3], r.length > 5 ? r[5] : "")).append('\n');
             }
             return b.toString();
         });
-        // credited.csv remembers paid sessions, so confirming twice credits once
+        // credited.txt remembers paid sessions, so confirming twice credits once
         route(s, "/load/confirm", "POST", "PASSENGER", (u, p) -> {
             String id = req(p, "sessionId");
-            String[] pd = Csv.read(dir.resolve("pending.csv"), 4).stream().filter(r -> r[0].equals(id)).findFirst()
+            String[] pd = Csv.read(dir.resolve("pending.txt"), 4).stream().filter(r -> r[0].equals(id)).findFirst()
                     .orElseThrow(() -> new IllegalArgumentException("Unknown payment"));
             if (!pd[1].equals(u.getId())) throw new IllegalArgumentException("Unknown payment");
             // The ledger row id comes from the session id, so the ledger itself says if this payment was credited.
-            // credited.csv is only read for payments made before this change.
+            // credited.txt is only read for payments made before this change.
             String rowId = loadRowId(id);
-            if (store.hasTxn(rowId) || Csv.read(dir.resolve("credited.csv"), 1).stream().anyMatch(r -> r[0].equals(id)))
+            if (store.hasTxn(rowId) || Csv.read(dir.resolve("credited.txt"), 1).stream().anyMatch(r -> r[0].equals(id)))
                 return json("status", "paid", "cents", String.valueOf(store.balance(pd[2])));
             if (!outsideLock(() -> Pay.paid(id))) return json("status", "unpaid");
             // a second confirm may have credited it while PayMongo answered; store.load would refuse it, so report paid
@@ -919,7 +920,7 @@ public final class Main {
 
         route(s, "/admin/api/users", "GET", "ADMIN", (u, p) -> {
             StringBuilder b = new StringBuilder();
-            for (String[] r : Csv.read(dir.resolve("users.csv"), 7))
+            for (String[] r : Csv.read(dir.resolve("users.txt"), 7))
                 b.append(String.join("|", clean(r[0]), clean(r[1]), clean(r[2]), r[4], clean(r[5]), clean(r[6]),
                         status(r[0]).equals("PENDING") ? "pending" : suspended(r[0]) ? "suspended" : "active", r.length > 7 ? clean(r[7]) : "",
                         r.length > 8 ? clean(r[8]) : "")).append('\n');
@@ -941,7 +942,7 @@ public final class Main {
             for (User x : act.equals("RETIRE") ? List.of(t) : store.siblings(t.getId())) {
                 boolean self = x.getId().equals(t.getId());
                 if (act.equals("REINSTATE") && !self && !status(x.getId()).equals("SUSPEND")) continue;
-                Csv.append(dir.resolve("suspended.csv"), SUSPENDED_H, x.getId(), act, Instant.now().toString());
+                Csv.append(dir.resolve("suspended.txt"), SUSPENDED_H, x.getId(), act, Instant.now().toString());
             }
             return json("ok", "1");
         });
@@ -978,7 +979,7 @@ public final class Main {
         });
         route(s, "/admin/api/fares", "GET", "ADMIN", (u, p) -> {
             StringBuilder b = new StringBuilder("Current|" + Fares.BASE + "|" + Fares.RATE_PER_KM + "|-|" + Fares.BASE_KM + "\n");
-            for (String[] r : Csv.read(dir.resolve("fares.csv"))) b.append(String.join("|", r)).append('\n');
+            for (String[] r : Csv.read(dir.resolve("fares.txt"))) b.append(String.join("|", r)).append('\n');
             return b.toString();
         });
         route(s, "/admin/api/fares/publish", "POST", "ADMIN", (u, p) -> {
@@ -1049,7 +1050,7 @@ public final class Main {
         // Links a card to a passenger, found by email (a card nobody has, e.g. after an unlink or a new card at the counter)
         route(s, "/admin/api/card/add", "POST", "ADMIN", (u, p) -> {
             String email = req(p, "email").trim().toLowerCase();
-            String owner = Csv.read(dir.resolve("users.csv"), 7).stream().filter(r -> r[2].equals(email) && r[4].equals("PASSENGER")).map(r -> r[0])
+            String owner = Csv.read(dir.resolve("users.txt"), 7).stream().filter(r -> r[2].equals(email) && r[4].equals("PASSENGER")).map(r -> r[0])
                     .findFirst().orElseThrow(() -> new IllegalArgumentException("No passenger account with email " + email));
             return json("uid", store.addCard(req(p, "uid"), owner));
         });

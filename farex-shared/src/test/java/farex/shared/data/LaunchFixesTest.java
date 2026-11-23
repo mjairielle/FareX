@@ -85,7 +85,7 @@ public class LaunchFixesTest {
 
     @Test
     void oldBoardingDoesNotLockTheCardForever() throws Exception {
-        Files.writeString(dir.resolve("boarding.csv"),
+        Files.writeString(dir.resolve("boarding.txt"),
                 "uid,operatorId,stopIdx,time,event\n" + CARD + ",o2,0,2020-01-01T00:00:00Z,BOARD\n");
         assertDoesNotThrow(() -> desk.tapIn(CARD, 0));
     }
@@ -96,7 +96,7 @@ public class LaunchFixesTest {
     void sameImpossibleToSpotPasswordsGetDifferentSaltedHashes() throws Exception {
         store.register("A", "a@x.com", "samePass123", "PASSENGER", "REGULAR", "");
         store.register("B", "b@x.com", "samePass123", "PASSENGER", "REGULAR", "");
-        List<String> hashes = Files.readAllLines(dir.resolve("users.csv")).stream()
+        List<String> hashes = Files.readAllLines(dir.resolve("users.txt")).stream()
                 .filter(l -> l.contains("@x.com")).map(l -> l.split(",")[3]).toList();
         assertEquals(2, hashes.size());
         assertNotEquals(hashes.get(0), hashes.get(1));
@@ -110,10 +110,10 @@ public class LaunchFixesTest {
         byte[] d = MessageDigest.getInstance("SHA-256").digest("oldPassword1".getBytes("UTF-8"));
         StringBuilder sb = new StringBuilder();
         for (byte b : d) sb.append(String.format("%02x", b));
-        Files.writeString(dir.resolve("users.csv"), Files.readString(dir.resolve("users.csv"))
+        Files.writeString(dir.resolve("users.txt"), Files.readString(dir.resolve("users.txt"))
                 + "z1,Old,old@x.com," + sb + ",PASSENGER,REGULAR,\n");
         assertTrue(store.login("old@x.com", "oldPassword1").isPresent());
-        assertTrue(Files.readString(dir.resolve("users.csv")).contains("old@x.com,pbkdf2$"));
+        assertTrue(Files.readString(dir.resolve("users.txt")).contains("old@x.com,pbkdf2$"));
         assertTrue(store.login("old@x.com", "oldPassword1").isPresent(), "works again after the upgrade");
     }
 

@@ -28,10 +28,10 @@ import org.w3c.dom.NodeList;
  *   jeepney_routes.osm  route relations tagged bus=share_taxi (how OSM PH maps jeepneys), with geometry
  *   qc_roads.osm        named QC roads, only to name stops after their intersection
  * Writes into dataDir:
- *   routes.csv          routeId,seq,name,lat,lng      (stops in riding order)
- *   route_names.csv     routeId,name,oneway           (OSM name; oneway when OSM maps each direction)
- *   route_shapes.csv    the street path between consecutive stops, for the map
- *   route_km.csv        the length of that path, which fares are charged on
+ *   routes.txt          routeId,seq,name,lat,lng      (stops in riding order)
+ *   route_names.txt     routeId,name,oneway           (OSM name; oneway when OSM maps each direction)
+ *   route_shapes.txt    the street path between consecutive stops, for the map
+ *   route_km.txt        the length of that path, which fares are charged on
  *
  * Stops: OSM rarely maps jeepney stops (jeeps stop where flagged), so they are placed at the
  * mapped platforms, both ends, wherever another route joins, leaves or crosses this one (so
@@ -494,7 +494,7 @@ public final class ImportOsmRoutes {
                 kms.add(String.join(",", r.id, String.valueOf(i), String.format(Locale.ROOT, "%.3f", b - a)));
             }
         }
-        Files.write(dir.resolve("routes.csv"), stops, StandardCharsets.UTF_8);
+        Files.write(dir.resolve("routes.txt"), stops, StandardCharsets.UTF_8);
         Files.write(dir.resolve(RouteBook.NAMES_FILE), names, StandardCharsets.UTF_8);
         Files.write(dir.resolve(RouteShapes.FILE), shapes, StandardCharsets.UTF_8);
         Files.write(dir.resolve(RoadDistances.FILE), kms, StandardCharsets.UTF_8);

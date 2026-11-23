@@ -29,7 +29,7 @@ public class StoreTest {
         assertTrue(store.login("ana@mail.com", "wrongpass").isEmpty(), "Login with wrong password should fail");
     }
 
-    // users.csv is cached in memory: every write, and an edit made outside Store, must still show at once
+    // users.txt is cached in memory: every write, and an edit made outside Store, must still show at once
     @Test
     void userCacheSeesEveryChange() {
         assertEquals("STUDENT", ((farex.shared.user.Passenger) store.findUser("p1").get()).getPassengerType());
@@ -42,7 +42,7 @@ public class StoreTest {
         farex.shared.user.User op = store.addRole("p1", "OPERATOR", "XYZ-1");
         assertEquals(2, store.siblings("p1").size(), "new role row seen");
         assertEquals("XYZ-1", ((farex.shared.user.Operator) store.findUser(op.getId()).get()).getVehiclePlate());
-        Csv.append(tempDir.resolve("users.csv"), "", "x9", "Hand Edit", "hand@mail.com", "h", "PASSENGER", "REGULAR", "");
+        Csv.append(tempDir.resolve("users.txt"), "", "x9", "Hand Edit", "hand@mail.com", "h", "PASSENGER", "REGULAR", "");
         assertTrue(store.findUser("x9").isPresent(), "row added by hand to the file is seen");
         store.deleteAccount("p1");
         assertTrue(store.findUser("p1").isEmpty() && store.findUser(op.getId()).isEmpty(), "deleted rows are gone");
@@ -157,7 +157,7 @@ public class StoreTest {
         try {
             farex.shared.fare.Fares.publish(tempDir, java.time.LocalDate.now().minusDays(1), 1500, 225, 4.0);
             assertEquals(1500, farex.shared.fare.Fares.BASE);
-            String published = Csv.read(tempDir.resolve("fares.csv")).get(0)[3];
+            String published = Csv.read(tempDir.resolve("fares.txt")).get(0)[3];
             farex.shared.fare.Fares.delete(tempDir, java.time.LocalDate.now().minusDays(1).toString(), published);
             assertEquals(1400, farex.shared.fare.Fares.BASE, "back to the built-in fare");
         } finally {

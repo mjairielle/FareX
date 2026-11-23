@@ -26,7 +26,7 @@ public class SpeedAndIndexTest {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < 200_000; i++)
             sb.append(UUID.randomUUID()).append(",CARD_LOAD,p9,0011223344,500,0,500000,2026-11-17T00:00:00Z,x,\n");
-        Files.writeString(dir.resolve("ledger.csv"), Files.readString(dir.resolve("ledger.csv")) + sb, StandardOpenOption.TRUNCATE_EXISTING);
+        Files.writeString(dir.resolve("ledger.txt"), Files.readString(dir.resolve("ledger.txt")) + sb, StandardOpenOption.TRUNCATE_EXISTING);
         Store s = new Store(dir);
         s.balance("0011223344");                                   // first call reads the file once
         long t0 = System.nanoTime();
@@ -53,7 +53,7 @@ public class SpeedAndIndexTest {
         Store s = new Store(dir);
         s.load(CARD, "p1", 5000, "GCash");
         long big = s.balance(CARD);
-        Files.writeString(dir.resolve("ledger.csv"),
+        Files.writeString(dir.resolve("ledger.txt"),
                 "uuid,type,accountId,cardUid,amount,balanceBefore,balanceAfter,time,extra1,extra2\n"
                 + "u1,CARD_LOAD,p1," + CARD + ",100,0,100,2026-11-17T00:00:00Z,x,\n");
         assertEquals(100, s.balance(CARD));
@@ -64,10 +64,10 @@ public class SpeedAndIndexTest {
     void halfWrittenLastLineWaitsAndBadNumberRowIsSkipped() throws Exception {
         Store s = new Store(dir);
         long before = s.balance(CARD);
-        Files.writeString(dir.resolve("ledger.csv"), "u2,CARD_LOAD,p1," + CARD + ",1,0,9",
+        Files.writeString(dir.resolve("ledger.txt"), "u2,CARD_LOAD,p1," + CARD + ",1,0,9",
                 StandardOpenOption.APPEND);                         // no newline yet, writer is mid write
         assertEquals(before, s.balance(CARD));
-        Files.writeString(dir.resolve("ledger.csv"), "99,2026-11-17T00:00:00Z,x,\nu3,CARD_LOAD,p1," + CARD + ",1,0,abc,2026-11-17T00:00:00Z,x,\n",
+        Files.writeString(dir.resolve("ledger.txt"), "99,2026-11-17T00:00:00Z,x,\nu3,CARD_LOAD,p1," + CARD + ",1,0,abc,2026-11-17T00:00:00Z,x,\n",
                 StandardOpenOption.APPEND);
         assertEquals(999, s.balance(CARD), "finished row counted, bad number row skipped");
     }

@@ -4,7 +4,7 @@ import java.nio.file.Path;
 import java.util.*;
 
 /**
- * Road distance between consecutive stops, from route_km.csv (routeId,segment,km; segment i is
+ * Road distance between consecutive stops, from route_km.txt (routeId,segment,km; segment i is
  * stop i -> i+1). Written by farex.server.FetchRouteShapes from OSRM, committed with the data.
  *
  * Fares are charged on these through Fares.pathKm, which looks them up by the two stops'
@@ -12,7 +12,7 @@ import java.util.*;
  * every route sharing a stretch of road use the same number.
  */
 public final class RoadDistances {
-    public static final String FILE = "route_km.csv";
+    public static final String FILE = "route_km.txt";
     public static final String HEADER = "routeId,segment,km";
 
     private RoadDistances() {}
@@ -26,12 +26,12 @@ public final class RoadDistances {
         return String.format(Locale.ROOT, "%.5f,%.5f>%.5f,%.5f", aLat, aLng, bLat, bLng);
     }
 
-    /** key(a, b) -> road km for every segment of `routes` listed in dir/route_km.csv. */
+    /** key(a, b) -> road km for every segment of `routes` listed in dir/route_km.txt. */
     public static Map<String, Double> load(Path dir, Map<String, List<RouteStop>> routes) {
         return load(dir, FILE, routes);
     }
 
-    /** Same from another file of the same format, e.g. stops_km.csv for the operator's stops.csv route. */
+    /** Same from another file of the same format, e.g. stops_km.txt for the operator's stops.txt route. */
     public static Map<String, Double> load(Path dir, String file, Map<String, List<RouteStop>> routes) {
         Map<String, Double> out = new HashMap<>();
         for (String[] r : Csv.read(dir.resolve(file))) {

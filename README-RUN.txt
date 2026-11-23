@@ -2,7 +2,7 @@ Run FareX on your laptop
 ========================
 1. Copy .env.example to .env. For a local demo set: DEV=1, FAKE_PAY=1, ADMIN_PASSWORD=(8+ chars), CARD_KEY=(any text).
 2. From the FareX root: mvn -q install -DskipTests
-3. Terminal 1: run-server.bat      (waits on port 8080, creates data/ on first run, delete data/users.csv etc. to reset)
+3. Terminal 1: run-server.bat      (waits on port 8080, creates data/ on first run, delete data/users.txt etc. to reset)
 4. Terminal 2: run-app.bat         (or: cd farex-app, mvn javafx:run)
 5. Tests: mvn test     Live exploit check (Git Bash): CP=farex-shared/target/classes:farex-server/target/classes ./security-check.sh
 

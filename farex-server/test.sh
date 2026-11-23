@@ -91,11 +91,11 @@ ok "$(curl -s -X POST $B/admin/api/user/add -d "name=Eve&email=eve@m.com&passwor
 EVE=$(curl -s -X POST $B/admin/api/user/add -d "name=Eve&email=eve@m.com&password=password1&role=OPERATOR&plate=EVE-1&route=311" -H "$(H $MT)" | j id)
 ET=$(curl -s -X POST $B/login -d "email=eve@m.com&password=password1" | j token)
 ok "$(curl -s $B/operator/route -H "$(H $ET)" | head -1 | cut -d'|' -f1)" "#311" "operator gets the route they chose"
-ok "$(curl -s $B/operator/route -H "$(H $ET)" | sed -n 2p | cut -d, -f1)" "$(grep '^311,0,' data/routes.csv | cut -d, -f3)" "its first stop is that route's first stop"
+ok "$(curl -s $B/operator/route -H "$(H $ET)" | sed -n 2p | cut -d, -f1)" "$(grep '^311,0,' data/routes.txt | cut -d, -f3)" "its first stop is that route's first stop"
 ok "$(curl -s $B/admin/api/users -H "$(H $MT)" | grep "^$EVE|" | cut -d'|' -f9)" 311 "admin sees the route"
 curl -s -X POST $B/operator/stop -d "stop=0" -H "$(H $ET)" >/dev/null
 QE=$(qr "FAREX:JEEP:$EVE" 0067676767)
-ok "$(echo $QE | j stop)" "$(grep '^311,0,' data/routes.csv | cut -d, -f3)" "QR boards at a stop of the operator's route"
+ok "$(echo $QE | j stop)" "$(grep '^311,0,' data/routes.txt | cut -d, -f3)" "QR boards at a stop of the operator's route"
 curl -s -X POST $B/operator/stop -d "stop=5" -H "$(H $ET)" >/dev/null
 qr "FAREX:JEEP:$EVE" 0067676767 >/dev/null
 ok "$(curl -s -X POST $B/admin/api/user/edit -d "id=$EVE&route=310-A" -H "$(H $MT)" | j ok)" 1 "admin changes the route"
@@ -103,9 +103,9 @@ ok "$(curl -s $B/operator/route -H "$(H $ET)" | head -1 | cut -d'|' -f1)" "#310-
 ok "$(qr "FAREX:JEEP:$EVE" 0067676767 | j error)" "This jeepney is not on a shift" "QR waits for the jeep's stop on the new route"
 ok "$(curl -s $B/operator/route -H "$(H $OT)" | head -1)" "#|Default route|false" "an operator with no route runs the default stops"
 turn() { curl -s -X POST $B/operator/turn -H "$(H $1)"; }
-ok "$(turn $ET | head -1)" "#310-B|$(grep '^310-B,' data/route_names.csv | cut -d, -f2)|true" "turning around a one-way route runs its twin back"
+ok "$(turn $ET | head -1)" "#310-B|$(grep '^310-B,' data/route_names.txt | cut -d, -f2)|true" "turning around a one-way route runs its twin back"
 ok "$(turn $ET | head -1 | cut -d'|' -f1)" "#310-A" "turning again runs it forward"
-ok "$(turn $OT | sed -n 2p | cut -d, -f1)" "$(tail -1 data/stops.csv | cut -d, -f2)" "a two-way line turned around starts at its last stop"
+ok "$(turn $OT | sed -n 2p | cut -d, -f1)" "$(tail -1 data/stops.txt | cut -d, -f2)" "a two-way line turned around starts at its last stop"
 turn $OT >/dev/null
 curl -s -X POST $B/operator/stop -d "stop=0" -H "$(H $ET)" >/dev/null
 qr "FAREX:JEEP:$EVE" 0067676767 >/dev/null
@@ -118,7 +118,7 @@ PS=$(curl -s -X POST $B/load/start -d "uid=0067676767&cents=20000&method=GCash" 
 ok "$(curl -s $B/load/paid -H "$(H $AT)" | grep -c "^$PS,0067676767,20000,GCash$")" 1 "paid load is listed for Fetch Load, with its method"
 ok "$(curl -s $B/load/paid -H "$(H $OT)" | grep -c "$PS")" 0 "not shown to another account"
 if [ -n "$DATA" ]; then   # a checkout left unpaid (FAKE_PAY only says paid for fake- sessions)
-  echo "cs_unpaid,p1,0067676767,5000,$(date -u +%Y-%m-%dT%H:%M:%SZ),GCash" >> "$DATA/pending.csv"
+  echo "cs_unpaid,p1,0067676767,5000,$(date -u +%Y-%m-%dT%H:%M:%SZ),GCash" >> "$DATA/pending.txt"
   ok "$(curl -s $B/load/paid -H "$(H $AT)" | grep -c cs_unpaid)" 0 "unpaid checkout never shows in Fetch Load"
 fi
 curl -s -X POST $B/load/confirm -d "sessionId=$PS" -H "$(H $AT)" >/dev/null

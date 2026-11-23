@@ -1,8 +1,8 @@
 # Secrets and live data never go into the image
 .env
-data/users.csv
-data/cards.csv
-data/ledger.csv
+data/users.txt
+data/cards.txt
+data/ledger.txt
 
 # Git and IDE
 .git
@@ -25,3 +25,7 @@ farex-app/runPom.xml
 # Scripts and docs
 *.bat
 flowcharts/
+# old .csv names: account files from before the switch to .txt, renamed when the server starts
+data/users.csv
+data/cards.csv
+data/ledger.csv

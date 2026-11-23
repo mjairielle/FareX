@@ -78,7 +78,7 @@ The server loads configuration from environment variables (or `.env` in the root
 | `PAYMONGO_METHODS` | `gcash,paymaya,card` | PayMongo payment methods offered at checkout. Live keys: list only methods PayMongo activated for the account (`dob` = BPI online banking), or every checkout fails |
 | `PUBLIC_URL` | `http://localhost:8080` | This server's public address. PayMongo sends the payer back to `PUBLIC_URL/paid` or `/cancelled` |
 
-The server refuses to start in production mode while a demo password (`admin123` or `1234`) is still in `users.csv`.
+The server refuses to start in production mode while a demo password (`admin123` or `1234`) is still in `users.txt`.
 Run `./security-check.sh` after building to replay the launch review exploits. Expect all PASS.
 
 ---

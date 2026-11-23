@@ -17,7 +17,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/** Fares on road distances (route_km.csv) instead of straight lines. Fares.ROAD_KM is global: always reset. */
+/** Fares on road distances (route_km.txt) instead of straight lines. Fares.ROAD_KM is global: always reset. */
 public class RoadKmTest {
 
     @TempDir
@@ -57,7 +57,7 @@ public class RoadKmTest {
     @Test
     void sharedRoadDoesNotTemptAPointlessTransfer() throws Exception {
         try {
-            // data/route_km.csv as committed: R1 and R3 share Commonwealth Ave from Tandang Sora to
+            // data/route_km.txt as committed: R1 and R3 share Commonwealth Ave from Tandang Sora to
             // Fairview, so Philcoa -> Fairview on R1 and R1 -> R3 at Tandang Sora tie on distance.
             RouteBook book = new RouteBook(tempDir);
             Files.writeString(tempDir.resolve(RoadDistances.FILE), String.join("\n", RoadDistances.HEADER,
@@ -83,7 +83,7 @@ public class RoadKmTest {
             Fares.setRoadKm(RoadDistances.load(tempDir, book.routes()));
 
             TripPlanner.Plan plan = new TripPlanner(book).plan(r1.get(0).name(), r1.get(1).name(), new RegularFare()).get(0);
-            assertEquals(6.0, plan.km(), 1e-9, "planner uses the 6 km in route_km.csv, not the ~1.6 km straight line");
+            assertEquals(6.0, plan.km(), 1e-9, "planner uses the 6 km in route_km.txt, not the ~1.6 km straight line");
             assertEquals(Fares.fare(6.0, new RegularFare()), plan.fareCents());
 
             Store store = new Store(tempDir);

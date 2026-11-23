@@ -31,7 +31,7 @@ public final class Fares {
     public static void load(Path dir) {
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
         LocalDate best = null;
-        for (String[] r : Csv.read(dir.resolve("fares.csv"), 3)) {
+        for (String[] r : Csv.read(dir.resolve("fares.txt"), 3)) {
             try {
                 LocalDate eff = LocalDate.parse(r[0]);
                 if (!eff.isAfter(today) && (best == null || !eff.isBefore(best))) {
@@ -44,7 +44,7 @@ public final class Fares {
                     BASE_KM = baseKm;
                 }
             } catch (RuntimeException badRow) {                // one bad row must not take every request down
-                System.err.println("Skipped bad fares.csv row: " + String.join(",", r));
+                System.err.println("Skipped bad fares.txt row: " + String.join(",", r));
             }
         }
     }
@@ -59,7 +59,7 @@ public final class Fares {
         if (base < 500 || base > 10000) throw new IllegalArgumentException("Base fare must be P5.00 to P100.00");
         if (rate < 50 || rate > 2000) throw new IllegalArgumentException("Rate per km must be P0.50 to P20.00");
         if (!(baseKm >= 0 && baseKm <= 20)) throw new IllegalArgumentException("Base distance must be 0 to 20 km");
-        Csv.append(dir.resolve("fares.csv"), HEADER, effective.toString(), String.valueOf(base), String.valueOf(rate),
+        Csv.append(dir.resolve("fares.txt"), HEADER, effective.toString(), String.valueOf(base), String.valueOf(rate),
                 java.time.Instant.now().toString(), String.valueOf(baseKm));
         load(dir);
     }
@@ -69,7 +69,7 @@ public final class Fares {
      * then chosen again from the rows left, or the built-in P14.00 / 4 km / P2.00 when none is due.
      */
     public static void delete(Path dir, String effective, String published) {
-        Path file = dir.resolve("fares.csv");
+        Path file = dir.resolve("fares.txt");
         List<String[]> rows = new java.util.ArrayList<>(Csv.read(file));
         if (!rows.removeIf(r -> r[0].equals(effective) && r.length > 3 && r[3].equals(published)))
             throw new IllegalArgumentException("No such fare table");
@@ -101,7 +101,7 @@ public final class Fares {
 
     /**
      * Road km between consecutive stops, keyed by RoadDistances.key(from, to). Set once at startup
-     * from route_km.csv (server) or /road-km (app). Empty means straight-line distances everywhere.
+     * from route_km.txt (server) or /road-km (app). Empty means straight-line distances everywhere.
      */
     private static volatile java.util.Map<String, Double> ROAD_KM = java.util.Map.of();
 
@@ -110,7 +110,7 @@ public final class Fares {
 
     /**
      * Distance riding from stop a to stop b (a <= b) in stop order: the road distance for each
-     * stretch between stops when it is known (route_km.csv), else the straight line between them.
+     * stretch between stops when it is known (route_km.txt), else the straight line between them.
      * A stretch known only in the other direction uses that; one-way streets make the two differ.
      */
     public static double pathKm(List<RouteStop> stops, int a, int b) {

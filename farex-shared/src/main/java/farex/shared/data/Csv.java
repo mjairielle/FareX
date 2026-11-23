@@ -14,6 +14,30 @@ public final class Csv {
         return s.replace(',', ' ').replace('\r', ' ').replace('\n', ' ');
     }
 
+    /**
+     * Data files are .txt (comma-separated inside). Renames each old name.csv in dir to name.txt, so accounts,
+     * balances and routes from before the switch carry over. Never overwrites: a name.txt that exists wins.
+     * Returns how many files it renamed.
+     */
+    public static int renameOldCsv(Path dir) {
+        int n = 0;
+        try (DirectoryStream<Path> old = Files.newDirectoryStream(dir, "*.csv")) {
+            for (Path csv : old) {
+                String name = csv.getFileName().toString();
+                Path txt = csv.resolveSibling(name.substring(0, name.length() - 4) + ".txt");
+                if (Files.exists(txt)) continue;
+                Files.move(csv, txt);
+                System.out.println("Renamed " + name + " to " + txt.getFileName());
+                n++;
+            }
+        } catch (NoSuchFileException | NotDirectoryException none) {
+            // no data folder yet: nothing to carry over
+        } catch (IOException e) {
+            throw new RuntimeException("Cannot rename the old .csv data files in " + dir, e);   // stop, never start empty
+        }
+        return n;
+    }
+
     /** Size and last change time: equal stamps mean the file did not change since it was read. */
     public static Object stamp(Path file) {
         try {

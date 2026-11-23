@@ -6,7 +6,7 @@ import farex.shared.user.*;
 import java.time.Instant;
 import java.util.*;
 
-/** Operator side tap logic. Who is on board is kept in boarding.csv so a restart or a second jeepney cannot lose or duplicate a rider. */
+/** Operator side tap logic. Who is on board is kept in boarding.txt so a restart or a second jeepney cannot lose or duplicate a rider. */
 public class TapDesk {
     public record BoardedInfo(String cardUid, String passengerName, int stopIdx, String stopName, Instant time) {}
 

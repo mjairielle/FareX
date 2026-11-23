@@ -5,19 +5,19 @@ import java.util.*;
 
 /**
  * All jeepney routes, each an ordered list of stops. Rows: routeId,seq,name,lat,lng. First run seeds sample routes.
- * Optional route_names.csv (routeId,name,oneway) gives a route its display name and marks it one-way:
+ * Optional route_names.txt (routeId,name,oneway) gives a route its display name and marks it one-way:
  * OpenStreetMap maps most jeepney routes once per direction, and each direction is ridden forward only.
  */
 public final class RouteBook {
     private static final String H = "routeId,seq,name,lat,lng";
-    public static final String NAMES_FILE = "route_names.csv";
+    public static final String NAMES_FILE = "route_names.txt";
     public static final String NAMES_HEADER = "routeId,name,oneway";
     private final Map<String, List<RouteStop>> routes = new LinkedHashMap<>();
     private final Map<String, String> names = new HashMap<>();
     private final Set<String> oneway = new HashSet<>();
 
     public RouteBook(Path dir) {
-        Path file = dir.resolve("routes.csv");
+        Path file = dir.resolve("routes.txt");
         if (!Files.exists(file)) seed(file);
         Map<String, TreeMap<Integer, RouteStop>> tmp = new LinkedHashMap<>();
         for (String[] r : Csv.read(file, 5)) {
@@ -25,7 +25,7 @@ public final class RouteBook {
                 tmp.computeIfAbsent(r[0], k -> new TreeMap<>())
                    .put(Integer.parseInt(r[1]), new RouteStop(r[2], Double.parseDouble(r[3]), Double.parseDouble(r[4])));
             } catch (NumberFormatException bad) {           // one damaged row must not stop the server from starting
-                System.err.println("Skipped bad routes.csv row: " + String.join(",", r));
+                System.err.println("Skipped bad routes.txt row: " + String.join(",", r));
             }
         }
         tmp.forEach((id, m) -> routes.put(id, List.copyOf(m.values())));
@@ -46,7 +46,7 @@ public final class RouteBook {
 
     /** Admin adds a new route. Stops: name, lat, lng. */
     public static void addRoute(Path dir, String id, List<String[]> stops) {
-        for (String[] r : Csv.read(dir.resolve("routes.csv"))) if (r[0].equals(id.trim())) throw new IllegalArgumentException("Route " + id.trim() + " already exists");
+        for (String[] r : Csv.read(dir.resolve("routes.txt"))) if (r[0].equals(id.trim())) throw new IllegalArgumentException("Route " + id.trim() + " already exists");
         saveRoute(dir, id, "", false, stops);
     }
 
@@ -66,7 +66,7 @@ public final class RouteBook {
                 if (Math.abs(lat) > 90 || Math.abs(lng) > 180) throw new IllegalArgumentException("Coordinates out of range");
             } catch (NumberFormatException e) { throw new IllegalArgumentException("Bad coordinates for " + s[0]); }
         }
-        Path file = dir.resolve("routes.csv");
+        Path file = dir.resolve("routes.txt");
         List<String[]> rows = new ArrayList<>(Csv.read(file));
         rows.removeIf(r -> r[0].equals(rid));
         for (int i = 0; i < stops.size(); i++) {
@@ -83,7 +83,7 @@ public final class RouteBook {
 
     /** Admin deletes a route: its stops, name and road path. Past trips keep the fare they were charged. */
     public static void deleteRoute(Path dir, String id) {
-        Path file = dir.resolve("routes.csv");
+        Path file = dir.resolve("routes.txt");
         List<String[]> rows = new ArrayList<>(Csv.read(file));
         if (!rows.removeIf(r -> r[0].equals(id))) throw new IllegalArgumentException("No route " + id);
         Csv.rewrite(file, H, rows);
@@ -92,9 +92,9 @@ public final class RouteBook {
         dropRoadPath(dir, id);
     }
 
-    // route_shapes.csv / route_km.csv rows of this route (written by FetchRouteShapes), when there are any
+    // route_shapes.txt / route_km.txt rows of this route (written by FetchRouteShapes), when there are any
     private static void dropRoadPath(Path dir, String id) {
-        for (String[] f : new String[][]{{"route_shapes.csv", "routeId,segment,seq,lat,lng"}, {"route_km.csv", "routeId,segment,km"}}) {
+        for (String[] f : new String[][]{{"route_shapes.txt", "routeId,segment,seq,lat,lng"}, {"route_km.txt", "routeId,segment,km"}}) {
             Path p = dir.resolve(f[0]);
             if (!Files.exists(p)) continue;
             List<String[]> rows = new ArrayList<>(Csv.read(p));
@@ -109,7 +109,7 @@ public final class RouteBook {
         return new ArrayList<>(out);
     }
 
-    // Sample coordinates around Quezon City. Edit routes.csv to change. Shared stops must repeat the same name.
+    // Sample coordinates around Quezon City. Edit routes.txt to change. Shared stops must repeat the same name.
     private static void seed(Path file) {
         String[][] r = {
             {"R1", "Philcoa", "14.65400", "121.05377"}, {"R1", "Tandang Sora", "14.66223", "121.06619"},

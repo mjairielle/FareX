@@ -67,7 +67,7 @@ public class TripPlannerTest {
         // two rides): P14.00 + P14.00 = P28.00. LOOP is cheaper. A per-km search cost
         // (base per boarding + rate on every km) scored LOOP 30.2 vs hops 29.6 and picked the hops.
         Path dir = Files.createTempDirectory(tempDir, "loop");
-        Files.writeString(dir.resolve("routes.csv"), String.join("\n",
+        Files.writeString(dir.resolve("routes.txt"), String.join("\n",
                 "routeId,seq,name,lat,lng",
                 "LOOP,0,X,14.6000,121.0000", "LOOP,1,Far,14.6400,121.0000", "LOOP,2,Y,14.6072,121.0000",
                 "A,0,X,14.6000,121.0000", "A,1,M,14.6036,121.0000",

@@ -21,9 +21,9 @@ import java.util.regex.Pattern;
 
 /**
  * One-off tool: asks the public OSRM router for the road between each pair of consecutive stops
- * in routes.csv, and writes next to it
- *   route_shapes.csv  the road path, for drawing routes on the map
- *   route_km.csv      the road distance, which fares are charged on (Fares.pathKm)
+ * in routes.txt, and writes next to it
+ *   route_shapes.txt  the road path, for drawing routes on the map
+ *   route_km.txt      the road distance, which fares are charged on (Fares.pathKm)
  * Run it after adding or changing routes, then commit both files. The server and app never call
  * OSRM themselves.
  *
